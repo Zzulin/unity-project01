@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de640fe3d0db1804a85f9fc8f5cadab6, type: 3}
   m_Name: ForwardRenderer
   m_EditorClassIdentifier: 
-  m_RendererFeatures: []
-  m_RendererFeatureMap: 
+  m_RendererFeatures:
+  - {fileID: 3285400655040549921}
+  m_RendererFeatureMap: 2114872c7d16982d
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   shaders:
@@ -42,3 +43,30 @@ MonoBehaviour:
   m_ShadowTransparentReceive: 1
   m_RenderingMode: 0
   m_AccurateGbufferNormals: 0
+--- !u!114 &3285400655040549921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 644bd5a1479c0fd46ac9c6ffa97f78d6, type: 3}
+  m_Name: NewVolumeCloudEffect
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    cloudMaterial: {fileID: 2100000, guid: 7a1b0736d6651d343987c6edd0ff728a, type: 2}
+    renderPassEvent: 500
+    cloudDensity: 0.5
+    cloudCoverage: 0.5
+    cloudScale: {x: 1, y: 0.5, z: 1}
+    cloudSpeed: {x: 0.1, y: 0.05, z: 0.1}
+    cloudColor: {r: 0.9528302, g: 0.7119334, b: 0.10487114, a: 1}
+    cloudEmission: {r: 1, g: 1, b: 1, a: 1}
+    cloudSharpness: 0.5
+    cloudSoftness: 0.2
+    cloudHeight: 100
+    cloudThickness: 50
+    raySteps: 64

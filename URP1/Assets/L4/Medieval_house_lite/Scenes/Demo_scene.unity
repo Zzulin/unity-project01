@@ -4996,6 +4996,7 @@ MonoBehaviour:
   minIntensity: 1.5
   maxIntensity: 3
   smoothing: 30
+  lastSum: 0
 --- !u!108 &458878848
 Light:
   m_ObjectHideFlags: 0
@@ -5155,8 +5156,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6edcaa0dcc0401d4d98b0daeb7335fd7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ssaoMaterial: {fileID: 0}
+  cam: {fileID: 0}
   aoStrength: 0
   SampleKernelCount: 64
+  sampleKernelList: []
   sampleKeneralRadius: 0.01
   rangeStrength: 0.001
   depthBiasValue: 0
@@ -24586,6 +24590,7 @@ MonoBehaviour:
   minIntensity: 1.5
   maxIntensity: 3
   smoothing: 30
+  lastSum: 0
 --- !u!4 &8837246229246011754
 Transform:
   m_ObjectHideFlags: 0
