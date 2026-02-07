@@ -17,6 +17,7 @@ namespace My
             this.z = z;
         }
         public float Magitude => Mathf.Sqrt(x * x + y * y + z * z);
+        public static Vec3 zero => new Vec3(0, 0, 0);
 
         public static Vec3 operator *(Vec3 v,float k) 
         {
@@ -38,6 +39,21 @@ namespace My
                 v1.z * v2.x - v1.x * v2.z,
                 v1.x * v2.y - v1.y * v2.x
             );
+        }
+        public static Vec3 operator-(Vec3 v1,Vec3 v2)
+        {
+            return new Vec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+        }
+        public Vec3 Normalized
+        {
+            get
+            {
+                float mag = this.Magitude;
+                if (mag > 1e-5f) // 避免除以零
+                    return new Vec3(x / mag, y / mag, z / mag);
+                else
+                    return Vec3.zero; // 对于零向量，返回零向量
+            }
         }
     }
 }

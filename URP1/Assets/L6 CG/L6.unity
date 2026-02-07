@@ -228,6 +228,7 @@ GameObject:
   - component: {fileID: 1509611138}
   - component: {fileID: 1509611137}
   - component: {fileID: 1509611140}
+  - component: {fileID: 1509611142}
   - component: {fileID: 1509611141}
   m_Layer: 0
   m_Name: Main Camera
@@ -267,9 +268,9 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
+  near clip plane: 1
+  far clip plane: 100
+  field of view: 90
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -324,7 +325,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -346,3 +347,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70adaaa54f9ca584796e898386998057, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1509611142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509611136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f0b6b0822c2741499ca3207e614cac0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rectColor: {r: 0.24941278, g: 1, b: 0, a: 1}
+  rectMat: {fileID: 2100000, guid: 04bb0b7cf44d7ab499bee1bfaa58480e, type: 2}
+  points:
+  - {x: 100, y: 100}
+  - {x: 500, y: 500}
+  - {x: 1000, y: 600}
