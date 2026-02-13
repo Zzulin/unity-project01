@@ -82,8 +82,23 @@ Shader "Unlit/pbr_1"
                float a2=a*a;
                float NdotH2=NdotH*NdotH;
                float denom=NdotH2*(a2-1)+1;
-               return a2/(PI*denom*denom);
+               return a2/max(0.001,PI*denom*denom);
            }
+           float GeometrySchlickGGX(float NdotV,float roughness)
+           {
+               float r =(roughness+1);
+               float k=r*r/8;
+               float denom=NdotV*(1-k)+k;
+               return NdotV/max(0.001,denom);//避免除0出现白色噪点
+               
+           }
+           float GeometrySmith(float NdotV,float NdotL,float roughness)
+           {
+               float ggx_v=GeometrySchlickGGX(NdotV,roughness);
+               float ggx_l=GeometrySchlickGGX(NdotL,roughness);
+               return ggx_v*ggx_l;
+           }
+           
            float4 frag (v2f i) : SV_Target
            {
                //采样 向量
@@ -110,7 +125,10 @@ Shader "Unlit/pbr_1"
                float3 diffuse=NdotL*LightColor*Albedo.xyz*(1-metallic);//能量守恒
                float3 SpecularColor=lerp(float3(0.04,0.04,0.04),Albedo.xyz,metallic);//能量守恒
                float D=DistributionGGX(NdotH,roughness);
-               float3 specular= SpecularColor*LightColor*D*NdotL;
+               float G=GeometrySmith(NdotV,NdotL,roughness);
+               float3 numerator=SpecularColor*D*G;
+               float demonimator=4*NdotL*NdotV;
+               float3 specular= numerator/demonimator*LightColor*NdotL*0.25;
                 
                
                float3 ambient=Albedo.xyz*unity_AmbientSky.rgb;
