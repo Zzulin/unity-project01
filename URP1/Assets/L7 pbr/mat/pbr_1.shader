@@ -3,10 +3,13 @@ Shader "Mypbr/pbr_1"
    Properties
    {
        _BaseMap("RGB basecolor A smoothness", 2D) = "white" {}
-       _Metallic("Metallic add", Range(0,1)) = 1
-       _MetallicMap("Metallic", 2D) = "gray" {}
-       _NormalMap("Normal", 2D) = "bump" {}
-       _Roughness("Roughness add", Range(0,1)) = 0.5
+       _Metallic("Metallic add", Range(-1,1)) = 1
+       [NoScaleOffset]_MetallicMap("Metallic", 2D) = "gray" {}
+       [NoScaleOffset]_NormalMap("Normal", 2D) = "bump" {}
+       _NormalMapScale("NormalMapScale", Range(0,2)) = 1
+       _Roughness("Roughness add", Range(-1,1)) = 0.5
+       _OcclusionMap("Occlusion", 2D) = "white" {}
+       _OcclusionStrength("OcclusionStrength", Range(0,1)) = 1
        
    }
    SubShader
@@ -32,6 +35,8 @@ Shader "Mypbr/pbr_1"
            //主pass阴影添加
            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE//开启主光级联阴影
            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS//开启主光阴影
+           #pragma multi_compile _ LIGHTMAP_ON//开启lightmap
+           #pragma multi_compile _ SHADOWS_SHADOWMASK//开启阴影贴图
            
            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -39,6 +44,8 @@ Shader "Mypbr/pbr_1"
            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
            float _Metallic;
            float _Roughness; 
+           float _NormalMapScale;
+           float _OcclusionStrength;
            
            SAMPLER(sampler_BaseMap);
            Texture2D _BaseMap;
@@ -46,11 +53,15 @@ Shader "Mypbr/pbr_1"
 
            SAMPLER(sampler_MetallicMap);
            Texture2D _MetallicMap;
-           float4 _MetallicMap_ST;
+           
 
            SAMPLER(sampler_NormalMap);
            Texture2D _NormalMap;
-           float4 _NormalMap_ST;
+         
+           
+           SAMPLER(sampler_OcclusionMap);
+           Texture2D _OcclusionMap;
+    
            
            struct appdata
            {
@@ -58,6 +69,10 @@ Shader "Mypbr/pbr_1"
                float3 normal : NORMAL;
                float2 uv : TEXCOORD0;
                float4 tangent : TANGENT;
+               #ifdef LIGHTMAP_ON
+               float2 lightmapUV : TEXCOORD1;
+               #endif
+               
            };
            struct v2f
            {
@@ -68,7 +83,10 @@ Shader "Mypbr/pbr_1"
                float3 viewDirWS : TEXCOORD3;
                float3 tangentWS : TEXCOORD4;
                float3 bitangentWS : TEXCOORD5;
-               float4 shadowCoord : TEXCOORD6;//阴影贴图坐标 float4
+               float4 shadowCoord : TEXCOORD6;//实时阴影贴图坐标 float4
+               #ifdef LIGHTMAP_ON
+               float2 lightmapUV : TEXCOORD7;
+               #endif
            };
            v2f vert (appdata v)
            {
@@ -83,7 +101,13 @@ Shader "Mypbr/pbr_1"
                o.uv = TRANSFORM_TEX(v.uv, _BaseMap);
                o.viewDirWS=GetWorldSpaceViewDir(o.positionWS);
                o.tangentWS=TransformObjectToWorld(v.tangent.xyz);
+               //乘以切向的w分量保证如果有模型对称的情况让副切线的方向一致
                o.bitangentWS=cross(o.NormalWS,o.tangentWS)*v.tangent.w;
+               #ifdef LIGHTMAP_ON
+               //需要平移和缩放uv 适应烘焙出来的Lightmap
+               o.lightmapUV.xy=v.lightmapUV*unity_LightmapST.xy+unity_LightmapST.zw;
+               #endif
+               
                return o;
            }
            float DistributionGGX(float NdotH,float roughness)
@@ -109,7 +133,13 @@ Shader "Mypbr/pbr_1"
            }
            float FresnelSchlick(float VdotH,float F0)
            {
-               return F0+(1-F0)*pow(max(0,1-VdotH),5);
+               float OneminF0=1-F0;
+               return F0+OneminF0*pow(max(0,1-VdotH),5);
+           }
+           float3 FresnelSchlickNdotVRoughness(float NdotV,float F0,float roughness)
+           {
+               float OneminF0=max((1-roughness),F0)-F0;
+               return F0+OneminF0*pow(max(0,1-NdotV),5);
            }
            float3 CalculateBRDF(float3 normalWS,float3 viewDirWS,Light mainLight,float3 LightDir,float3 LightColor,float roughness,float metallic,float3 Albedo,float3 F0)
            {
@@ -134,13 +164,13 @@ Shader "Mypbr/pbr_1"
                float3 diffuse=KD*Albedo/(PI);
                float3 radiance=LightColor*mainLight.shadowAttenuation*mainLight.distanceAttenuation;//阴影衰减*距离衰减
                float3 mainlight=(diffuse+specular)*radiance*max(0,NdotL);
-               //return float3(max(0,NdotL),max(0,NdotL),max(0,NdotL));
+               //return float3(D,D,D);
                return mainlight;
            }
            float4 frag (v2f i) : SV_Target
            {
                //采样 向量
-               float3 normalTS=UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap,sampler_NormalMap,i.uv));
+               float3 normalTS=UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap,sampler_NormalMap,i.uv),_NormalMapScale);
                //切线空间->世界空间
                float3x3 TBN=float3x3(i.tangentWS,i.bitangentWS,i.NormalWS);
                float3 normalWS=normalize(mul(normalTS,TBN));
@@ -149,7 +179,17 @@ Shader "Mypbr/pbr_1"
                float3 viewDirWS=normalize(i.viewDirWS);
                float smoothness= Albedo.a;
                float roughness=saturate(1-smoothness+_Roughness);
-               Light mainLight =GetMainLight(i.shadowCoord);//getMainLight 传入阴影坐标
+               //getMainLight 传入阴影坐标实时阴影
+               //Light mainLight =GetMainLight(i.shadowCoord);
+               float4 shadowMask=1;
+                    #ifdef LIGHTMAP_ON
+                    //unity的自动LOD远的时候采样静态烘焙的全局光照贴图 进的时候动态阴影  
+                    shadowMask=SAMPLE_SHADOWMASK(i.lightmapUV);
+                    #else
+                    shadowMask=unity_ProbesOcclusion;
+                    #endif
+               //mainLight unity自动lod 摄像机近时实时阴影 远时采样烘焙阴影
+               Light mainLight =GetMainLight(i.shadowCoord,i.positionWS,shadowMask);
                float3 LightDir=mainLight.direction;
                float3 LightColor=mainLight.color;
                //float3 shadowAttenuation=float3(mainLight.shadowAttenuation,mainLight.shadowAttenuation,mainLight.shadowAttenuation);
@@ -158,13 +198,9 @@ Shader "Mypbr/pbr_1"
                #ifdef _ADDITIONAL_LIGHTS
                uint additionalLightCount=GetAdditionalLightsCount();
                    #ifdef _ADDITIONAL_LIGHT_SHADOWS
-                    float4 shadowMask=1;
-                        #ifdef _LIGHTMAP_ON
-                        shadowMask=SAMPLE_SHADOWMASK(i.uv);//采样静态烘焙的全局光照贴图
-                        #else
-                        shadowMask=unity_ProbesOcclusion;//采样动态烘焙的光照贴
-                        #endif
+                    
                    #endif
+               //return float4(shadowMask.rgb,1);
                for(uint index=0;index<additionalLightCount;index++)
                {
                    #ifdef _ADDITIONAL_LIGHT_SHADOWS
@@ -176,25 +212,29 @@ Shader "Mypbr/pbr_1"
                }
                #endif
                
-               // 正确的PBR环境光实现 - IBL
-               // // 1. 漫反射环境光
-               // float3 diffuseGI=SampleSH(normalWS);
-               // float3 ambientDiffuse=diffuseGI*diffuseColor;
-               //
-               // // 2. 镜面反射环境光 - 使用反射探针
-               // float3 reflectDir=reflect(-viewDirWS,normalWS);
-               // float4 encodedIrradiance=SAMPLE_TEXTURECUBE(unity_SpecCube0, samplerunity_SpecCube0, reflectDir);
-               // float3 decodedIrradiance=DecodeHDREnvironment(encodedIrradiance, unity_SpecCube0_HDR);
-               //
-               // // 菲涅尔反射已经包含了能量守恒信息
-               // //环境镜面反射比例
-               // //float specularGIlerp=lerp(0.1,1,F);
-               // float3 specularGI=decodedIrradiance*F;
-               //
-               // // 3. 最终环境光 = 漫反射环境光 + 镜面反射环境光
-               // float3 ambient=ambientDiffuse+specularGI;
-               //
-               float3 ambient =Albedo*unity_AmbientSky.rgb;
+              
+               //间接光镜面反射
+               float3 KS=FresnelSchlickNdotVRoughness(dot(normalWS,viewDirWS),F0,roughness);//环境光KS是float3
+               float3 reflectDir=reflect(-viewDirWS,normalWS);
+               float4 encodedIrradiance=SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectDir,roughness*6);
+               float3 decodedIrradiance=DecodeHDREnvironment(encodedIrradiance, unity_SpecCube0_HDR);
+               float3 specularAmbient=KS*decodedIrradiance;
+               //间接光漫反射
+               float3 irradience;
+               #if LIGHTMAP_ON
+               irradience=SampleLightmap(i.lightmapUV,i.NormalWS);
+               #else
+               irradience=SampleSH(normalWS);
+               #endif
+               float KD=(1-KS)*(1-metallic);
+               float3 diffuseAmbient=KD*irradience*Albedo;
+               //间接光漫反射+间接光镜面反射
+               float occlusion=SAMPLE_TEXTURE2D(_OcclusionMap,sampler_OcclusionMap,i.uv).r;
+               occlusion=lerp(1,occlusion,_OcclusionStrength);
+               diffuseAmbient*=occlusion;
+               specularAmbient*=lerp(occlusion,1.0,roughness*roughness);    
+               float3 ambient =diffuseAmbient+specularAmbient;
+               //直接光+环境光
                float3 finalColor=mainlight+ambient;
                return float4(finalColor,1);  
            }
