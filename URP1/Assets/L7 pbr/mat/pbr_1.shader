@@ -33,8 +33,8 @@ Shader "Mypbr/pbr_1"
            #pragma multi_compile _ _ADDITIONAL_LIGHTS 
            #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS//开启附加光阴影
            //主pass阴影添加
-           #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE//开启主光级联阴影
-           #pragma multi_compile _ _MAIN_LIGHT_SHADOWS//开启主光阴影
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN//main light shadows
+            #pragma multi_compile _ _SHADOWS_SOFT//soft shadows
            #pragma multi_compile _ LIGHTMAP_ON//开启lightmap
            #pragma multi_compile _ SHADOWS_SHADOWMASK//开启阴影贴图
            
@@ -83,7 +83,9 @@ Shader "Mypbr/pbr_1"
                float3 viewDirWS : TEXCOORD3;
                float3 tangentWS : TEXCOORD4;
                float3 bitangentWS : TEXCOORD5;
-               float4 shadowCoord : TEXCOORD6;//实时阴影贴图坐标 float4
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                float4 shadowCoord : TEXCOORD6;//shadow coord
+                #endif
                #ifdef LIGHTMAP_ON
                float2 lightmapUV : TEXCOORD7;
                #endif
@@ -93,7 +95,9 @@ Shader "Mypbr/pbr_1"
                v2f o;
                //阴影坐标
                VertexPositionInputs vertexinput=GetVertexPositionInputs(v.positionOS);//获取顶点世界 相机 裁剪 NDC坐标
-               o.shadowCoord=GetShadowCoord(vertexinput);
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                o.shadowCoord=GetShadowCoord(vertexinput);
+                #endif
                
                o.positionCS = vertexinput.positionCS;
                o.positionWS = vertexinput.positionWS;
@@ -189,7 +193,15 @@ Shader "Mypbr/pbr_1"
                     shadowMask=unity_ProbesOcclusion;
                     #endif
                //mainLight unity自动lod 摄像机近时实时阴影 远时采样烘焙阴影
-               Light mainLight =GetMainLight(i.shadowCoord,i.positionWS,shadowMask);
+                float4 shadowCoord;
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                shadowCoord=i.shadowCoord;
+                #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
+                shadowCoord=TransformWorldToShadowCoord(i.positionWS);
+                #else
+                shadowCoord=float4(0,0,0,0);
+                #endif
+                Light mainLight =GetMainLight(shadowCoord,i.positionWS,shadowMask);
                float3 LightDir=mainLight.direction;
                float3 LightColor=mainLight.color;
                //float3 shadowAttenuation=float3(mainLight.shadowAttenuation,mainLight.shadowAttenuation,mainLight.shadowAttenuation);
