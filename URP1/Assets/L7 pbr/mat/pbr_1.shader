@@ -2,7 +2,8 @@ Shader "Mypbr/pbr_1"
 {
    Properties
    {
-       _BaseMap("RGB basecolor A smoothness", 2D) = "white" {}
+       [MainTexture]_BaseMap("RGB basecolor A smoothness", 2D) = "white" {}   //假如自己加metapass要有 最好加入MainTexture前
+       
        _Metallic("Metallic add", Range(-1,1)) = 1
        [NoScaleOffset]_MetallicMap("Metallic", 2D) = "gray" {}
        [NoScaleOffset]_NormalMap("Normal", 2D) = "bump" {}
@@ -33,8 +34,8 @@ Shader "Mypbr/pbr_1"
            #pragma multi_compile _ _ADDITIONAL_LIGHTS 
            #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS//开启附加光阴影
            //主pass阴影添加
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN//main light shadows
-            #pragma multi_compile _ _SHADOWS_SOFT//soft shadows
+           #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN//main light shadows
+           #pragma multi_compile _ _SHADOWS_SOFT//soft shadows
            #pragma multi_compile _ LIGHTMAP_ON//开启lightmap
            #pragma multi_compile _ SHADOWS_SHADOWMASK//开启阴影贴图
            
@@ -216,7 +217,7 @@ Shader "Mypbr/pbr_1"
                for(uint index=0;index<additionalLightCount;index++)
                {
                    #ifdef _ADDITIONAL_LIGHT_SHADOWS
-                   Light addLight=GetAdditionalLight(index,i.positionWS,shadowMask);
+                   Light addLight=GetAdditionalLight(index,i.positionWS,shadowMask);//additionallight屏幕空间阴影不需要传入阴影坐标
                    #else
                    Light addLight=GetAdditionalLight(index,i.positionWS);
                    #endif
@@ -269,7 +270,69 @@ Shader "Mypbr/pbr_1"
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
             ENDHLSL
-            
         }
+//       Pass
+//        {
+//            Name "Meta"
+//            Tags{"LightMode" = "Meta"}
+//            Cull Off
+//
+//            HLSLPROGRAM
+//            #pragma vertex CustomMetaVertex
+//            #pragma fragment CustomMetaFragment
+//
+//            // 只引入最核心的两个基础库，避免多余的变量冲突
+//            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+//            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
+//
+//            // 显式声明你的贴图和 ST (用于处理 UV 缩放/偏移)
+//            SAMPLER(sampler_BaseMap);
+//            Texture2D _BaseMap;
+//            float4 _BaseMap_ST;
+//
+//            // 1. 完全由自己定义的顶点输入结构
+//            struct AttributesMeta
+//            {
+//                float4 positionOS   : POSITION;
+//                float2 uv           : TEXCOORD0;
+//                float2 lightmapUV   : TEXCOORD1;
+//            };
+//
+//            // 2. 完全由自己定义的片段输入结构（彻底干掉 v2f_meta 的报错）
+//            struct VaryingsMeta
+//            {
+//                float4 positionCS   : SV_POSITION;
+//                float2 uv           : TEXCOORD0;
+//            };
+//
+//            // 3. 手写顶点着色器：把 3D 模型“展开”成 2D 光照贴图的形状
+//            VaryingsMeta CustomMetaVertex(AttributesMeta input)
+//            {
+//                VaryingsMeta output;
+//                // MetaVertexPosition 是底层核心函数，负责坐标转换
+//                output.positionCS = MetaVertexPosition(input.positionOS, input.uv, input.lightmapUV, unity_LightmapST, unity_DynamicLightmapST);
+//                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+//                return output;
+//            }
+//
+//            // 4. 手写片段着色器
+//            float4 CustomMetaFragment(VaryingsMeta input) : SV_Target
+//            {
+//                // 正常采样你的贴图
+//                float4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+//
+//                // 填充最终给烘焙器的数据
+//                MetaInput metaInput;
+//                ZERO_INITIALIZE(MetaInput, metaInput);
+//                
+//                // 乘以 0.85 是为了压低能量，防止过曝
+//                metaInput.Albedo = albedo.rgb * 0.85;    
+//                metaInput.Emission = half3(0,0,0);
+//
+//                // 把处理好的数据丢给引擎 (注意这里传的是 input.uv)
+//                return MetaFragment(metaInput);
+//            }
+//            ENDHLSL
+//        }
    }
 }
