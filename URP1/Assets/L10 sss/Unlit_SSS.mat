@@ -29,7 +29,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _SpecularPower: 78.64
+    - _BehindAmbient: 0.451
+    - _BehindPower: 3.77
+    - _BehindStrenth: 4
+    - _Distortion: 0.098
+    - _SpecularPower: 8.7
     m_Colors:
-    - _MainColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BehindColor: {r: 0.8805031, g: 0.68739176, b: 0.20212795, a: 1}
+    - _MainColor: {r: 0.31867442, g: 0.9559748, b: 0.23749045, a: 1}
+    - _SpecularColor: {r: 0.40784314, g: 0.78039217, b: 0.30588236, a: 1}
   m_BuildTextureStacks: []

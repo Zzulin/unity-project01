@@ -5,6 +5,10 @@ Shader "Unlit/SSS"
         _MainTex ("Texture", 2D) = "white" {}
         _MainColor("Main Color", Color) = (1,1,1,1)
         _SpecularPower("Specular Power", Float) = 10
+        _Distortion("法线扰动背光", Range(0,1)) = 0.5
+        _BehindPower("背光pow", Range(0,10)) = 1
+        _BehindStrenth("背光强度", Range(1,4)) = 1
+        _BehindAmbient("背光环境", Range(0,1)) = 0.5
     }
     SubShader
     {
@@ -47,6 +51,11 @@ Shader "Unlit/SSS"
             float4 _MainTex_ST;
             float4 _MainColor;
             float _SpecularPower;
+            float _Distortion;
+            float _BehindPower;
+            float _BehindStrenth;
+            float _BehindAmbient;
+            
             Varyings vert (Attributes input)    
             {
                 Varyings output;
@@ -70,21 +79,22 @@ Shader "Unlit/SSS"
                 //
                 Light mainlight=GetMainLight();
                 float3 N=input.normalWS;
-                float3 V=GetWorldSpaceNormalizeViewDir(input.positionWS);
                 float3 L=mainlight.direction;
-                float3 H=normalize(N+L);
-                float3 LightColor=mainlight.color;
+                float3 V=GetWorldSpaceNormalizeViewDir(input.positionWS);
+                float3 H=normalize(L+V);
+                
+                float NdotL = saturate(dot(N, L));
+                float3 MainLightColor=mainlight.color;
                 // 采样纹理
                 half4 col = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
-                // 计算法线点乘光照
-                float VdotfuH = dot(V,-H);
-                float NdotL = dot(N, L);
-                float3 diffuse=NdotL*LightColor*_MainColor;
-                float Spc=pow(max(0,dot(N,H)),_SpecularPower)*LightColor*_MainColor;
+                float3 diffuse=NdotL*MainLightColor*_MainColor;
+                float3 Spc=pow(saturate(dot(N,H)),_SpecularPower)*MainLightColor*_MainColor;
                 // 简单光照：基础颜色乘以光照强度
-                 
-                float3 finalcolor=diffuse+Spc;
-                return float4(VdotfuH,VdotfuH,VdotfuH,1);
+                float3 LaddN=L+N*_Distortion;
+                float3 BehindLight = (pow(saturate(dot(V,-LaddN)),_BehindPower)*_BehindStrenth+_BehindAmbient)*MainLightColor*_MainColor;
+                
+                float3 finalcolor=diffuse+Spc+BehindLight;
+                return float4(finalcolor,1);
             }   
             ENDHLSL
         }

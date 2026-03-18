@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.besty.unity-skills": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity",
+    "com.besty.unity-skills": "file:C:/Users/fukeh/Downloads/Unity-Skills-main/Unity-Skills-main/SkillsForUnity",
     "com.unity.ai.navigation": "1.1.7",
     "com.unity.cinemachine": "2.10.5",
     "com.unity.cloud.gltfast": "6.14.1",

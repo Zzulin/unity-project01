@@ -1,14 +1,13 @@
 {
   "dependencies": {
     "com.besty.unity-skills": {
-      "version": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity",
+      "version": "file:C:/Users/fukeh/Downloads/Unity-Skills-main/Unity-Skills-main/SkillsForUnity",
       "depth": 0,
-      "source": "git",
+      "source": "local",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.2",
         "com.unity.timeline": "1.7.7"
-      },
-      "hash": "805caf7c39d8666a631cef1c42b31a337a7eb0d5"
+      }
     },
     "com.merry-yellow.code-assist": {
       "version": "file:com.merry-yellow.code-assist",
