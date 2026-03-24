@@ -167,7 +167,7 @@ Shader "Mypbr/pbr_1"
                float demonimator=4*NdotL*NdotV;
                float3 specular= numerator/demonimator;
                float3 diffuse=KD*Albedo/(PI);
-               float3 radiance=LightColor*mainLight.shadowAttenuation*mainLight.distanceAttenuation;//阴影衰减*距离衰减
+               float3 radiance=LightColor*mainLight.shadowAttenuation*mainLight.distanceAttenuation;//LightColor*阴影衰减*距离衰减
                float3 mainlight=(diffuse+specular)*radiance*max(0,NdotL);
                //return float3(D,D,D);
                return mainlight;
@@ -271,68 +271,6 @@ Shader "Mypbr/pbr_1"
             #pragma fragment ShadowPassFragment
             ENDHLSL
         }
-//       Pass
-//        {
-//            Name "Meta"
-//            Tags{"LightMode" = "Meta"}
-//            Cull Off
-//
-//            HLSLPROGRAM
-//            #pragma vertex CustomMetaVertex
-//            #pragma fragment CustomMetaFragment
-//
-//            // 只引入最核心的两个基础库，避免多余的变量冲突
-//            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-//            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
-//
-//            // 显式声明你的贴图和 ST (用于处理 UV 缩放/偏移)
-//            SAMPLER(sampler_BaseMap);
-//            Texture2D _BaseMap;
-//            float4 _BaseMap_ST;
-//
-//            // 1. 完全由自己定义的顶点输入结构
-//            struct AttributesMeta
-//            {
-//                float4 positionOS   : POSITION;
-//                float2 uv           : TEXCOORD0;
-//                float2 lightmapUV   : TEXCOORD1;
-//            };
-//
-//            // 2. 完全由自己定义的片段输入结构（彻底干掉 v2f_meta 的报错）
-//            struct VaryingsMeta
-//            {
-//                float4 positionCS   : SV_POSITION;
-//                float2 uv           : TEXCOORD0;
-//            };
-//
-//            // 3. 手写顶点着色器：把 3D 模型“展开”成 2D 光照贴图的形状
-//            VaryingsMeta CustomMetaVertex(AttributesMeta input)
-//            {
-//                VaryingsMeta output;
-//                // MetaVertexPosition 是底层核心函数，负责坐标转换
-//                output.positionCS = MetaVertexPosition(input.positionOS, input.uv, input.lightmapUV, unity_LightmapST, unity_DynamicLightmapST);
-//                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
-//                return output;
-//            }
-//
-//            // 4. 手写片段着色器
-//            float4 CustomMetaFragment(VaryingsMeta input) : SV_Target
-//            {
-//                // 正常采样你的贴图
-//                float4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-//
-//                // 填充最终给烘焙器的数据
-//                MetaInput metaInput;
-//                ZERO_INITIALIZE(MetaInput, metaInput);
-//                
-//                // 乘以 0.85 是为了压低能量，防止过曝
-//                metaInput.Albedo = albedo.rgb * 0.85;    
-//                metaInput.Emission = half3(0,0,0);
-//
-//                // 把处理好的数据丢给引擎 (注意这里传的是 input.uv)
-//                return MetaFragment(metaInput);
-//            }
-//            ENDHLSL
-//        }
+//       
    }
 }

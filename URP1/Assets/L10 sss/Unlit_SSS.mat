@@ -12,7 +12,8 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _SSS_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -27,13 +28,24 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 2800000, guid: 47a0ff2b135362d41a367ac432c19036, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Thickness:
+        m_Texture: {fileID: 2800000, guid: dd44e7d294deb46469a5eb9779744b1e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BehindAmbient: 0.451
-    - _BehindPower: 3.77
-    - _BehindStrenth: 4
-    - _Distortion: 0.098
-    - _SpecularPower: 8.7
+    - _BehindAmbient: 0.189
+    - _BehindPower: 1.25
+    - _BehindStrenth: 3.7
+    - _Distortion: 0.625
+    - _NormalMapScale: 1
+    - _SSS: 1
+    - _SpecularPower: 59.83
+    - _ThicknessScale: 0.09
     m_Colors:
-    - _BaseColor: {r: 0.31867442, g: 0.9559748, b: 0.23749045, a: 1}
+    - _BaseColor: {r: 0.2556662, g: 0.8742138, b: 0.6772317, a: 1}
   m_BuildTextureStacks: []

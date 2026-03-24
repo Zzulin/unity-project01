@@ -5,10 +5,16 @@ Shader "Unlit/SSS"
         _BaseMap ("Texture", 2D) = "white" {}
         _BaseColor("Main Color", Color) = (1,1,1,1)
         _SpecularPower("Specular Power", Float) = 10
+        _NormalMap("法线贴图", 2D) = "bump" {}
+        _NormalMapScale("法线强度", Range(0, 2)) = 1
+
+        [Toggle(_SSS_ON)]_SSS("是否开启SSS", Float) = 1
         _Distortion("法线扰动背光", Range(0,1)) = 0.5
         _BehindPower("背光pow", Range(0,10)) = 1
         _BehindStrenth("背光强度", Range(1,4)) = 1
         _BehindAmbient("背光环境", Range(0,1)) = 0.5
+        _Thickness("厚度图", 2D) = "white" {}
+        _ThicknessScale("厚度缩放", Range(0, 1)) = 1
     }
     SubShader
     {
@@ -26,6 +32,7 @@ Shader "Unlit/SSS"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma shader_feature _ _SSS_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -35,6 +42,7 @@ Shader "Unlit/SSS"
                 float4 positionOS   : POSITION;
                 float2 uv           : TEXCOORD0;
                 float3 normalOS     : NORMAL;
+                float4 tangentOS    : TANGENT;
             };
 
             struct Varyings
@@ -43,6 +51,8 @@ Shader "Unlit/SSS"
                 float4 positionCS   : SV_POSITION;
                 float3 normalWS     : TEXCOORD1;
                 float3 positionWS   : TEXCOORD2;
+                float3 tangentWS    : TEXCOORD3;
+                float3 bitangentWS   : TEXCOORD4;
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -53,10 +63,17 @@ Shader "Unlit/SSS"
                 half _BehindPower;
                 half _BehindStrenth;
                 half _BehindAmbient;
+                half _NormalMapScale;
+                half _ThicknessScale;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_Thickness);
+            SAMPLER(sampler_Thickness);
+            TEXTURE2D(_NormalMap);
+            SAMPLER(sampler_NormalMap);
+
 
             Varyings vert (Attributes input)
             {
@@ -67,6 +84,9 @@ Shader "Unlit/SSS"
                 output.positionWS = vertexInput.positionWS;
 
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.tangentWS = TransformObjectToWorld(input.tangentOS.xyz);
+                // 乘以 tangent.w 分量保证副切线方向一致（处理模型对称情况）
+                output.bitangentWS = cross(output.normalWS, output.tangentWS) * input.tangentOS.w;
 
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
 
@@ -75,8 +95,12 @@ Shader "Unlit/SSS"
 
             half4 frag (Varyings input) : SV_Target
             {
+                // 采样法线贴图并转换到世界空间
+                half3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalMapScale);
+                half3x3 TBN = half3x3(input.tangentWS, input.bitangentWS, input.normalWS);
+                half3 N = normalize(mul(normalTS, TBN));
+
                 Light mainlight = GetMainLight();
-                half3 N = input.normalWS;
                 half3 L = mainlight.direction;
                 half3 V = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half3 H = normalize(L + V);
@@ -87,11 +111,13 @@ Shader "Unlit/SSS"
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 half3 diffuse = NdotL * mainLightColor * _BaseColor.rgb;
                 half3 specular = pow(saturate(dot(N, H)), _SpecularPower) * mainLightColor * _BaseColor.rgb;
-
-                // SSS backlight term
+                half3 sss = 0;
+                #ifdef _SSS_ON
+                half thickness = lerp(SAMPLE_TEXTURE2D(_Thickness, sampler_Thickness, input.uv).r, 1, _ThicknessScale);
                 half3 Ldistort = L + N * _Distortion;
-                half backlight = pow(saturate(dot(V, -Ldistort)), _BehindPower) * _BehindStrenth + _BehindAmbient;
-                half3 sss = backlight * mainLightColor * _BaseColor.rgb;
+                half backintensity = pow(saturate(dot(V, -Ldistort)), _BehindPower) * _BehindStrenth + _BehindAmbient;
+                sss = backintensity * mainLightColor * _BaseColor.rgb * thickness;
+                #endif
 
                 half3 finalColor = diffuse + specular + sss;
                 return half4(finalColor, albedo.a);
