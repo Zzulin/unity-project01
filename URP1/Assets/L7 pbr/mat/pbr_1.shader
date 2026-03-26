@@ -48,6 +48,7 @@ Shader "Mypbr/pbr_1"
            float _NormalMapScale;
            float _OcclusionStrength;
            
+           
            SAMPLER(sampler_BaseMap);
            Texture2D _BaseMap;
            float4 _BaseMap_ST;
@@ -105,9 +106,9 @@ Shader "Mypbr/pbr_1"
                o.NormalWS = TransformObjectToWorldNormal(v.normal);
                o.uv = TRANSFORM_TEX(v.uv, _BaseMap);
                o.viewDirWS=GetWorldSpaceViewDir(o.positionWS);
-               o.tangentWS=TransformObjectToWorld(v.tangent.xyz);
+               o.tangentWS=normalize(TransformObjectToWorld(v.tangent.xyz));
                //乘以切向的w分量保证如果有模型对称的情况让副切线的方向一致
-               o.bitangentWS=cross(o.NormalWS,o.tangentWS)*v.tangent.w;
+               o.bitangentWS=normalize(cross(o.NormalWS,o.tangentWS)*v.tangent.w);
                #ifdef LIGHTMAP_ON
                //需要平移和缩放uv 适应烘焙出来的Lightmap
                o.lightmapUV.xy=v.lightmapUV*unity_LightmapST.xy+unity_LightmapST.zw;
@@ -168,7 +169,7 @@ Shader "Mypbr/pbr_1"
                float3 specular= numerator/demonimator;
                float3 diffuse=KD*Albedo/(PI);
                float3 radiance=LightColor*mainLight.shadowAttenuation*mainLight.distanceAttenuation;//LightColor*阴影衰减*距离衰减
-               float3 mainlight=(diffuse+specular)*radiance*max(0,NdotL);
+               float3 mainlight=(diffuse+specular)*radiance*max(0.01,NdotL);
                //return float3(D,D,D);
                return mainlight;
            }
@@ -210,9 +211,6 @@ Shader "Mypbr/pbr_1"
                float3 mainlight=CalculateBRDF(normalWS,viewDirWS,mainLight,LightDir,LightColor,roughness,metallic,Albedo,F0);
                #ifdef _ADDITIONAL_LIGHTS
                uint additionalLightCount=GetAdditionalLightsCount();
-                   #ifdef _ADDITIONAL_LIGHT_SHADOWS
-                    
-                   #endif
                //return float4(shadowMask.rgb,1);
                for(uint index=0;index<additionalLightCount;index++)
                {

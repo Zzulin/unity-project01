@@ -3,7 +3,7 @@ Shader "Unlit/SSS"
     Properties
     {
         _BaseMap ("Texture", 2D) = "white" {}
-        _BaseColor("Main Color", Color) = (1,1,1,1)
+        _BaseColor("Base Color", Color) = (1,1,1,1)
         _SpecularPower("Specular Power", Float) = 10
         _NormalMap("法线贴图", 2D) = "bump" {}
         _NormalMapScale("法线强度", Range(0, 2)) = 1
@@ -33,6 +33,7 @@ Shader "Unlit/SSS"
             #pragma vertex vert
             #pragma fragment frag
             #pragma shader_feature _ _SSS_ON
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS 
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -92,7 +93,19 @@ Shader "Unlit/SSS"
 
                 return output;
             }
-
+            half3 LightingSSS(half3 LightDir,half3 mainLightColor, half3 N, 
+            half3 V,half thickness,half NdotL,half3 H)
+            {
+                half3 Ldistort = LightDir + N * _Distortion;
+                half backintensity = pow(saturate(dot(V, -Ldistort)), _BehindPower) * _BehindStrenth + _BehindAmbient;
+                half3 diffuse = NdotL * mainLightColor * _BaseColor.rgb;
+                half3 specular = pow(saturate(dot(N, H)), _SpecularPower) * mainLightColor * _BaseColor.rgb;
+                half3 sss=0;
+                    #ifdef _SSS_ON
+                        sss= backintensity * mainLightColor * _BaseColor.rgb * thickness;
+                    #endif
+                 return diffuse + specular+sss;
+            }
             half4 frag (Varyings input) : SV_Target
             {
                 // 采样法线贴图并转换到世界空间
@@ -104,22 +117,30 @@ Shader "Unlit/SSS"
                 half3 L = mainlight.direction;
                 half3 V = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half3 H = normalize(L + V);
-
                 half NdotL = saturate(dot(N, L));
+                //half3 additionalLight = GetAdditionalLightsColor(0);
                 half3 mainLightColor = mainlight.color;
-
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                half3 diffuse = NdotL * mainLightColor * _BaseColor.rgb;
-                half3 specular = pow(saturate(dot(N, H)), _SpecularPower) * mainLightColor * _BaseColor.rgb;
                 half3 sss = 0;
-                #ifdef _SSS_ON
                 half thickness = lerp(SAMPLE_TEXTURE2D(_Thickness, sampler_Thickness, input.uv).r, 1, _ThicknessScale);
-                half3 Ldistort = L + N * _Distortion;
-                half backintensity = pow(saturate(dot(V, -Ldistort)), _BehindPower) * _BehindStrenth + _BehindAmbient;
-                sss = backintensity * mainLightColor * _BaseColor.rgb * thickness;
-                #endif
-
-                half3 finalColor = diffuse + specular + sss;
+                half3 finalColor = LightingSSS(L, mainLightColor, N, V, thickness,NdotL,H);    
+                    #ifdef _ADDITIONAL_LIGHTS
+                        uint additionalLightCount=GetAdditionalLightsCount();
+                         for(uint index=0;index<additionalLightCount;index++)
+                            {
+                                
+                                Light addLight=GetAdditionalLight(index,input.positionWS);
+                                half3 addlightColor=addLight.color;
+                                half addlightattenuation = addLight.distanceAttenuation;//额外光距离衰减
+                                addlightColor *= addlightattenuation;
+                                half3 addlightDir=addLight.direction;
+                                half NdotAddLight=saturate(dot(N,addlightDir));
+                                half3 Haddlight=normalize(addlightDir + V);
+                                finalColor+=LightingSSS(addlightDir,addlightColor,N, V, 
+                                thickness,NdotAddLight,Haddlight);
+                                
+                            }
+                    #endif
                 return half4(finalColor, albedo.a);
             }
             ENDHLSL

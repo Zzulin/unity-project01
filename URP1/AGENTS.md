@@ -14,7 +14,7 @@ This file declares available skills for AI agents like Codex.
   - Layers:
     - Default, TransparentFX, Ignore Raycast, Water, UI
 - Active game object:
-  - Name: default
+  - Name: untitled
   - Tag: Untagged
   - Layer: Default
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->
