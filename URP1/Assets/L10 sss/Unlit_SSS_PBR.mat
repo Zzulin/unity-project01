@@ -11,9 +11,9 @@ Material:
   m_Shader: {fileID: 4800000, guid: 64bd5e4317799a446b3194e4163882a9, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords:
+  m_ValidKeywords:
   - _SSS_ON
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -41,22 +41,23 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Thickness:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 20e135a644db193498f46cc37bfc6fe3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BehindAmbient: 0.2
-    - _BehindPower: 2
-    - _BehindStrenth: 2
-    - _Distortion: 0.5
+    - _BehindAmbient: 0.175
+    - _BehindPower: 1.25
+    - _BehindStrenth: 3.67
+    - _Distortion: 0.613
     - _Metallic: -0.16
     - _MetallicMapScale: 1
     - _NormalMapScale: 1
     - _OcclusionStrength: 1
-    - _Roughness: 0
+    - _Roughness: 0.38
     - _SSS: 1
-    - _ThicknessScale: 0.5
+    - _SSSintensity: 1
+    - _ThicknessScale: 0.09
     m_Colors:
     - _BaseColor: {r: 0.66666657, g: 0.06918231, b: 0.06918231, a: 1}
     - _Color: {r: 0.25490198, g: 0.8745098, b: 0.6784314, a: 1}

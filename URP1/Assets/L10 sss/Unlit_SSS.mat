@@ -38,6 +38,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AmbientIntensity: 0.19
     - _BehindAmbient: 0.189
     - _BehindPower: 1.25
     - _BehindStrenth: 3.7

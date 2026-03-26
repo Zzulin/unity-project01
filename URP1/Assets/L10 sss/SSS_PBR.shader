@@ -11,6 +11,16 @@ Shader "Unlit/SSS_PBR"
        _Roughness("Roughness add", Range(-1,1)) = 0.5
        _OcclusionMap("Occlusion", 2D) = "white" {}
        _OcclusionStrength("OcclusionStrength", Range(0,1)) = 1
+        [Header(SSS)]
+        [Toggle(_SSS_ON)]_SSS("是否开启SSS", Float) = 1
+        _SSSintensity("SSS强度", Range(0,1)) = 0.5
+        _Distortion("法线扰动背光", Range(0,1)) = 0.5
+        _BehindPower("背光pow", Range(0,10)) = 1
+        _BehindStrenth("背光强度", Range(1,4)) = 1
+        _BehindAmbient("背光环境", Range(0,1)) = 0.5
+        _Thickness("厚度图", 2D) = "white" {}
+        _ThicknessScale("厚度缩放", Range(0, 1)) = 1
+        
        
    }
    SubShader
@@ -31,6 +41,7 @@ Shader "Unlit/SSS_PBR"
            HLSLPROGRAM
            #pragma vertex vert
            #pragma fragment frag
+           #pragma shader_feature _ _SSS_ON
            #pragma multi_compile _ _ADDITIONAL_LIGHTS 
            #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS//开启附加光阴影
            //主pass阴影添加
@@ -43,11 +54,22 @@ Shader "Unlit/SSS_PBR"
            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
            //#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/GlobalIllumination.hlsl"
            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+           
            float _Metallic;
            float _Roughness; 
            float _NormalMapScale;
            float _OcclusionStrength;
            float4 _Color;
+
+           float _Distortion;
+           float _BehindPower;
+           float _BehindStrenth;
+           float _BehindAmbient;
+           float _ThicknessScale;
+           float _SSSintensity;
+
+           SAMPLER(sampler_Thickness);
+           Texture2D _Thickness;
 
            SAMPLER(sampler_BaseMap);
            Texture2D _BaseMap;
@@ -147,7 +169,9 @@ Shader "Unlit/SSS_PBR"
                float OneminF0=max((1-roughness),F0)-F0;
                return F0+OneminF0*pow(max(0,1-NdotV),5);
            }
-           float3 CalculateBRDF(float3 normalWS,float3 viewDirWS,Light mainLight,float3 LightDir,float3 LightColor,float roughness,float metallic,float3 Albedo,float3 F0)
+           float3 CalculateBRDF(float3 normalWS,float3 viewDirWS,Light mainLight,
+           float3 LightDir,float3 LightColor,float roughness,float metallic,
+           float3 Albedo,float3 F0,float thickness)
            {
                float3 halfDir=normalize(LightDir+viewDirWS);
                float NdotL=dot(normalWS,LightDir);
@@ -163,15 +187,21 @@ Shader "Unlit/SSS_PBR"
                float3 KS=F;
                float3 KD=float3(1,1,1)-KS;
                KD*=1-metallic;//非金属才会漫反射
-               
+
                float3 numerator=F*D*G;
                float demonimator=4*NdotL*NdotV;
                float3 specular= numerator/demonimator;
                float3 diffuse=KD*Albedo/(PI);
                float3 radiance=LightColor*mainLight.shadowAttenuation*mainLight.distanceAttenuation;//LightColor*阴影衰减*距离衰减
                float3 mainlight=(diffuse+specular)*radiance*max(0,NdotL);
-               //return float3(D,D,D);
-               return mainlight;
+               //SSS部分
+                half3 Ldistort = LightDir + normalWS * _Distortion;
+                half backintensity = pow(saturate(dot(viewDirWS, -Ldistort)), _BehindPower) * _BehindStrenth + _BehindAmbient;
+                half3 sss=0;
+                        #ifdef _SSS_ON
+                            sss= backintensity * LightColor * Albedo.rgb * thickness*_SSSintensity*mainLight.distanceAttenuation;
+                        #endif
+                return mainlight+sss;
            }
            float4 frag (v2f i) : SV_Target
            {
@@ -208,7 +238,8 @@ Shader "Unlit/SSS_PBR"
                float3 LightColor=mainLight.color;
                //float3 shadowAttenuation=float3(mainLight.shadowAttenuation,mainLight.shadowAttenuation,mainLight.shadowAttenuation);
                float3 F0=lerp(0.04,Albedo,metallic);//根据金属度插值 金属度为0时 为0.04 金属的F0为Albedo记录的
-               float3 mainlight=CalculateBRDF(normalWS,viewDirWS,mainLight,LightDir,LightColor,roughness,metallic,Albedo,F0);
+               half thickness = lerp(SAMPLE_TEXTURE2D(_Thickness, sampler_Thickness, i.uv).r, 1, _ThicknessScale); 
+               float3 mainlight=CalculateBRDF(normalWS,viewDirWS,mainLight,LightDir,LightColor,roughness,metallic,Albedo,F0,thickness);
                #ifdef _ADDITIONAL_LIGHTS
                uint additionalLightCount=GetAdditionalLightsCount();
                //return float4(shadowMask.rgb,1);
@@ -219,7 +250,7 @@ Shader "Unlit/SSS_PBR"
                    #else
                    Light addLight=GetAdditionalLight(index,i.positionWS);
                    #endif
-                   mainlight+=CalculateBRDF(normalWS,viewDirWS,addLight,addLight.direction,addLight.color,roughness,metallic,Albedo,F0);
+                   mainlight+=CalculateBRDF(normalWS,viewDirWS,addLight,addLight.direction,addLight.color,roughness,metallic,Albedo,F0,thickness);
                }
                #endif
                
@@ -238,7 +269,7 @@ Shader "Unlit/SSS_PBR"
                irradience=SampleSH(normalWS);
                #endif
                float KD=(1-KS)*(1-metallic);
-               float3 diffuseAmbient=KD*irradience*Albedo;
+               float3 diffuseAmbient=KD*irradience*Albedo/PI;
                //间接光漫反射+间接光镜面反射
                float occlusion=SAMPLE_TEXTURE2D(_OcclusionMap,sampler_OcclusionMap,i.uv).r;
                occlusion=lerp(1,occlusion,_OcclusionStrength);

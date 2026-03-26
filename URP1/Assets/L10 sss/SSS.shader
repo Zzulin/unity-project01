@@ -7,6 +7,7 @@ Shader "Unlit/SSS"
         _SpecularPower("Specular Power", Float) = 10
         _NormalMap("法线贴图", 2D) = "bump" {}
         _NormalMapScale("法线强度", Range(0, 2)) = 1
+        _AmbientIntensity("环境光强度", Range(0,1)) = 0.5
 
         [Toggle(_SSS_ON)]_SSS("是否开启SSS", Float) = 1
         _Distortion("法线扰动背光", Range(0,1)) = 0.5
@@ -66,6 +67,7 @@ Shader "Unlit/SSS"
                 half _BehindAmbient;
                 half _NormalMapScale;
                 half _ThicknessScale;
+                half _AmbientIntensity;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -122,7 +124,7 @@ Shader "Unlit/SSS"
                 half3 mainLightColor = mainlight.color;
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 half3 sss = 0;
-                half thickness = lerp(SAMPLE_TEXTURE2D(_Thickness, sampler_Thickness, input.uv).r, 1, _ThicknessScale);
+                half thickness = lerp(SAMPLE_TEXTURE2D(_Thickness, sampler_Thickness, input.uv).r, 1, _ThicknessScale); 
                 half3 finalColor = LightingSSS(L, mainLightColor, N, V, thickness,NdotL,H);    
                     #ifdef _ADDITIONAL_LIGHTS
                         uint additionalLightCount=GetAdditionalLightsCount();
@@ -137,10 +139,11 @@ Shader "Unlit/SSS"
                                 half NdotAddLight=saturate(dot(N,addlightDir));
                                 half3 Haddlight=normalize(addlightDir + V);
                                 finalColor+=LightingSSS(addlightDir,addlightColor,N, V, 
-                                thickness,NdotAddLight,Haddlight);
-                                
+                                thickness,NdotAddLight,Haddlight);  
                             }
                     #endif
+                half3 Ambient=SampleSH(N)*_AmbientIntensity;
+                finalColor+=Ambient;
                 return half4(finalColor, albedo.a);
             }
             ENDHLSL
