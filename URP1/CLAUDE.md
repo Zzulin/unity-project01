@@ -2,96 +2,142 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## 项目概述
 
-This is a **Unity URP (Universal Render Pipeline) shader learning project** containing multiple scenes (L1-L10) that demonstrate various rendering techniques. The project uses Unity 2022.3.62f3c1 with URP 14.0.12.
+这是一个 **Unity URP (Universal Render Pipeline) 着色器学习项目**，包含多个课程场景 (L1-L11)，演示各种渲染技术。项目使用 Unity 2022.3.62f3c1 和 URP 14.0.12。
 
-## Unity Development
+## 项目开发
 
-### Opening the Project
-- Open in Unity Editor 2022.3.62f3c1 or later
-- The active scene is `L10` (in `Assets/L10 sss/L10.unity`)
+### 打开项目
+- 使用 Unity Editor 2022.3.62f3c1 或更高版本打开
+- 当前激活场景是 `L10`（位于 `Assets/L10 sss/L10.unity`）
 
-### Key Unity Packages
-- `com.unity.render-pipelines.universal` (14.0.12) - URP rendering
-- `com.unity.cinemachine` (2.10.5) - Cinemachine camera system
-- `com.unity.probuilder` (5.2.4) - In-editor procedural modeling
-- `com.unity.ai.navigation` (1.1.7) - Navigation system
-- `com.unity.cloud.gltfast` (6.14.1) - GLTF model loading
-- `com.besty.unity-skills` (local path) - Custom Unity automation skills
+### 主要 Unity 包
 
-### Unity Skills
-This project has Unity Editor automation via the `unity-skills` skill. When Claude Code has this skill loaded, it can automate Unity Editor operations including:
-- Scene management (create, open, save scenes)
-- Game object manipulation
-- Component management
-- Material and shader operations
-- Asset import/export
-- Project settings
+| 包名 | 版本 | 用途 |
+|------|------|------|
+| `com.unity.render-pipelines.universal` | 14.0.12 | URP 渲染管线核心 |
+| `com.unity.burst` | 1.8.28 | Burst 编译器（性能优化） |
+| `com.unity.cinemachine` | 2.10.5 | Cinemachine 相机系统 |
+| `com.unity.probuilder` | 5.2.4 | 编辑器内程序化建模 |
+| `com.unity.ai.navigation` | 1.1.7 | 导航系统 |
+| `com.unity.cloud.gltfast` | 6.14.1 | GLTF 模型加载 |
+| `com.unity.textmeshpro` | 3.0.9 | 文本渲染 |
+| `com.unity.timeline` | 1.7.7 | 时间线动画 |
 
-## Scene Architecture
+### 本地包（项目特有）
 
-Each lesson scene is in its own folder under `Assets/`:
-- `L1消散/` - Bloom/dissipation shader effects
-- `L2视差云/` - Parallax cloud rendering
-- `L3屏幕空间溶解/` - Screen-space dissolve effects
-- `L5/IgniteCoders/Simple Water Shader/` - Water shader with reflection
-- `L6 CG/` - CG math (vector/matrix operations) and shader examples
-- `L7 pbr/` - Physically Based Rendering materials
-- `L8 plane reflect box projection/` - Planar reflections with box projection
-- `L9 lightmap/` - Lightmapping demonstration
-- `L10 sss/` - Subsurface scattering shader (current active scene)
+| 包名 | 路径 | 用途 |
+|------|------|------|
+| `com.besty.unity-skills` | `C:/Users/fukeh/Downloads/Unity-Skills-main/...` | Unity 自动化技能 |
+| `com.stalomeow.star-rail-npr-shader` | `C:/Users/fukeh/Downloads/StarRailNPRShader-main/...` | 星空铁轨 NPR 着色器参考 |
+| `com.merry-yellow.code-assist` | `com.merry-yellow.code-assist` | 代码辅助 |
 
-## Shader Development
+### Unity Skills 自动化
 
-Custom shaders use URP's HLSL syntax with:
-- `#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"`
-- `#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"`
-- `Attributes` and `Varyings` structs for vertex/fragment shader communication
-- `GetVertexPositionInputs()`, `GetMainLight()`, `TransformObjectToWorldNormal()` helper functions
+本项目配置了 `unity-skills` 技能，可自动化以下 Unity Editor 操作：
+- 场景管理（创建、打开、保存场景）
+- 游戏对象操作
+- 组件管理
+- 材质和着色器操作
+- 资源导入/导出
+- 项目设置
 
-## Project Structure
+## 场景架构
+
+每个课程场景在 `Assets/` 下都有独立文件夹：
+
+| 场景 | 着色器技术 |
+|------|-----------|
+| `L1消散/` | Bloom/消散着色器效果 |
+| `L2视差云/` | 视差云渲染 |
+| `L3屏幕空间溶解/` | 屏幕空间溶解效果 |
+| `L5/IgniteCoders/Simple Water Shader/` | 水面着色器（带反射） |
+| `L6 CG/` | CG 数学（向量/矩阵运算）和着色器示例 |
+| `L7 pbr/` | 物理渲染（PBR）材质 |
+| `L8 plane reflect box projection/` | 平面反射（盒投影） |
+| `L9 lightmap/` | 光照贴图演示 |
+| `L10 sss/` | 次表面散射着色器（当前活跃场景） |
+| `L11 NPR/` | NPR 着色器 |
+
+## 着色器开发
+
+自定义着色器使用 URP HLSL 语法：
+
+### 必需的 Include
+```hlsl
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+```
+
+### 核心结构和函数
+- `Attributes` 和 `Varyings` 结构体（顶点/片元着色器通信）
+- `GetVertexPositionInputs()` - 获取顶点位置
+- `GetMainLight()` - 获取主光源
+- `TransformObjectToWorldNormal()` - 世界空间法线变换
+
+## 项目结构
 
 ```
 Assets/
-├── L10 sss/           # Current active scene (SSS shader)
-├── L1消散/             # Bloom/dissipation
-├── L2视差云/           # Parallax clouds
-├── L3屏幕空间溶解/     # Screen-space dissolve
-├── L5/                # Water shader
-├── L6 CG/             # CG math & shaders
-├── L7 pbr/            # PBR materials
-├── L8 plane reflect/  # Planar reflections
-├── L9 lightmap/       # Lightmapping
-├── Settings/          # URP quality settings (UniversalRP-HighQuality.asset, etc.)
-├── Scripts/           # General scripts (SimpleCameraController.cs)
-├── animator/          # Animation resources
-├── Skybox/            # Skybox/scene resources
-└── TutorialInfo/      # Unity tutorial info scripts
+├── L1消散/             # 消散/Bloom
+├── L2视差云/           # 视差云
+├── L3屏幕空间溶解/     # 屏幕溶解
+├── L5/IgniteCoders/   # 水面着色器
+├── L6 CG/             # CG 数学和着色器
+├── L7 pbr/            # PBR 材质
+├── L8 plane reflect/  # 平面反射
+├── L9 lightmap/       # 光照贴图
+├── L10 sss/           # SSS 着色器（当前场景）
+├── L11 NPR/           # NPR 着色器
+├── Settings/          # URP 质量设置
+│   ├── UniversalRP-HighQuality.asset
+│   ├── UniversalRP-MediumQuality.asset
+│   ├── UniversalRP-LowQuality.asset
+│   └── ForwardRenderer.asset
+├── Scripts/           # 通用脚本
+│   └── SimpleCameraController.cs
+├── Skybox/            # 天空盒/场景资源
+├── Screenshots/       # 截图
+└── URPSimpleGenshinShaders-master/  # 简化版原神风格着色器参考
 ```
 
-## Important Notes
+## URP 配置
 
-- Scene names contain Chinese characters indicating the technique being demonstrated
-- Each scene folder is self-contained with its own shader and material assets
-- URP settings are in `Assets/Settings/` with quality variants (High, Medium, Low)
-- The project uses the .NET scripting backend (check Assembly-CSharp.csproj)
-## TA Development Standards (Shader & C#)
+- URP 配置文件位于 `Assets/Settings/`
+- 支持三种质量等级：High、Medium、Low
+- ForwardRenderer 配置管理前向渲染通道
 
-### Shader Coding Standards (URP)
-- **Naming Conventions**: Use `_BaseMap` instead of `_MainTex`, and `_BaseColor` instead of `_Color` to align with URP standards.
-- **Includes**: Always include `"Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"` for basic transforms.
-- **Performance**: 
-  - Prefer `half` precision for colors and simple interpolators.
-  - Use `full` precision (float) only for world positions and UV calculations.
-  - Avoid `pow()`, `exp()`, and `sin()` in inner loops if a linear approximation suffices.
-- **SRP Batcher**: Ensure all material properties are wrapped in a `CBUFFER_START(UnityPerMaterial)` block for SRP Batcher compatibility.
+## 重要说明
 
-### C# & Rendering Scripts
-- **Optimization**: Use `Shader.PropertyToID()` for all shader property access instead of string names.
-- **Lifecycle**: Avoid `GameObject.Find` or `GetComponent` in `Update()`. Cache references in `Awake()` or `Start()`.
-- **Naming**: Use `PascalCase` for public methods and `_camelCase` for private fields.
+- 场景名称包含中文，表示演示的技术类型
+- 每个场景文件夹都是自包含的，拥有自己的着色器和材质资源
+- URP 设置在 `Assets/Settings/` 目录下有质量变体
+- 项目使用 .NET 脚本后端
+- 场景 L4 未使用（编号跳过）
 
-### Math & Physics
-- Always use `quaternion` math over `Euler angles` when manipulating transforms via script.
-- Standardize on `Unity.Mathematics` (float3, float4) where performance is critical.
+## currentDate
+Today's date is 2026-03-29.
+
+## TA 开发标准（着色器 & C#）
+
+### 着色器编码标准 (URP)
+
+- **命名规范**：使用 `_BaseMap` 而非 `_MainTex`，使用 `_BaseColor` 而非 `_Color`（对齐 URP 标准）
+- **Include**：始终包含 `"Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"` 用于基础变换
+- **性能优化**：
+  - 颜色和简单插值器使用 `half` 精度
+  - 世界位置和 UV 计算使用 `full` 精度 (float)
+  - 内部循环中避免 `pow()`、`exp()` 和 `sin()`，尽量使用线性近似
+- **SRP Batcher**：将所有材质属性包装在 `CBUFFER_START(UnityPerMaterial)` 块中以兼容 SRP Batcher
+
+### C# & 渲染脚本
+
+- **优化**：使用 `Shader.PropertyToID()` 进行所有着色器属性访问，而非字符串名称
+- **生命周期**：避免在 `Update()` 中使用 `GameObject.Find` 或 `GetComponent`，在 `Awake()` 或 `Start()` 中缓存引用
+- **命名**：公共方法使用 `PascalCase`，私有字段使用 `_camelCase`
+
+### 数学与物理
+
+- 通过脚本操作变换时，始终使用 `quaternion` 数学而非欧拉角
+- 性能关键处统一使用 `Unity.Mathematics`（float3、float4）
