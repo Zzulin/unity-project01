@@ -1,0 +1,45 @@
+name: Bug 报告
+description: 报告一个 Bug
+labels: ["bug"]
+body:
+  - type: input
+    id: unity-version
+    attributes:
+      label: Unity 版本
+      description: 当前官方维护基线为 Unity 2022.3+ / Unity 6；若问题发生在更早版本，请明确说明。
+      placeholder: "例如: 2022.3.20f1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰描述遇到的问题
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 如何复现这个问题？
+      placeholder: |
+        1. 打开 Unity 项目
+        2. 执行 ...
+        3. 出现错误
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 你期望发生什么？
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 错误日志
+      description: 粘贴相关的 Console 日志
+      render: shell

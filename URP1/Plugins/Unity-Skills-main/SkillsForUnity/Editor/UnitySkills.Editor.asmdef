@@ -1,0 +1,53 @@
+{
+    "name": "UnitySkills.Editor",
+    "rootNamespace": "UnitySkills",
+    "references": [
+        "Newtonsoft.Json",
+        "Unity.Timeline",
+        "Cinemachine",
+        "Unity.Cinemachine",
+        "Unity.Splines",
+        "Unity.ProBuilder",
+        "Unity.ProBuilder.Editor"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.cinemachine",
+            "expression": "[2.0,3.0)",
+            "define": "CINEMACHINE_2"
+        },
+        {
+            "name": "com.unity.cinemachine",
+            "expression": "[3.0,4.0)",
+            "define": "CINEMACHINE_3"
+        },
+        {
+            "name": "com.unity.splines",
+            "expression": "[2.0,3.0)",
+            "define": "SPLINES_2"
+        },
+        {
+            "name": "com.unity.probuilder",
+            "expression": "[5.0,7.0)",
+            "define": "PROBUILDER"
+        },
+        {
+            "name": "com.unity.xr.interaction.toolkit",
+            "expression": "[2.0,4.0)",
+            "define": "XRI"
+        },
+        {
+            "name": "com.unity.xr.core-utils",
+            "expression": "[2.0,4.0)",
+            "define": "XR_CORE_UTILS"
+        }
+    ],
+    "noEngineReferences": false
+}
