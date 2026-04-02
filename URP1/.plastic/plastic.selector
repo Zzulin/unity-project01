@@ -1,4 +1,0 @@
-repository "URP1@tj_zzulin@cloud.cn"
-  path "/"
-    br "/main"
-    co "/main"

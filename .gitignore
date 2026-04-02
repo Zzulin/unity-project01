@@ -101,3 +101,6 @@ InitTestScene*.unity*
 # Claude Code config (may contain sensitive tokens)
 .mcp.json
 .claude/
+.DS_Store
+/URP1/.plastic
+/URP1/.plastic
