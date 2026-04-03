@@ -10,7 +10,12 @@ namespace UnitySkills
     /// </summary>
     public static class TextureSkills
     {
-        [UnitySkill("texture_get_settings", "Get texture import settings for an image asset")]
+        [UnitySkill("texture_get_settings", "Get texture import settings for an image asset",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Query,
+            Tags = new[] { "texture", "import", "settings", "inspect" },
+            Outputs = new[] { "textureType", "sRGB", "maxTextureSize", "compression", "filterMode" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object TextureGetSettings(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -42,7 +47,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("texture_set_settings", "Set texture import settings. textureType: Default/NormalMap/Sprite/Editor GUI/Cursor/Cookie/Lightmap/SingleChannel. maxSize: 32-8192. filterMode: Point/Bilinear/Trilinear. compression: None/LowQuality/Normal/HighQuality")]
+        [UnitySkill("texture_set_settings", "Set texture import settings. textureType: Default/NormalMap/Sprite/Editor GUI/Cursor/Cookie/Lightmap/SingleChannel. maxSize: 32-8192. filterMode: Point/Bilinear/Trilinear. compression: None/LowQuality/Normal/HighQuality",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Modify,
+            Tags = new[] { "texture", "import", "settings", "compression" },
+            Outputs = new[] { "changesApplied", "changes" },
+            RequiresInput = new[] { "assetPath" })]
         public static object TextureSetSettings(
             string assetPath,
             string textureType = null,
@@ -180,7 +189,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("texture_set_settings_batch", "Set texture import settings for multiple images. items: JSON array of {assetPath, textureType, maxSize, filterMode, ...}")]
+        [UnitySkill("texture_set_settings_batch", "Set texture import settings for multiple images. items: JSON array of {assetPath, textureType, maxSize, filterMode, ...}",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Modify,
+            Tags = new[] { "texture", "import", "batch", "settings" },
+            Outputs = new[] { "totalCount", "successCount", "results" })]
         public static object TextureSetSettingsBatch(string items)
         {
             return BatchExecutor.Execute<BatchTextureItem>(items, item =>
@@ -235,7 +247,11 @@ namespace UnitySkills
             public float? spritePixelsPerUnit { get; set; }
         }
 
-        [UnitySkill("texture_find_assets", "Search for texture assets in the project")]
+        [UnitySkill("texture_find_assets", "Search for texture assets in the project",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Query,
+            Tags = new[] { "texture", "search", "find", "asset" },
+            Outputs = new[] { "totalFound", "textures" },
+            ReadOnly = true)]
         public static object TextureFindAssets(string filter = "", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Texture2D " + filter);
@@ -249,7 +265,12 @@ namespace UnitySkills
             return new { success = true, totalFound = guids.Length, showing = textures.Length, textures };
         }
 
-        [UnitySkill("texture_get_info", "Get detailed texture information (dimensions, format, memory)")]
+        [UnitySkill("texture_get_info", "Get detailed texture information (dimensions, format, memory)",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Query,
+            Tags = new[] { "texture", "info", "dimensions", "memory" },
+            Outputs = new[] { "width", "height", "format", "mipmapCount", "memorySizeKB" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object TextureGetInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -262,7 +283,12 @@ namespace UnitySkills
                 filterMode = tex.filterMode.ToString(), wrapMode = tex.wrapMode.ToString(), memorySizeKB = memSize / 1024f };
         }
 
-        [UnitySkill("texture_set_type", "Set texture type. textureType: Default/NormalMap/Sprite/EditorGUI/Cursor/Cookie/Lightmap/SingleChannel", TracksWorkflow = true)]
+        [UnitySkill("texture_set_type", "Set texture type. textureType: Default/NormalMap/Sprite/EditorGUI/Cursor/Cookie/Lightmap/SingleChannel",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Modify,
+            Tags = new[] { "texture", "type", "import" },
+            Outputs = new[] { "path", "textureType" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object TextureSetType(string assetPath, string textureType)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -278,7 +304,12 @@ namespace UnitySkills
             return new { success = true, path = assetPath, textureType = tt.ToString() };
         }
 
-        [UnitySkill("texture_set_platform_settings", "Set platform-specific texture settings. platform: Standalone/iPhone/Android/WebGL", TracksWorkflow = true)]
+        [UnitySkill("texture_set_platform_settings", "Set platform-specific texture settings. platform: Standalone/iPhone/Android/WebGL",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Modify,
+            Tags = new[] { "texture", "platform", "compression", "optimization" },
+            Outputs = new[] { "path", "platform", "maxSize", "format" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object TextureSetPlatformSettings(string assetPath, string platform, int? maxSize = null, string format = null, int? compressionQuality = null, bool? overridden = null)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -299,7 +330,12 @@ namespace UnitySkills
             return new { success = true, path = assetPath, platform, maxSize = ps.maxTextureSize, format = ps.format.ToString() };
         }
 
-        [UnitySkill("texture_get_platform_settings", "Get platform-specific texture settings. platform: Standalone/iPhone/Android/WebGL")]
+        [UnitySkill("texture_get_platform_settings", "Get platform-specific texture settings. platform: Standalone/iPhone/Android/WebGL",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Query,
+            Tags = new[] { "texture", "platform", "settings", "inspect" },
+            Outputs = new[] { "overridden", "maxTextureSize", "format", "compressionQuality" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object TextureGetPlatformSettings(string assetPath, string platform)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -312,7 +348,12 @@ namespace UnitySkills
                 maxTextureSize = ps.maxTextureSize, format = ps.format.ToString(), compressionQuality = ps.compressionQuality };
         }
 
-        [UnitySkill("texture_set_sprite_settings", "Configure Sprite-specific settings (pixelsPerUnit, spriteMode)", TracksWorkflow = true)]
+        [UnitySkill("texture_set_sprite_settings", "Configure Sprite-specific settings (pixelsPerUnit, spriteMode)",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Modify,
+            Tags = new[] { "sprite", "texture", "2d", "import" },
+            Outputs = new[] { "pixelsPerUnit", "spriteMode" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object TextureSetSpriteSettings(string assetPath, float? pixelsPerUnit = null, string spriteMode = null)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -331,7 +372,11 @@ namespace UnitySkills
                 spriteMode = importer.spriteImportMode.ToString() };
         }
 
-        [UnitySkill("texture_find_by_size", "Find textures by dimension range (minSize/maxSize in pixels)")]
+        [UnitySkill("texture_find_by_size", "Find textures by dimension range (minSize/maxSize in pixels)",
+            Category = SkillCategory.Texture, Operation = SkillOperation.Query,
+            Tags = new[] { "texture", "search", "size", "dimensions" },
+            Outputs = new[] { "count", "textures" },
+            ReadOnly = true)]
         public static object TextureFindBySize(int minSize = 0, int maxSize = 99999, int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Texture2D");

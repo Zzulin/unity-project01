@@ -10,21 +10,31 @@ namespace UnitySkills
     /// </summary>
     public static class NavMeshSkills
     {
-        [UnitySkill("navmesh_bake", "Bake the NavMesh (Synchronous). Warning: Can be slow.")]
+        [UnitySkill("navmesh_bake", "Bake the NavMesh (Synchronous). Warning: Can be slow.",
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Execute,
+            Tags = new[] { "navmesh", "bake", "pathfinding", "navigation" },
+            Outputs = new[] { "success", "message" })]
         public static object NavMeshBake()
         {
             UnityEditor.AI.NavMeshBuilder.BuildNavMesh();
             return new { success = true, message = "NavMesh baked successfully" };
         }
 
-        [UnitySkill("navmesh_clear", "Clear the NavMesh data")]
+        [UnitySkill("navmesh_clear", "Clear the NavMesh data",
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Delete,
+            Tags = new[] { "navmesh", "clear", "navigation" },
+            Outputs = new[] { "success", "warning" })]
         public static object NavMeshClear()
         {
             UnityEditor.AI.NavMeshBuilder.ClearAllNavMeshes();
             return new { success = true, warning = "NavMesh cleared. This operation cannot be undone." };
         }
 
-        [UnitySkill("navmesh_calculate_path", "Calculate a path between two points. Returns: {status, distance, cornerCount, corners}")]
+        [UnitySkill("navmesh_calculate_path", "Calculate a path between two points. Returns: {status, distance, cornerCount, corners}",
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Query,
+            Tags = new[] { "navmesh", "path", "pathfinding", "navigation" },
+            Outputs = new[] { "status", "valid", "distance", "cornerCount", "corners" },
+            ReadOnly = true)]
         public static object NavMeshCalculatePath(
             float startX, float startY, float startZ,
             float endX, float endY, float endZ,
@@ -63,7 +73,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("navmesh_add_agent", "Add NavMeshAgent component to an object", TracksWorkflow = true)]
+        [UnitySkill("navmesh_add_agent", "Add NavMeshAgent component to an object", TracksWorkflow = true,
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Create,
+            Tags = new[] { "navmesh", "agent", "component", "navigation" },
+            Outputs = new[] { "success", "gameObject" },
+            RequiresInput = new[] { "gameObject" })]
         public static object NavMeshAddAgent(string name = null, int instanceId = 0, string path = null)
         {
             var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -74,7 +88,11 @@ namespace UnitySkills
             return new { success = true, gameObject = go.name };
         }
 
-        [UnitySkill("navmesh_set_agent", "Set NavMeshAgent properties (speed, acceleration, radius, height, stoppingDistance)", TracksWorkflow = true)]
+        [UnitySkill("navmesh_set_agent", "Set NavMeshAgent properties (speed, acceleration, radius, height, stoppingDistance)", TracksWorkflow = true,
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Modify,
+            Tags = new[] { "navmesh", "agent", "speed", "properties" },
+            Outputs = new[] { "success", "gameObject", "speed", "radius" },
+            RequiresInput = new[] { "gameObject" })]
         public static object NavMeshSetAgent(string name = null, int instanceId = 0, string path = null,
             float? speed = null, float? acceleration = null, float? angularSpeed = null,
             float? radius = null, float? height = null, float? stoppingDistance = null)
@@ -94,7 +112,11 @@ namespace UnitySkills
             return new { success = true, gameObject = go.name, speed = agent.speed, radius = agent.radius };
         }
 
-        [UnitySkill("navmesh_add_obstacle", "Add NavMeshObstacle component to an object", TracksWorkflow = true)]
+        [UnitySkill("navmesh_add_obstacle", "Add NavMeshObstacle component to an object", TracksWorkflow = true,
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Create,
+            Tags = new[] { "navmesh", "obstacle", "component", "carving" },
+            Outputs = new[] { "success", "gameObject", "carving" },
+            RequiresInput = new[] { "gameObject" })]
         public static object NavMeshAddObstacle(string name = null, int instanceId = 0, string path = null, bool carve = true)
         {
             var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -106,7 +128,11 @@ namespace UnitySkills
             return new { success = true, gameObject = go.name, carving = obs.carving };
         }
 
-        [UnitySkill("navmesh_set_obstacle", "Set NavMeshObstacle properties (shape, size, carving)", TracksWorkflow = true)]
+        [UnitySkill("navmesh_set_obstacle", "Set NavMeshObstacle properties (shape, size, carving)", TracksWorkflow = true,
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Modify,
+            Tags = new[] { "navmesh", "obstacle", "shape", "carving" },
+            Outputs = new[] { "success", "gameObject", "shape", "carving" },
+            RequiresInput = new[] { "gameObject" })]
         public static object NavMeshSetObstacle(string name = null, int instanceId = 0, string path = null,
             string shape = null, float? sizeX = null, float? sizeY = null, float? sizeZ = null, bool? carving = null)
         {
@@ -126,7 +152,11 @@ namespace UnitySkills
             return new { success = true, gameObject = go.name, shape = obs.shape.ToString(), carving = obs.carving };
         }
 
-        [UnitySkill("navmesh_sample_position", "Find nearest point on NavMesh")]
+        [UnitySkill("navmesh_sample_position", "Find nearest point on NavMesh",
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Query,
+            Tags = new[] { "navmesh", "sample", "nearest", "position" },
+            Outputs = new[] { "success", "found", "point", "distance" },
+            ReadOnly = true)]
         public static object NavMeshSamplePosition(float x, float y, float z, float maxDistance = 10f)
         {
             var sourcePos = new Vector3(x, y, z);
@@ -135,7 +165,10 @@ namespace UnitySkills
             return new { success = true, found = false };
         }
 
-        [UnitySkill("navmesh_set_area_cost", "Set area traversal cost")]
+        [UnitySkill("navmesh_set_area_cost", "Set area traversal cost",
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Modify,
+            Tags = new[] { "navmesh", "area", "cost", "traversal" },
+            Outputs = new[] { "success", "areaIndex", "cost" })]
         public static object NavMeshSetAreaCost(int areaIndex, float cost)
         {
             if (Validate.InRange(areaIndex, 0, 31, "areaIndex") is object err1) return err1;
@@ -144,7 +177,11 @@ namespace UnitySkills
             return new { success = true, areaIndex, cost };
         }
 
-        [UnitySkill("navmesh_get_settings", "Get NavMesh build settings")]
+        [UnitySkill("navmesh_get_settings", "Get NavMesh build settings",
+            Category = SkillCategory.NavMesh, Operation = SkillOperation.Query,
+            Tags = new[] { "navmesh", "settings", "agent", "build" },
+            Outputs = new[] { "success", "agentRadius", "agentHeight", "agentSlope", "agentClimb" },
+            ReadOnly = true)]
         public static object NavMeshGetSettings()
         {
             var settings = NavMesh.GetSettingsByIndex(0);

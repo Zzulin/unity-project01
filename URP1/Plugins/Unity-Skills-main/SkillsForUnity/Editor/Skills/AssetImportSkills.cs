@@ -11,7 +11,12 @@ namespace UnitySkills
     /// </summary>
     public static class AssetImportSkills
     {
-        [UnitySkill("asset_reimport", "Force reimport of an asset", TracksWorkflow = true)]
+        [UnitySkill("asset_reimport", "Force reimport of an asset",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Execute,
+            Tags = new[] { "asset", "reimport", "refresh", "import" },
+            Outputs = new[] { "reimported" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetReimport(string assetPath)
         {
             if (string.IsNullOrEmpty(assetPath))
@@ -55,7 +60,11 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("asset_reimport_batch", "Reimport multiple assets matching a pattern", TracksWorkflow = true)]
+        [UnitySkill("asset_reimport_batch", "Reimport multiple assets matching a pattern",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Execute,
+            Tags = new[] { "asset", "reimport", "batch", "import", "refresh" },
+            Outputs = new[] { "count", "assets" },
+            TracksWorkflow = true)]
         public static object AssetReimportBatch(string searchFilter = "*", string folder = "Assets", int limit = 100)
         {
             if (Validate.SafePath(folder, "folder") is object folderErr) return folderErr;
@@ -98,7 +107,12 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("texture_set_import_settings", "Set texture import settings (maxSize, compression, readable)", TracksWorkflow = true)]
+        [UnitySkill("texture_set_import_settings", "Set texture import settings (maxSize, compression, readable)",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Modify,
+            Tags = new[] { "texture", "import", "settings", "compression", "mipmap" },
+            Outputs = new[] { "assetPath", "maxSize", "compression", "readable", "mipmaps" },
+            RequiresInput = new[] { "textureAsset" },
+            TracksWorkflow = true)]
         public static object TextureSetImportSettings(
             string assetPath,
             int? maxSize = null,
@@ -174,7 +188,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("model_set_import_settings", "Set model (FBX) import settings", TracksWorkflow = true)]
+        [UnitySkill("model_set_import_settings", "Set model (FBX) import settings",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Modify,
+            Tags = new[] { "model", "fbx", "import", "settings", "mesh" },
+            Outputs = new[] { "assetPath", "globalScale", "importAnimation", "meshCompression" },
+            RequiresInput = new[] { "modelAsset" },
+            TracksWorkflow = true)]
         public static object ModelSetImportSettings(
             string assetPath,
             float? globalScale = null,
@@ -250,7 +269,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("audio_set_import_settings", "Set audio clip import settings", TracksWorkflow = true)]
+        [UnitySkill("audio_set_import_settings", "Set audio clip import settings",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Modify,
+            Tags = new[] { "audio", "import", "settings", "compression", "clip" },
+            Outputs = new[] { "assetPath", "forceToMono", "loadType", "compressionFormat" },
+            RequiresInput = new[] { "audioAsset" },
+            TracksWorkflow = true)]
         public static object AudioSetImportSettings(
             string assetPath,
             bool? forceToMono = null,
@@ -288,7 +312,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("sprite_set_import_settings", "Set sprite import settings (mode, pivot, packingTag, pixelsPerUnit)", TracksWorkflow = true)]
+        [UnitySkill("sprite_set_import_settings", "Set sprite import settings (mode, pivot, packingTag, pixelsPerUnit)",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Modify,
+            Tags = new[] { "sprite", "import", "settings", "2d", "texture" },
+            Outputs = new[] { "assetPath", "spriteMode", "pixelsPerUnit" },
+            RequiresInput = new[] { "textureAsset" },
+            TracksWorkflow = true)]
         public static object SpriteSetImportSettings(
             string assetPath,
             string spriteMode = null,
@@ -334,7 +363,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("texture_get_import_settings", "Get current texture import settings")]
+        [UnitySkill("texture_get_import_settings", "Get current texture import settings",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Query,
+            Tags = new[] { "texture", "import", "settings", "inspect" },
+            Outputs = new[] { "assetPath", "textureType", "maxSize", "compression", "readable", "mipmaps" },
+            RequiresInput = new[] { "textureAsset" },
+            ReadOnly = true)]
         public static object TextureGetImportSettings(string assetPath)
         {
             var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
@@ -354,7 +388,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("model_get_import_settings", "Get current model import settings")]
+        [UnitySkill("model_get_import_settings", "Get current model import settings",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Query,
+            Tags = new[] { "model", "fbx", "import", "settings", "inspect" },
+            Outputs = new[] { "assetPath", "globalScale", "importAnimation", "meshCompression", "readable", "generateColliders" },
+            RequiresInput = new[] { "modelAsset" },
+            ReadOnly = true)]
         public static object ModelGetImportSettings(string assetPath)
         {
             var importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
@@ -373,7 +412,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("audio_get_import_settings", "Get current audio import settings")]
+        [UnitySkill("audio_get_import_settings", "Get current audio import settings",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Query,
+            Tags = new[] { "audio", "import", "settings", "inspect", "clip" },
+            Outputs = new[] { "assetPath", "forceToMono", "loadInBackground", "loadType", "compressionFormat", "quality" },
+            RequiresInput = new[] { "audioAsset" },
+            ReadOnly = true)]
         public static object AudioGetImportSettings(string assetPath)
         {
             var importer = AssetImporter.GetAtPath(assetPath) as AudioImporter;
@@ -392,7 +436,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("asset_set_labels", "Set labels on an asset", TracksWorkflow = true)]
+        [UnitySkill("asset_set_labels", "Set labels on an asset",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Modify,
+            Tags = new[] { "asset", "labels", "tag", "metadata" },
+            Outputs = new[] { "assetPath", "labels" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetSetLabels(string assetPath, string labels)
         {
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
@@ -403,7 +452,12 @@ namespace UnitySkills
             return new { success = true, assetPath, labels = labelArray };
         }
 
-        [UnitySkill("asset_get_labels", "Get labels of an asset")]
+        [UnitySkill("asset_get_labels", "Get labels of an asset",
+            Category = SkillCategory.AssetImport, Operation = SkillOperation.Query,
+            Tags = new[] { "asset", "labels", "metadata", "inspect" },
+            Outputs = new[] { "assetPath", "labels" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object AssetGetLabels(string assetPath)
         {
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);

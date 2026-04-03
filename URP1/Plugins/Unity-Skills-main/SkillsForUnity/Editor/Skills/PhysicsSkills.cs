@@ -9,7 +9,11 @@ namespace UnitySkills
     /// </summary>
     public static class PhysicsSkills
     {
-        [UnitySkill("physics_raycast", "Cast a ray and get hit info. Returns: {hit, collider, point, normal, distance}")]
+        [UnitySkill("physics_raycast", "Cast a ray and get hit info. Returns: {hit, collider, point, normal, distance}",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "raycast", "collision", "detection", "line-of-sight" },
+            Outputs = new[] { "hit", "collider", "point", "normal", "distance" },
+            ReadOnly = true)]
         public static object PhysicsRaycast(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -42,7 +46,11 @@ namespace UnitySkills
             return new { hit = false };
         }
 
-        [UnitySkill("physics_check_overlap", "Check for colliders in a sphere. Returns list of hit colliders.")]
+        [UnitySkill("physics_check_overlap", "Check for colliders in a sphere. Returns list of hit colliders.",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "overlap", "sphere", "collision", "detection" },
+            Outputs = new[] { "count", "colliders" },
+            ReadOnly = true)]
         public static object PhysicsCheckOverlap(
             float x, float y, float z,
             float radius,
@@ -67,14 +75,21 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("physics_get_gravity", "Get global gravity setting")]
+        [UnitySkill("physics_get_gravity", "Get global gravity setting",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "gravity", "global", "setting" },
+            Outputs = new[] { "x", "y", "z" },
+            ReadOnly = true)]
         public static object PhysicsGetGravity()
         {
             var g = Physics.gravity;
             return new { x = g.x, y = g.y, z = g.z };
         }
 
-        [UnitySkill("physics_set_gravity", "Set global gravity setting", TracksWorkflow = true)]
+        [UnitySkill("physics_set_gravity", "Set global gravity setting", TracksWorkflow = true,
+            Category = SkillCategory.Physics, Operation = SkillOperation.Modify,
+            Tags = new[] { "gravity", "global", "setting" },
+            Outputs = new[] { "success", "gravity" })]
         public static object PhysicsSetGravity(float x, float y, float z)
         {
             // Record for Undo support via DynamicsManager asset
@@ -94,7 +109,11 @@ namespace UnitySkills
             return new { success = true, gravity = new { x, y, z } };
         }
 
-        [UnitySkill("physics_raycast_all", "Cast a ray and return ALL hits (penetrating)")]
+        [UnitySkill("physics_raycast_all", "Cast a ray and return ALL hits (penetrating)",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "raycast", "penetrating", "collision", "detection" },
+            Outputs = new[] { "count", "hits" },
+            ReadOnly = true)]
         public static object PhysicsRaycastAll(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -118,7 +137,11 @@ namespace UnitySkills
             return new { count = results.Length, hits = results };
         }
 
-        [UnitySkill("physics_spherecast", "Cast a sphere along a direction and get hit info")]
+        [UnitySkill("physics_spherecast", "Cast a sphere along a direction and get hit info",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "spherecast", "collision", "detection", "sweep" },
+            Outputs = new[] { "hit", "objectName", "point", "distance" },
+            ReadOnly = true)]
         public static object PhysicsSphereCast(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -143,7 +166,11 @@ namespace UnitySkills
             return new { hit = false };
         }
 
-        [UnitySkill("physics_boxcast", "Cast a box along a direction and get hit info")]
+        [UnitySkill("physics_boxcast", "Cast a box along a direction and get hit info",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "boxcast", "collision", "detection", "sweep" },
+            Outputs = new[] { "hit", "objectName", "point", "distance" },
+            ReadOnly = true)]
         public static object PhysicsBoxCast(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -170,7 +197,11 @@ namespace UnitySkills
             return new { hit = false };
         }
 
-        [UnitySkill("physics_overlap_box", "Check for colliders overlapping a box volume")]
+        [UnitySkill("physics_overlap_box", "Check for colliders overlapping a box volume",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "overlap", "box", "collision", "detection" },
+            Outputs = new[] { "count", "colliders" },
+            ReadOnly = true)]
         public static object PhysicsOverlapBox(
             float x, float y, float z,
             float halfExtentX = 0.5f, float halfExtentY = 0.5f, float halfExtentZ = 0.5f,
@@ -188,7 +219,10 @@ namespace UnitySkills
             return new { count = results.Length, colliders = results };
         }
 
-        [UnitySkill("physics_create_material", "Create a PhysicMaterial asset", TracksWorkflow = true)]
+        [UnitySkill("physics_create_material", "Create a PhysicMaterial asset", TracksWorkflow = true,
+            Category = SkillCategory.Physics, Operation = SkillOperation.Create,
+            Tags = new[] { "material", "friction", "bounciness", "asset" },
+            Outputs = new[] { "success", "path" })]
         public static object PhysicsCreateMaterial(
             string name = "New PhysicMaterial", string savePath = "Assets",
             float dynamicFriction = 0.6f, float staticFriction = 0.6f, float bounciness = 0f)
@@ -217,7 +251,11 @@ namespace UnitySkills
             return new { success = true, path };
         }
 
-        [UnitySkill("physics_set_material", "Set PhysicMaterial on a collider (supports name/instanceId/path)", TracksWorkflow = true)]
+        [UnitySkill("physics_set_material", "Set PhysicMaterial on a collider (supports name/instanceId/path)", TracksWorkflow = true,
+            Category = SkillCategory.Physics, Operation = SkillOperation.Modify,
+            Tags = new[] { "material", "collider", "friction", "bounciness" },
+            Outputs = new[] { "success", "gameObject", "material" },
+            RequiresInput = new[] { "gameObject", "physicMaterial" })]
         public static object PhysicsSetMaterial(
             string materialPath, string name = null, int instanceId = 0, string path = null)
         {
@@ -237,14 +275,21 @@ namespace UnitySkills
             return new { success = true, gameObject = go.name, material = materialPath };
         }
 
-        [UnitySkill("physics_get_layer_collision", "Get whether two layers collide")]
+        [UnitySkill("physics_get_layer_collision", "Get whether two layers collide",
+            Category = SkillCategory.Physics, Operation = SkillOperation.Query,
+            Tags = new[] { "layer", "collision", "matrix" },
+            Outputs = new[] { "layer1", "layer2", "collisionEnabled" },
+            ReadOnly = true)]
         public static object PhysicsGetLayerCollision(int layer1, int layer2)
         {
             bool ignored = Physics.GetIgnoreLayerCollision(layer1, layer2);
             return new { layer1, layer2, collisionEnabled = !ignored };
         }
 
-        [UnitySkill("physics_set_layer_collision", "Set whether two layers collide", TracksWorkflow = true)]
+        [UnitySkill("physics_set_layer_collision", "Set whether two layers collide", TracksWorkflow = true,
+            Category = SkillCategory.Physics, Operation = SkillOperation.Modify,
+            Tags = new[] { "layer", "collision", "matrix" },
+            Outputs = new[] { "success", "layer1", "layer2", "collisionEnabled" })]
         public static object PhysicsSetLayerCollision(int layer1, int layer2, bool enableCollision = true)
         {
             Physics.IgnoreLayerCollision(layer1, layer2, !enableCollision);

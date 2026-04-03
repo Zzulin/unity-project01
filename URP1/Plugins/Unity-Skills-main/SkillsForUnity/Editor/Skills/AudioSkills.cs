@@ -10,7 +10,12 @@ namespace UnitySkills
     /// </summary>
     public static class AudioSkills
     {
-        [UnitySkill("audio_get_settings", "Get audio import settings for an audio asset")]
+        [UnitySkill("audio_get_settings", "Get audio import settings for an audio asset",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Query,
+            Tags = new[] { "audio", "import", "settings", "clip" },
+            Outputs = new[] { "path", "forceToMono", "loadType", "compressionFormat", "quality" },
+            RequiresInput = new[] { "audioAsset" },
+            ReadOnly = true)]
         public static object AudioGetSettings(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -35,7 +40,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("audio_set_settings", "Set audio import settings. loadType: DecompressOnLoad/CompressedInMemory/Streaming. compressionFormat: PCM/Vorbis/ADPCM. quality: 0.0-1.0")]
+        [UnitySkill("audio_set_settings", "Set audio import settings. loadType: DecompressOnLoad/CompressedInMemory/Streaming. compressionFormat: PCM/Vorbis/ADPCM. quality: 0.0-1.0",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Modify,
+            Tags = new[] { "audio", "import", "settings", "compression", "quality" },
+            Outputs = new[] { "success", "path", "changesApplied", "changes" },
+            RequiresInput = new[] { "audioAsset" })]
         public static object AudioSetSettings(
             string assetPath,
             bool? forceToMono = null,
@@ -139,7 +148,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("audio_set_settings_batch", "Set audio import settings for multiple audio files. items: JSON array of {assetPath, forceToMono, loadType, compressionFormat, quality, ...}")]
+        [UnitySkill("audio_set_settings_batch", "Set audio import settings for multiple audio files. items: JSON array of {assetPath, forceToMono, loadType, compressionFormat, quality, ...}",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Modify,
+            Tags = new[] { "audio", "import", "batch", "settings", "bulk" },
+            Outputs = new[] { "totalCount", "successCount", "results" },
+            RequiresInput = new[] { "audioAssets" })]
         public static object AudioSetSettingsBatch(string items)
         {
             return BatchExecutor.Execute<BatchAudioItem>(items, item =>
@@ -185,7 +198,11 @@ namespace UnitySkills
             public float? quality { get; set; }
         }
 
-        [UnitySkill("audio_find_clips", "Search for AudioClip assets in the project")]
+        [UnitySkill("audio_find_clips", "Search for AudioClip assets in the project",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Query,
+            Tags = new[] { "audio", "clip", "search", "find", "asset" },
+            Outputs = new[] { "totalFound", "showing", "clips" },
+            ReadOnly = true)]
         public static object AudioFindClips(string filter = "", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:AudioClip " + filter);
@@ -198,7 +215,12 @@ namespace UnitySkills
             return new { success = true, totalFound = guids.Length, showing = clips.Length, clips };
         }
 
-        [UnitySkill("audio_get_clip_info", "Get detailed information about an AudioClip asset")]
+        [UnitySkill("audio_get_clip_info", "Get detailed information about an AudioClip asset",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Query,
+            Tags = new[] { "audio", "clip", "info", "inspect" },
+            Outputs = new[] { "name", "path", "length", "channels", "frequency", "samples", "loadType" },
+            RequiresInput = new[] { "audioAsset" },
+            ReadOnly = true)]
         public static object AudioGetClipInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -210,7 +232,12 @@ namespace UnitySkills
                 loadState = clip.loadState.ToString(), ambisonic = clip.ambisonic };
         }
 
-        [UnitySkill("audio_add_source", "Add an AudioSource component to a GameObject", TracksWorkflow = true)]
+        [UnitySkill("audio_add_source", "Add an AudioSource component to a GameObject",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Create | SkillOperation.Modify,
+            Tags = new[] { "audio", "source", "add", "component", "playback" },
+            Outputs = new[] { "success", "gameObject", "instanceId" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object AudioAddSource(string name = null, int instanceId = 0, string path = null, string clipPath = null, bool playOnAwake = false, bool loop = false, float volume = 1f)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -230,7 +257,12 @@ namespace UnitySkills
             return new { success = true, gameObject = go.name, instanceId = go.GetInstanceID() };
         }
 
-        [UnitySkill("audio_get_source_info", "Get AudioSource configuration")]
+        [UnitySkill("audio_get_source_info", "Get AudioSource configuration",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Query,
+            Tags = new[] { "audio", "source", "info", "inspect" },
+            Outputs = new[] { "gameObject", "clip", "volume", "pitch", "loop", "spatialBlend" },
+            RequiresInput = new[] { "gameObject" },
+            ReadOnly = true)]
         public static object AudioGetSourceInfo(string name = null, int instanceId = 0, string path = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -245,7 +277,12 @@ namespace UnitySkills
                 maxDistance = source.maxDistance, priority = source.priority };
         }
 
-        [UnitySkill("audio_set_source_properties", "Set AudioSource properties", TracksWorkflow = true)]
+        [UnitySkill("audio_set_source_properties", "Set AudioSource properties",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Modify,
+            Tags = new[] { "audio", "source", "property", "volume", "pitch" },
+            Outputs = new[] { "success", "gameObject" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object AudioSetSourceProperties(string name = null, int instanceId = 0, string path = null, string clipPath = null,
             float? volume = null, float? pitch = null, bool? loop = null, bool? playOnAwake = null, bool? mute = null, float? spatialBlend = null, int? priority = null)
         {
@@ -268,7 +305,11 @@ namespace UnitySkills
             return new { success = true, gameObject = go.name };
         }
 
-        [UnitySkill("audio_find_sources_in_scene", "Find all AudioSource components in the current scene")]
+        [UnitySkill("audio_find_sources_in_scene", "Find all AudioSource components in the current scene",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Query,
+            Tags = new[] { "audio", "source", "find", "scene", "search" },
+            Outputs = new[] { "totalFound", "showing", "sources" },
+            ReadOnly = true)]
         public static object AudioFindSourcesInScene(int limit = 50)
         {
             var sources = FindHelper.FindAll<AudioSource>();
@@ -277,7 +318,11 @@ namespace UnitySkills
             return new { success = true, totalFound = sources.Length, showing = results.Length, sources = results };
         }
 
-        [UnitySkill("audio_create_mixer", "Create a new AudioMixer asset", TracksWorkflow = true)]
+        [UnitySkill("audio_create_mixer", "Create a new AudioMixer asset",
+            Category = SkillCategory.Audio, Operation = SkillOperation.Create,
+            Tags = new[] { "audio", "mixer", "create", "asset" },
+            Outputs = new[] { "success", "path", "name" },
+            TracksWorkflow = true)]
         public static object AudioCreateMixer(string mixerName = "NewAudioMixer", string folder = "Assets")
         {
             if (Validate.Required(mixerName, "mixerName") is object nameErr) return nameErr;

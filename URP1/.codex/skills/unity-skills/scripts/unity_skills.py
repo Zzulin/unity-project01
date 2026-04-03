@@ -17,77 +17,128 @@ import requests
 import time
 import json
 import os
-from typing import Any, Dict, Optional
+import re
+import threading
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlencode
+
+__version__ = "1.6.9"
 
 UNITY_URL = "http://localhost:8090"
 DEFAULT_PORT = 8090
-DEFAULT_TIMEOUT = 3600
+PORT_RANGE_START = 8090
+PORT_RANGE_END = 8100
 
-# Auto-workflow configuration
-_auto_workflow_enabled = True  # Enable auto-workflow
-_current_workflow_active = False  # Is a workflow currently active?
-
-# Skills that should trigger auto-workflow (modification operations)
-_workflow_tracked_skills = {
-    'gameobject_create', 'gameobject_delete', 'gameobject_rename',
-    'gameobject_set_transform', 'gameobject_duplicate', 'gameobject_set_parent',
-    'gameobject_set_active', 'gameobject_create_batch', 'gameobject_delete_batch',
-    'gameobject_rename_batch', 'gameobject_set_transform_batch',
-    'component_add', 'component_remove', 'component_set_property',
-    'component_add_batch', 'component_remove_batch', 'component_set_property_batch',
-    'material_create', 'material_assign', 'material_set_color', 'material_set_texture',
-    'material_set_emission', 'material_set_float', 'material_set_shader',
-    'material_create_batch', 'material_assign_batch', 'material_set_colors_batch',
-    'light_create', 'light_set_properties', 'light_set_enabled',
-    'prefab_create', 'prefab_instantiate', 'prefab_apply', 'prefab_unpack',
-    'prefab_instantiate_batch',
-    'ui_create_canvas', 'ui_create_panel', 'ui_create_button', 'ui_create_text',
-    'ui_create_image', 'ui_create_inputfield', 'ui_create_slider', 'ui_create_toggle',
-    'ui_create_batch', 'ui_set_text', 'ui_set_anchor', 'ui_set_rect',
-    'script_create', 'script_delete', 'script_create_batch',
-    'terrain_create', 'terrain_set_height', 'terrain_set_heights_batch', 'terrain_paint_texture',
-    'asset_import', 'asset_delete', 'asset_move', 'asset_duplicate',
-    'scene_create', 'scene_save',
-}
-
-def set_auto_workflow(enabled: bool):
-    """Enable or disable auto-workflow recording."""
-    global _auto_workflow_enabled
-    _auto_workflow_enabled = enabled
-
-def is_auto_workflow_enabled() -> bool:
-    """Check if auto-workflow is enabled."""
-    return _auto_workflow_enabled
+# Timeout constants (seconds)
+DEFAULT_CALL_TIMEOUT = 900
+HEALTH_TIMEOUT = 2
+SCAN_TIMEOUT = 1
 
 def get_registry_path():
     return os.path.join(os.path.expanduser("~"), ".unity_skills", "registry.json")
 
+
+def _load_registry():
+    reg_path = get_registry_path()
+    if not os.path.exists(reg_path):
+        return {}
+    try:
+        with open(reg_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except IOError:
+        return {}
+    except json.JSONDecodeError as exc:
+        print(f"[unity-skills] registry.json is invalid JSON: {exc}", file=sys.stderr)
+        return {}
+
+
 def _get_agent_id():
-    """Read agent ID from agent_config.json in the same directory as this script."""
     try:
         config_path = os.path.join(os.path.dirname(__file__), 'agent_config.json')
         if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                return json.load(f).get('agentId', 'Unknown')
-    except: pass
-    return 'Unknown'
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return json.load(f).get('agentId', 'Python')
+    except (IOError, json.JSONDecodeError):
+        pass
+    return 'Python'
 
-AGENT_ID = _get_agent_id()
+
+def _version_matches(actual_version: str, target: str) -> bool:
+    """
+    Version prefix matching with Unity 6 special format support.
+
+    Unity 6 uses internal version like '6000.0.xxf1', so user input '6' or 'Unity 6'
+    should match '6000.x.x'. Traditional versions like '2022.3.12f1' use direct prefix matching.
+
+    Examples:
+        _version_matches("6000.0.28f1", "6")       -> True
+        _version_matches("6000.0.28f1", "Unity 6")  -> True
+        _version_matches("6000.0.28f1", "6000")     -> True
+        _version_matches("2022.3.12f1", "2022")     -> True
+        _version_matches("2022.3.12f1", "2022.3")   -> True
+        _version_matches("2022.3.12f1", "6")        -> False
+    """
+    if not actual_version or not target:
+        return False
+
+    # Strip "Unity" prefix and whitespace from target
+    cleaned = target.strip()
+    if cleaned.lower().startswith("unity"):
+        cleaned = cleaned[5:].strip()
+
+    if not cleaned:
+        return False
+
+    # Unity 6 special mapping: user says "6", "6.1", "6.2" etc -> match "6000."
+    if cleaned.split(".")[0] == "6" and not cleaned.startswith("6000"):
+        return actual_version.startswith("6000.")
+
+    # Direct prefix match for everything else (e.g. "6000", "2022", "2022.3")
+    return actual_version.startswith(cleaned)
+
+
+def _is_retryable_transport_error(result: Dict[str, Any]) -> bool:
+    if not isinstance(result, dict) or result.get('success'):
+        return False
+
+    transport_error = result.get('transportError')
+    if transport_error in {'connection', 'timeout'}:
+        return True
+
+    error_text = str(result.get('error', '')).lower()
+    return (
+        'cannot connect' in error_text
+        or 'timed out' in error_text
+        or 'read timed out' in error_text
+        or 'connection aborted' in error_text
+    )
+
 
 class UnitySkills:
     """
     Client for interacting with a specific Unity Editor instance.
     """
-    def __init__(self, port: int = None, target: str = None, url: str = None):
+    def __init__(self, port: int = None, target: str = None, url: str = None, version: str = None, agent_id: str = None, timeout: int = None):
         """
         Initialize client.
         Args:
             port: Connect to specific localhost port (e.g. 8091)
             target: Connect to instance by Name or ID (e.g. "MyGame" or "MyGame_A1B2") - auto-discovers port.
             url: Full URL override.
+            version: Connect to instance by Unity version (e.g. "6", "2022", "2022.3") - auto-discovers port.
+            agent_id: Custom agent identifier (e.g. "MyScript", "ClaudeCode")
+            timeout: Request timeout in seconds (default: 900)
+        Priority: url > port > target > version > default port 8090
         """
         self.url = url
-        self.timeout = DEFAULT_TIMEOUT
+        self.agent_id = agent_id or _get_agent_id()
+        self.timeout = timeout or DEFAULT_CALL_TIMEOUT
+        # Reuse a Session so TCP connections stay warm across requests.
+        self._session = requests.Session()
+        self._session.headers.update({
+            'X-Agent-Id': self.agent_id,
+            'User-Agent': f'unity-skills-python/{__version__}',
+        })
 
         if not self.url:
             if port:
@@ -98,89 +149,254 @@ class UnitySkills:
                     self.url = f"http://localhost:{found_port}"
                 else:
                     raise ValueError(f"Could not find Unity instance matching '{target}' in registry.")
+            elif version:
+                found_port = self._find_port_by_version(version)
+                if found_port:
+                    self.url = f"http://localhost:{found_port}"
+                else:
+                    raise ValueError(f"Could not find Unity instance matching version '{version}'.")
             else:
-                self.url = f"http://localhost:{DEFAULT_PORT}"
+                # Auto-discover: scan 8090-8100 for first responding instance
+                found_port = self._find_first_available()
+                self.url = f"http://localhost:{found_port}"
 
-        # Sync timeout from Unity server
+        # Sync timeout from Unity server if user didn't specify one
+        if not timeout:
+            self._sync_timeout_from_server()
+
+    def _sync_timeout_from_server(self):
+        """Fetch requestTimeoutMinutes from /health and apply as self.timeout."""
         try:
-            resp = requests.get(f"{self.url}/health", timeout=2)
+            resp = self._session.get(f"{self.url}/health", timeout=HEALTH_TIMEOUT)
             if resp.status_code == 200:
                 minutes = resp.json().get('requestTimeoutMinutes')
-                if minutes and minutes > 0:
+                if minutes and isinstance(minutes, (int, float)) and minutes > 0:
                     self.timeout = int(minutes) * 60
-        except: pass
+        except Exception:
+            pass
+
+    def _find_first_available(self) -> int:
+        """Scan ports 8090-8100 and return the first responsive Unity instance."""
+        for port in range(PORT_RANGE_START, PORT_RANGE_END + 1):
+            try:
+                resp = requests.get(f"http://localhost:{port}/health", timeout=SCAN_TIMEOUT)
+                if resp.status_code == 200:
+                    return port
+            except (requests.exceptions.RequestException, ValueError):
+                continue
+        raise ConnectionError(f"No Unity instance found on ports {PORT_RANGE_START}-{PORT_RANGE_END}. Is UnitySkills server running?")
 
     def _find_port_by_target(self, target: str) -> Optional[int]:
-        reg_path = get_registry_path()
-        if not os.path.exists(reg_path):
-            return None
-        try:
-            with open(reg_path, 'r') as f:
-                data = json.load(f)
-                # target can be ID or Name
-                # 1. Exact ID match
-                for path, info in data.items():
-                    if info.get('id') == target:
-                        return info.get('port')
-                # 2. Exact Name match (if unique?) - return first found
-                for path, info in data.items():
-                    if info.get('name') == target:
-                        return info.get('port')
-                return None
-        except:
-            return None
+        data = _load_registry()
+        for path, info in data.items():
+            if info.get('id') == target:
+                return info.get('port')
+        for path, info in data.items():
+            if info.get('name') == target:
+                return info.get('port')
+        return None
 
-    def call(self, skill_name: str, verbose: bool = False, **kwargs) -> Dict[str, Any]:
+    def _find_port_by_version(self, version: str) -> Optional[int]:
         """
-        Call a skill on this instance.
+        Find a Unity instance port by version string.
+
+        Three-stage search strategy (decreasing efficiency):
+        1. Check registry - read unityVersion field from registry.json (no HTTP overhead)
+        2. Probe health - when registry has no version info (old server), call /health on registered ports
+        3. Scan ports - when registry is empty/missing, scan ports 8090-8100
+        """
+        registry_data = _load_registry() or None
+
+        # Stage 1: Check registry unityVersion field
+        if registry_data:
+            for path, info in registry_data.items():
+                reg_version = info.get('unityVersion')
+                if reg_version and _version_matches(reg_version, version):
+                    port = info.get('port')
+                    if port:
+                        return port
+
+            # Stage 2: Probe /health for registered ports without version info
+            ports_without_version = []
+            for path, info in registry_data.items():
+                if not info.get('unityVersion') and info.get('port'):
+                    ports_without_version.append(info['port'])
+
+            for port in ports_without_version:
+                try:
+                    resp = requests.get(f"http://localhost:{port}/health", timeout=HEALTH_TIMEOUT)
+                    if resp.status_code == 200:
+                        health_data = resp.json()
+                        health_version = health_data.get('unityVersion')
+                        if health_version and _version_matches(health_version, version):
+                            return port
+                except (requests.exceptions.RequestException, ValueError):
+                    continue
+
+        # Stage 3: Scan port range (fallback when registry is empty/missing)
+        if not registry_data:
+            for port in range(PORT_RANGE_START, PORT_RANGE_END + 1):
+                try:
+                    resp = requests.get(f"http://localhost:{port}/health", timeout=SCAN_TIMEOUT)
+                    if resp.status_code == 200:
+                        health_data = resp.json()
+                        health_version = health_data.get('unityVersion')
+                        if health_version and _version_matches(health_version, version):
+                            return port
+                except (requests.exceptions.RequestException, ValueError):
+                    continue
+
+        return None
+
+    def call(self, skill_name: str, verbose: bool = False, _retries: int = 3, _retry_delay: float = 2.0, **kwargs) -> Dict[str, Any]:
+        """
+        Call a skill on this instance with automatic retry on connection errors.
+
+        Args:
+            skill_name: Name of the skill to call
+            verbose: Whether to return verbose output
+            _retries: Number of retries on connection error (default 3)
+            _retry_delay: Base delay between retries in seconds (default 2.0), uses progressive backoff
 
         Returns a normalized response with 'success' field and flattened result data.
         """
-        try:
-            # Combine verbose into kwargs for JSON body
-            kwargs['verbose'] = verbose
-            headers = {'X-Agent-Id': AGENT_ID, 'Content-Type': 'application/json; charset=utf-8'}
-            body = json.dumps(kwargs, ensure_ascii=False).encode('utf-8')
-            response = requests.post(f"{self.url}/skill/{skill_name}", data=body, headers=headers, timeout=self.timeout)
-            response.encoding = 'utf-8'  # Ensure correct UTF-8 decoding
-
+        last_error = None
+        for attempt in range(_retries + 1):
             try:
-                data = response.json()
-            except ValueError:
-                return {'success': False, 'error': f"Invalid JSON response: {response.text}"}
+                # Combine verbose into kwargs for JSON body
+                kwargs['verbose'] = verbose
+                # Preserve raw Unicode characters instead of forcing \\uXXXX escapes.
+                json_data = json.dumps(kwargs, ensure_ascii=False)
+                response = self._session.post(
+                    f"{self.url}/skill/{skill_name}",
+                    data=json_data.encode('utf-8'),
+                    headers={'Content-Type': 'application/json; charset=utf-8'},
+                    timeout=self.timeout
+                )
+                response.encoding = 'utf-8'  # Always decode server responses as UTF-8.
 
-            # Normalize response format
-            if data.get('status') == 'success':
-                result = data.get('result', {})
-                normalized = {'success': True}
-                if isinstance(result, dict):
-                    normalized.update(result)
+                try:
+                    data = response.json()
+                except ValueError:
+                    return {'success': False, 'error': f"Invalid JSON response: {response.text}"}
+
+                # Normalize server responses into the helper's flat success/error shape.
+                if data.get('status') == 'success':
+                    result = data.get('result', {})
+                    # Lift result fields to the top level for convenience.
+                    normalized = {'success': True}
+                    if isinstance(result, dict):
+                        normalized.update(result)
+                    else:
+                        normalized['result'] = result
+                    return normalized
+                elif data.get('status') == 'error':
+                    return {
+                        'success': False,
+                        'error': data.get('error', 'Unknown error'),
+                        'message': data.get('message', '')
+                    }
                 else:
-                    normalized['result'] = result
-                return normalized
-            elif data.get('status') == 'error':
+                    return data
+
+            except requests.exceptions.Timeout as e:
+                last_error = e
+                if attempt < _retries:
+                    time.sleep(_retry_delay * (attempt + 1))
+                    continue
                 return {
                     'success': False,
-                    'error': data.get('error', 'Unknown error'),
-                    'message': data.get('message', '')
+                    'error': f"Request to {self.url} timed out after {self.timeout} seconds.",
+                    'transportError': 'timeout',
+                    'retryable': True,
+                    'suggestion': 'Unity may still be compiling scripts or processing a long-running operation. Wait a moment and retry.',
                 }
-            else:
-                return data
-
-        except requests.exceptions.ConnectionError:
-             return {
-                'success': False,
-                'error': f"Cannot connect to {self.url}. Unity instance may be down.",
-                'suggestion': 'Unity may be recompiling scripts (Domain Reload). Wait 3-5 seconds and retry.',
-                'hint': 'Check if server is running: Window > UnitySkills > Start Server'
-            }
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
+            except requests.exceptions.ConnectionError as e:
+                last_error = e
+                if attempt < _retries:
+                    time.sleep(_retry_delay * (attempt + 1))
+                    continue
+                return {
+                    'success': False,
+                    'error': f"Cannot connect to {self.url}. Unity instance may be down.",
+                    'transportError': 'connection',
+                    'retryable': True,
+                    'suggestion': 'Unity may be recompiling scripts (Domain Reload). Wait 3-5 seconds and retry.',
+                    'hint': 'Check if server is running: Window > UnitySkills > Start Server'
+                }
+            except Exception as e:
+                return {'success': False, 'error': str(e)}
 
     # --- Proxies for common skills ---
     def create_cube(self, x=0, y=0, z=0, name="Cube"): return self.call("create_cube", x=x, y=y, z=z, name=name)
     def create_sphere(self, x=0, y=0, z=0, name="Sphere"): return self.call("create_sphere", x=x, y=y, z=z, name=name)
     def delete_object(self, name): return self.call("delete_object", objectName=name)
+
+
+# Global Default Client (lazy initialization)
+_default_client = None
+
+def _get_default_client():
+    """Lazily initialize the default client and auto-discover an instance on first use."""
+    global _default_client
+    if _default_client is None:
+        _default_client = UnitySkills()
+    return _default_client
+
+_auto_workflow_enabled = True  # Backward-compatible flag; single-call workflow is now handled by the Unity server.
+_current_workflow_active = False  # Is an explicit WorkflowContext currently active?
+_workflow_lock = threading.Lock()  # Protects _auto_workflow_enabled and _current_workflow_active
+
+def set_auto_workflow(enabled: bool):
+    """Backward-compatible toggle. Single-call auto-workflow is owned by the Unity server."""
+    global _auto_workflow_enabled
+    with _workflow_lock:
+        _auto_workflow_enabled = enabled
+
+def is_auto_workflow_enabled() -> bool:
+    """Check if auto-workflow is enabled."""
+    with _workflow_lock:
+        return _auto_workflow_enabled
+
+def connect(port: int = None, target: str = None, version: str = None) -> UnitySkills:
+    """
+    Create a new UnitySkills client.
+    Args:
+        port: Connect to specific localhost port (e.g. 8091)
+        target: Connect to instance by Name or ID
+        version: Connect to instance by Unity version (e.g. "6", "2022", "2022.3")
+    """
+    return UnitySkills(port=port, target=target, version=version)
+
+def set_unity_version(version: str):
+    """
+    Set target Unity version and reconfigure the default client.
+
+    This is the primary way for AI agents to route to a specific Unity version
+    when multiple instances are running.
+
+    Args:
+        version: Unity version string, e.g. "6", "Unity 6", "2022", "2022.3"
+
+    Example:
+        import unity_skills
+        unity_skills.set_unity_version("6")       # Switch to Unity 6
+        unity_skills.call_skill("gameobject_create", name="Cube")  # Auto-routes
+    """
+    global _default_client
+    _default_client = UnitySkills(version=version)
+
+def list_instances() -> list:
+    """Return list of active Unity instances from registry."""
+    data = _load_registry()
+    results = []
+    for info in data.values():
+        results.append(dict(info))
+    return results
+
+def call_skill(skill_name: str, **kwargs) -> Dict[str, Any]:
+    """Call a Unity skill. Single-call auto-workflow is handled by the Unity server."""
+    return _get_default_client().call(skill_name, **kwargs)
 
 
 class WorkflowContext:
@@ -195,129 +411,216 @@ class WorkflowContext:
     def __init__(self, tag: str, description: str = ''):
         self.tag = tag
         self.description = description
+        self._started = False
+        self._task_id = None
+
+    def _matches_status(self, status: Dict[str, Any]) -> bool:
+        if not status.get('success') or not status.get('isRecording'):
+            return False
+
+        current_tag = status.get('currentTaskTag')
+        current_description = status.get('currentTaskDescription') or ''
+        if current_tag != self.tag:
+            return False
+
+        return current_description == (self.description or '')
+
+    def _recover_started_task(self, failed_result: Dict[str, Any]) -> bool:
+        global _current_workflow_active
+
+        if not _is_retryable_transport_error(failed_result):
+            return False
+        if not wait_for_unity(timeout=10.0):
+            return False
+
+        status = _get_default_client().call('workflow_session_status')
+        if not self._matches_status(status):
+            return False
+
+        self._started = True
+        self._task_id = status.get('currentTaskId')
+        with _workflow_lock:
+            _current_workflow_active = True
+        return True
+
+    def _recover_ended_task(self, failed_result: Dict[str, Any]) -> bool:
+        if not _is_retryable_transport_error(failed_result):
+            return False
+        if not wait_for_unity(timeout=10.0):
+            return False
+
+        client = _get_default_client()
+        status = client.call('workflow_session_status')
+        if status.get('success'):
+            current_task_id = status.get('currentTaskId')
+            if not status.get('isRecording'):
+                return True
+            if self._task_id and current_task_id != self._task_id:
+                return True
+            if self._matches_status(status):
+                retry_result = client.call('workflow_task_end')
+                return bool(retry_result.get('success'))
+
+        return False
 
     def __enter__(self):
         global _current_workflow_active
-        _current_workflow_active = True
-        call_skill('workflow_task_start', tag=self.tag, description=self.description)
+        start_result = _get_default_client().call('workflow_task_start', tag=self.tag, description=self.description)
+        if not start_result.get('success'):
+            if self._recover_started_task(start_result):
+                return self
+            with _workflow_lock:
+                _current_workflow_active = False
+            raise RuntimeError(start_result.get('error', 'workflow_task_start failed'))
+
+        with _workflow_lock:
+            _current_workflow_active = True
+        self._started = True
+        self._task_id = start_result.get('taskId')
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         global _current_workflow_active
-        call_skill('workflow_task_end')
-        _current_workflow_active = False
+        try:
+            if self._started:
+                end_result = _get_default_client().call('workflow_task_end')
+                if not end_result.get('success'):
+                    recovered = self._recover_ended_task(end_result)
+                    if exc_type is None and not recovered:
+                        raise RuntimeError(end_result.get('error', 'workflow_task_end failed'))
+        finally:
+            with _workflow_lock:
+                _current_workflow_active = False
+            self._started = False
+            self._task_id = None
         return False  # Do not suppress exceptions
 
 def workflow_context(tag: str, description: str = '') -> WorkflowContext:
     """Convenience function to create a WorkflowContext."""
     return WorkflowContext(tag, description)
 
-# Global Default Client
-_default_client = UnitySkills()
-
-def connect(port: int = None, target: str = None) -> UnitySkills:
-    return UnitySkills(port=port, target=target)
-
-def list_instances() -> list:
-    """Return list of active Unity instances from registry."""
-    reg_path = get_registry_path()
-    if not os.path.exists(reg_path):
-        return []
-    try:
-        with open(reg_path, 'r') as f:
-            data = json.load(f)
-            return list(data.values())
-    except:
-        return []
-
-def call_skill(skill_name: str, **kwargs) -> Dict[str, Any]:
-    """
-    Call a Unity skill, supporting auto-workflow recording.
-
-    If auto-workflow is enabled (default), it will automatically:
-    1. Start a workflow task before a modification operation
-    2. Execute the operation
-    3. End the workflow task
-    """
-    global _current_workflow_active
-
-    # Check if we should track this call
-    should_track = (
-        _auto_workflow_enabled and
-        skill_name in _workflow_tracked_skills and
-        not _current_workflow_active and
-        not skill_name.startswith('workflow_')  # Avoid recursion
-    )
-
-    if should_track:
-        # Start workflow
-        _current_workflow_active = True
-        _default_client.call(
-            'workflow_task_start',
-            tag=skill_name,
-            description=f"Auto: {skill_name} - {str(kwargs)[:100]}"
-        )
-
-        # Execute actual operation
-        result = _default_client.call(skill_name, **kwargs)
-
-        # End workflow
-        _default_client.call('workflow_task_end')
-        _current_workflow_active = False
-
-        return result
-    else:
-        return _default_client.call(skill_name, **kwargs)
-
 def call_skill_with_retry(skill_name: str, max_retries: int = 3, retry_delay: float = 2.0, **kwargs) -> Dict[str, Any]:
-    """Call a Unity skill with automatic retry logic for Domain Reload scenarios."""
-    for attempt in range(max_retries):
+    """Call a Unity skill with automatic retry logic for Domain Reload scenarios.
+
+    Args:
+        skill_name: Name of the Unity skill to call.
+        max_retries: Maximum number of retry attempts after the initial call (default: 3, total attempts: 4).
+        retry_delay: Delay in seconds between retry attempts.
+        **kwargs: Additional arguments passed to call_skill.
+
+    Returns:
+        The result from call_skill, or the last result if all retries are exhausted.
+    """
+    last_result = None
+    for attempt in range(1 + max_retries):
         result = call_skill(skill_name, **kwargs)
-        if result.get('success') or ('error' not in result or 'Cannot connect' not in result.get('error', '')):
+
+        is_connection_error = _is_retryable_transport_error(result)
+        if not is_connection_error:
             return result
-        if attempt < max_retries - 1:
+
+        last_result = result
+        if attempt < max_retries:
             time.sleep(retry_delay)
-    return result
+    return last_result
 
-def wait_for_unity(timeout: float = 10.0, check_interval: float = 1.0) -> bool:
-    """Wait for Unity REST server to become available. Useful after script creation."""
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if is_unity_running():
-            return True
-        time.sleep(check_interval)
-    return False
+def get_skills(category: str = None, operation: str = None, tags: str = None,
+               read_only: bool = None, q: str = None) -> Dict[str, Any]:
+    """Get list of available skills, optionally filtered by metadata.
 
-def get_skills() -> Dict[str, Any]:
-    """Get list of all available skills."""
+    Args:
+        category: Filter by SkillCategory (e.g. "GameObject", "Material").
+        operation: Filter by SkillOperation (e.g. "Create", "Query").
+        tags: Filter by tag (e.g. "batch", "hierarchy").
+        read_only: Filter read-only skills (True/False).
+        q: Text search across name, description, and tags.
+    """
     try:
-        response = requests.get(f"{UNITY_URL}/skills", timeout=5)
+        client = _get_default_client()
+        params = {}
+        if category is not None: params["category"] = category
+        if operation is not None: params["operation"] = operation
+        if tags is not None: params["tags"] = tags
+        if read_only is not None: params["readOnly"] = str(read_only).lower()
+        if q is not None: params["q"] = q
+        qs = f"?{urlencode(params)}" if params else ""
+        response = client._session.get(f"{client.url}/skills{qs}", timeout=client.timeout)
         response.encoding = 'utf-8'
         return response.json()
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-def health() -> bool:
-    """Check if Unity server is running."""
+
+def find_skills(intent: str, top_n: int = 10) -> Dict[str, Any]:
+    """Server-side intent-based skill recommendation.
+
+    Uses keyword scoring: name match (3pts), tag match (2pts), description match (1pt).
+    Returns top-N ranked skills with relevance scores.
+
+    Args:
+        intent: Natural language description of what you want to do (e.g. "create red cube").
+        top_n: Maximum number of results (default 10, max 50).
+    """
     try:
-        response = requests.get(f"{UNITY_URL}/health", timeout=2)
+        client = _get_default_client()
+        params = {"intent": intent, "topN": str(top_n)}
+        response = client._session.get(
+            f"{client.url}/skills/recommend?{urlencode(params)}", timeout=client.timeout)
+        response.encoding = 'utf-8'
+        return response.json()
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def get_skill_chain(target_output: str) -> List[Dict[str, Any]]:
+    """Find skills that produce a specific output field.
+
+    Useful for building skill chains — e.g. find all skills that output "instanceId"
+    so you know which skills can feed into skills that require "gameObject".
+
+    Args:
+        target_output: The output field name to search for (e.g. "instanceId", "path").
+    """
+    try:
+        manifest = get_skills()
+        if manifest.get("status") == "error":
+            return []
+        skills = manifest.get("skills", [])
+        return [s for s in skills if s.get("outputs") and target_output in s["outputs"]]
+    except Exception:
+        return []
+
+def health() -> bool:
+    """Check if the current default Unity server is running."""
+    try:
+        client = _get_default_client()
+        response = client._session.get(f"{client.url}/health", timeout=HEALTH_TIMEOUT)
         response.encoding = 'utf-8'
         return response.json().get("status") == "ok"
-    except:
+    except (requests.exceptions.RequestException, ValueError):
         return False
+
 
 def is_unity_running() -> bool:
-    """Check if Unity REST server is running and ready."""
-    try:
-        response = requests.get(f'{UNITY_URL}/health', timeout=2)
-        return response.status_code == 200
-    except:
-        return False
+    """Alias for health()."""
+    return health()
+
+
+def wait_for_unity(timeout: float = 10.0, check_interval: float = 1.0) -> bool:
+    """Wait for Unity REST server to become available again."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if health():
+            return True
+        time.sleep(check_interval)
+    return False
+
 
 def get_server_status() -> Dict[str, Any]:
-    """Get detailed server status including version and stats."""
+    """Get detailed health information from the current Unity server."""
     try:
-        response = requests.get(f'{UNITY_URL}/health', timeout=5)
+        client = _get_default_client()
+        response = client._session.get(f"{client.url}/health", timeout=HEALTH_TIMEOUT)
         response.encoding = 'utf-8'
         return response.json()
     except requests.exceptions.ConnectionError:
@@ -325,73 +628,88 @@ def get_server_status() -> Dict[str, Any]:
     except Exception as e:
         return {'status': 'error', 'reason': str(e)}
 
-# Convenience functions
-def create_gameobject(name, primitive_type=None, x=0, y=0, z=0):
-    return call_skill('gameobject_create', name=name, primitiveType=primitive_type, x=x, y=y, z=z)
 
-def delete_gameobject(name):
-    return call_skill('gameobject_delete', name=name)
-
-def set_color(game_object, r, g, b, a=1):
-    return call_skill('material_set_color', name=game_object, r=r, g=g, b=b, a=a)
-
-def create_script(name, template='MonoBehaviour', wait_for_compile=True):
-    """Create a C# script and optionally wait for Unity to recompile."""
+def create_script(name: str, template: str = 'MonoBehaviour', wait_for_compile: bool = True) -> Dict[str, Any]:
+    """Create a script and optionally wait for recompilation to settle."""
     result = call_skill('script_create', name=name, template=template)
-    if result.get('success') and wait_for_compile:
-        print(f'Script {name} created. Waiting for Unity to recompile...')
-        time.sleep(2)  # Give Unity time to detect the new file
+    compilation = result.get('compilation', {}) if isinstance(result, dict) else {}
+    if result.get('success') and wait_for_compile and compilation.get('isCompiling'):
+        time.sleep(2)
         if wait_for_unity(timeout=10):
-            print('Unity recompiled successfully.')
-        else:
-            print('Warning: Unity might still be compiling. Wait a moment before next operation.')
+            feedback = call_skill('script_get_compile_feedback', scriptPath=result['path'])
+            if feedback.get('success'):
+                result['compilation'] = {k: v for k, v in feedback.items() if k != 'success'}
     return result
 
-def play():
-    return call_skill('editor_play')
 
-def stop():
-    return call_skill('editor_stop')
+_CLI_INT_PATTERN = re.compile(r'^[+-]?\d+$')
+_CLI_FLOAT_PATTERN = re.compile(r'^[+-]?(?:\d+\.\d*|\.\d+|\d+[eE][+-]?\d+|\d+\.\d*[eE][+-]?\d+|\.\d+[eE][+-]?\d+)$')
+
+
+def _parse_cli_value(value: str) -> Any:
+    lower_value = value.lower()
+    if lower_value == 'true':
+        return True
+    if lower_value == 'false':
+        return False
+    if _CLI_INT_PATTERN.fullmatch(value):
+        try:
+            return int(value)
+        except ValueError:
+            return value
+    if _CLI_FLOAT_PATTERN.fullmatch(value):
+        try:
+            return float(value)
+        except ValueError:
+            return value
+    return value
 
 # ============================================================
 # Main CLI Entry Point
 # ============================================================
 def main():
     """Command-line interface for Unity Skills."""
-    if len(sys.argv) < 2:
-        print('Usage: python unity_skills.py <skill_name> [param1=value1] [param2=value2] ...')
-        print('Example: python unity_skills.py editor_get_selection')
-        print('Example: python unity_skills.py gameobject_create name=MyCube primitiveType=Cube')
-        sys.exit(1)
+    import argparse
 
-    if sys.argv[1] == "--list":
+    parser = argparse.ArgumentParser(
+        description='Unity Skills Python CLI',
+        usage='python unity_skills.py [options] <skill_name> [param1=value1] ...'
+    )
+    parser.add_argument('--list', action='store_true', help='List all available skills')
+    parser.add_argument('--list-instances', action='store_true', help='List active Unity instances')
+    parser.add_argument('--port', type=int, default=None, help='Connect to specific port')
+    parser.add_argument('--version', type=str, default=None, dest='unity_version',
+                        help='Connect to Unity instance by version (e.g. "6", "2022", "2022.3")')
+    parser.add_argument('skill_name', nargs='?', help='Skill name to execute')
+    parser.add_argument('params', nargs='*', help='Skill parameters as key=value pairs')
+
+    args = parser.parse_args()
+
+    # Configure client based on CLI args
+    if args.port or args.unity_version:
+        global _default_client
+        _default_client = UnitySkills(port=args.port, version=args.unity_version)
+
+    if args.list:
         print(json.dumps(get_skills(), ensure_ascii=False, indent=2))
         return
-    elif sys.argv[1] == "--list-instances":
+    elif args.list_instances:
         print(json.dumps(list_instances(), ensure_ascii=False, indent=2))
         return
 
-    skill_name = sys.argv[1]
+    if not args.skill_name:
+        parser.print_help()
+        sys.exit(1)
 
     # Parse parameters
     params = {}
-    for arg in sys.argv[2:]:
+    for arg in args.params:
         if '=' in arg:
             key, value = arg.split('=', 1)
-            # Try to parse as number or boolean
-            if value.lower() == 'true':
-                value = True
-            elif value.lower() == 'false':
-                value = False
-            elif value.replace('.', '', 1).replace('-', '', 1).isdigit():
-                try:
-                    value = float(value) if '.' in value else int(value)
-                except ValueError:
-                    pass
-            params[key] = value
+            params[key] = _parse_cli_value(value)
 
     # Call the skill
-    result = call_skill(skill_name, **params)
+    result = call_skill(args.skill_name, **params)
 
     # Pretty print the result
     print(json.dumps(result, ensure_ascii=False, indent=2))

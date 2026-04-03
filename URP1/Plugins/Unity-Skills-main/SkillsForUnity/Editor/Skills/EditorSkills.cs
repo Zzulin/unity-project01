@@ -10,7 +10,10 @@ namespace UnitySkills
     /// </summary>
     public static class EditorSkills
     {
-        [UnitySkill("editor_play", "Enter play mode. Warning: any unsaved scene changes made during Play mode will be lost when exiting.")]
+        [UnitySkill("editor_play", "Enter play mode. Warning: any unsaved scene changes made during Play mode will be lost when exiting.",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Execute,
+            Tags = new[] { "play", "runtime", "test" },
+            Outputs = new[] { "mode" })]
         public static object EditorPlay()
         {
             if (EditorApplication.isPlaying)
@@ -20,7 +23,10 @@ namespace UnitySkills
             return new { success = true, mode = "playing" };
         }
 
-        [UnitySkill("editor_stop", "Exit play mode. Warning: any scene changes made during Play mode will be lost.")]
+        [UnitySkill("editor_stop", "Exit play mode. Warning: any scene changes made during Play mode will be lost.",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Execute,
+            Tags = new[] { "stop", "runtime", "exit" },
+            Outputs = new[] { "mode" })]
         public static object EditorStop()
         {
             if (!EditorApplication.isPlaying)
@@ -30,14 +36,21 @@ namespace UnitySkills
             return new { success = true, mode = "stopped" };
         }
 
-        [UnitySkill("editor_pause", "Pause/unpause play mode")]
+        [UnitySkill("editor_pause", "Pause/unpause play mode",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Execute,
+            Tags = new[] { "pause", "resume", "toggle" },
+            Outputs = new[] { "paused" })]
         public static object EditorPause()
         {
             EditorApplication.isPaused = !EditorApplication.isPaused;
             return new { success = true, paused = EditorApplication.isPaused };
         }
 
-        [UnitySkill("editor_select", "Select a GameObject")]
+        [UnitySkill("editor_select", "Select a GameObject",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Execute,
+            Tags = new[] { "select", "focus", "highlight" },
+            Outputs = new[] { "selected" },
+            RequiresInput = new[] { "gameObject" })]
         public static object EditorSelect(string name = null, int instanceId = 0, string path = null)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -49,7 +62,11 @@ namespace UnitySkills
             return new { success = true, selected = go.name };
         }
 
-        [UnitySkill("editor_get_selection", "Get currently selected objects")]
+        [UnitySkill("editor_get_selection", "Get currently selected objects",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Query,
+            Tags = new[] { "selection", "current", "active" },
+            Outputs = new[] { "count", "objects", "instanceId" },
+            ReadOnly = true)]
         public static object EditorGetSelection()
         {
             var selected = Selection.gameObjects.Select(go => new
@@ -61,21 +78,31 @@ namespace UnitySkills
             return new { count = selected.Length, objects = selected };
         }
 
-        [UnitySkill("editor_undo", "Undo the last action (single step). For multiple undo steps use history_undo(steps=N). For workflow-level undo use workflow_undo_task.")]
+        [UnitySkill("editor_undo", "Undo the last action (single step). For multiple undo steps use history_undo(steps=N). For workflow-level undo use workflow_undo_task.",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Execute,
+            Tags = new[] { "undo", "revert", "history" },
+            Outputs = new[] { "message" })]
         public static object EditorUndo()
         {
             Undo.PerformUndo();
             return new { success = true, message = "Undo performed" };
         }
 
-        [UnitySkill("editor_redo", "Redo the last undone action (single step). For multiple redo steps use history_redo(steps=N).")]
+        [UnitySkill("editor_redo", "Redo the last undone action (single step). For multiple redo steps use history_redo(steps=N).",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Execute,
+            Tags = new[] { "redo", "restore", "history" },
+            Outputs = new[] { "message" })]
         public static object EditorRedo()
         {
             Undo.PerformRedo();
             return new { success = true, message = "Redo performed" };
         }
 
-        [UnitySkill("editor_get_state", "Get current editor state")]
+        [UnitySkill("editor_get_state", "Get current editor state",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Query,
+            Tags = new[] { "state", "status", "info" },
+            Outputs = new[] { "isPlaying", "isPaused", "isCompiling", "unityVersion" },
+            ReadOnly = true)]
         public static object EditorGetState()
         {
             return new
@@ -89,7 +116,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("editor_execute_menu", "Execute a Unity menu item")]
+        [UnitySkill("editor_execute_menu", "Execute a Unity menu item",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Execute,
+            Tags = new[] { "menu", "command", "action" },
+            Outputs = new[] { "executed" })]
         public static object EditorExecuteMenu(string menuPath)
         {
             var result = EditorApplication.ExecuteMenuItem(menuPath);
@@ -99,13 +129,21 @@ namespace UnitySkills
             return new { success = true, executed = menuPath };
         }
 
-        [UnitySkill("editor_get_tags", "Get all available tags")]
+        [UnitySkill("editor_get_tags", "Get all available tags",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Query,
+            Tags = new[] { "tags", "list", "config" },
+            Outputs = new[] { "tags" },
+            ReadOnly = true)]
         public static object EditorGetTags()
         {
             return new { tags = InternalEditorUtility.tags };
         }
 
-        [UnitySkill("editor_get_layers", "Get all available layers")]
+        [UnitySkill("editor_get_layers", "Get all available layers",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Query,
+            Tags = new[] { "layers", "list", "config" },
+            Outputs = new[] { "layers" },
+            ReadOnly = true)]
         public static object EditorGetLayers()
         {
             var layers = Enumerable.Range(0, 32)
@@ -116,7 +154,11 @@ namespace UnitySkills
             return new { layers };
         }
 
-        [UnitySkill("editor_get_context", "Get full editor context - selected GameObjects, selected assets, active scene, focused window. Use this to get current selection without searching.")]
+        [UnitySkill("editor_get_context", "Get full editor context - selected GameObjects, selected assets, active scene, focused window. Use this to get current selection without searching.",
+            Category = SkillCategory.Editor, Operation = SkillOperation.Query,
+            Tags = new[] { "context", "selection", "workspace", "overview" },
+            Outputs = new[] { "selectedGameObjects", "selectedAssets", "activeScene", "focusedWindow" },
+            ReadOnly = true)]
         public static object EditorGetContext(bool includeComponents = false, bool includeChildren = false)
         {
             // 1. Hierarchy 选中的 GameObjects

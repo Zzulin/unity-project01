@@ -11,7 +11,11 @@ namespace UnitySkills
     /// </summary>
     public static class GameObjectSkills
     {
-        [UnitySkill("gameobject_create_batch", "Create multiple GameObjects in one call (Efficient). items: JSON array of {name, primitiveType, x, y, z}", TracksWorkflow = true)]
+        [UnitySkill("gameobject_create_batch", "Create multiple GameObjects in one call (Efficient). items: JSON array of {name, primitiveType, x, y, z, parentName, parentInstanceId, parentPath}",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Create,
+            Tags = new[] { "primitive", "empty", "hierarchy", "batch" },
+            Outputs = new[] { "gameObject", "instanceId", "path", "position" },
+            TracksWorkflow = true)]
         public static object GameObjectCreateBatch(string items)
         {
             return BatchExecutor.Execute<BatchCreateItem>(items, item =>
@@ -37,7 +41,15 @@ namespace UnitySkills
                     throw new System.Exception($"Unknown primitive type: {primitiveType}");
                 }
 
-                go.transform.position = new Vector3(item.x, item.y, item.z);
+                // Set parent if specified
+                if (!string.IsNullOrEmpty(item.parentName) || item.parentInstanceId != 0 || !string.IsNullOrEmpty(item.parentPath))
+                {
+                    var (parentGo, parentErr) = GameObjectFinder.FindOrError(item.parentName, item.parentInstanceId, item.parentPath);
+                    if (parentErr != null) throw new System.Exception($"Parent not found for '{item.name}'");
+                    go.transform.SetParent(parentGo.transform, false);
+                }
+
+                go.transform.localPosition = new Vector3(item.x, item.y, item.z);
                 if (item.rotX != 0 || item.rotY != 0 || item.rotZ != 0)
                     go.transform.eulerAngles = new Vector3(item.rotX, item.rotY, item.rotZ);
                 if (item.scaleX != 1 || item.scaleY != 1 || item.scaleZ != 1)
@@ -70,11 +82,28 @@ namespace UnitySkills
             public float scaleX { get; set; } = 1;
             public float scaleY { get; set; } = 1;
             public float scaleZ { get; set; } = 1;
+            public string parentName { get; set; }
+            public int parentInstanceId { get; set; }
+            public string parentPath { get; set; }
         }
 
-        [UnitySkill("gameobject_create", "Create a new GameObject. primitiveType: Cube, Sphere, Capsule, Cylinder, Plane, Quad, or Empty/null for empty object", TracksWorkflow = true)]
-        public static object GameObjectCreate(string name, string primitiveType = null, float x = 0, float y = 0, float z = 0)
+        [UnitySkill("gameobject_create", "Create a new GameObject. primitiveType: Cube, Sphere, Capsule, Cylinder, Plane, Quad, or Empty/null for empty object",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Create,
+            Tags = new[] { "primitive", "empty", "hierarchy" },
+            Outputs = new[] { "gameObject", "instanceId", "path", "position" },
+            TracksWorkflow = true)]
+        public static object GameObjectCreate(string name, string primitiveType = null, float x = 0, float y = 0, float z = 0,
+            string parentName = null, int parentInstanceId = 0, string parentPath = null)
         {
+            // Resolve parent first so we fail fast before creating the object
+            GameObject parentGo = null;
+            if (!string.IsNullOrEmpty(parentName) || parentInstanceId != 0 || !string.IsNullOrEmpty(parentPath))
+            {
+                var (found, parentErr) = GameObjectFinder.FindOrError(parentName, parentInstanceId, parentPath);
+                if (parentErr != null) return parentErr;
+                parentGo = found;
+            }
+
             GameObject go;
 
             // Support "Empty", "", or null to create an empty GameObject
@@ -95,7 +124,10 @@ namespace UnitySkills
                 return new { error = $"Unknown primitive type: {primitiveType}. Use: Cube, Sphere, Capsule, Cylinder, Plane, Quad, or Empty/None for empty object" };
             }
 
-            go.transform.position = new Vector3(x, y, z);
+            if (parentGo != null)
+                go.transform.SetParent(parentGo.transform, false);
+
+            go.transform.localPosition = new Vector3(x, y, z);
             Undo.RegisterCreatedObjectUndo(go, "Create " + name);
             WorkflowManager.SnapshotCreatedGameObject(go, primitiveType);
 
@@ -105,11 +137,17 @@ namespace UnitySkills
                 name = go.name,
                 instanceId = go.GetInstanceID(),
                 path = GameObjectFinder.GetPath(go),
+                parent = parentGo != null ? parentGo.name : "(root)",
                 position = new { x, y, z }
             };
         }
 
-        [UnitySkill("gameobject_rename", "Rename a GameObject (supports name/instanceId/path). Returns: {success, oldName, newName, instanceId}", TracksWorkflow = true)]
+        [UnitySkill("gameobject_rename", "Rename a GameObject (supports name/instanceId/path). Returns: {success, oldName, newName, instanceId}",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "rename", "name", "identity" },
+            Outputs = new[] { "oldName", "newName", "instanceId", "path" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectRename(string name = null, int instanceId = 0, string path = null, string newName = null)
         {
             if (Validate.Required(newName, "newName") is object err) return err;
@@ -131,7 +169,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("gameobject_rename_batch", "Rename multiple GameObjects in one call (Efficient). items: JSON array of {name, instanceId, path, newName}. Returns array with oldName, newName for each.", TracksWorkflow = true)]
+        [UnitySkill("gameobject_rename_batch", "Rename multiple GameObjects in one call (Efficient). items: JSON array of {name, instanceId, path, newName}. Returns array with oldName, newName for each.",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "rename", "name", "identity", "batch" },
+            Outputs = new[] { "oldName", "newName", "instanceId" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectRenameBatch(string items)
         {
             return BatchExecutor.Execute<BatchRenameItem>(items, item =>
@@ -159,7 +202,12 @@ namespace UnitySkills
             public string newName { get; set; }
         }
 
-        [UnitySkill("gameobject_delete", "Delete a GameObject (supports name/instanceId/path)", TracksWorkflow = true)]
+        [UnitySkill("gameobject_delete", "Delete a GameObject (supports name/instanceId/path)",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Delete,
+            Tags = new[] { "destroy", "remove", "hierarchy" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectDelete(string name = null, int instanceId = 0, string path = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -171,7 +219,12 @@ namespace UnitySkills
             return new { success = true, deleted = deletedName };
         }
 
-        [UnitySkill("gameobject_delete_batch", "Delete multiple GameObjects. items: JSON array of strings (names) or objects {name, instanceId, path}", TracksWorkflow = true)]
+        [UnitySkill("gameobject_delete_batch", "Delete multiple GameObjects. items: JSON array of strings (names) or objects {name, instanceId, path}",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Delete,
+            Tags = new[] { "destroy", "remove", "hierarchy", "batch" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectDeleteBatch(string items)
         {
             if (Validate.RequiredJsonArray(items, "items") is object err) return err;
@@ -218,7 +271,11 @@ namespace UnitySkills
             public string path { get; set; }
         }
 
-        [UnitySkill("gameobject_find", "Find GameObjects by name/regex, tag, layer, or component")]
+        [UnitySkill("gameobject_find", "Find GameObjects by name/regex, tag, layer, or component",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Query,
+            Tags = new[] { "search", "filter", "regex", "tag", "layer" },
+            Outputs = new[] { "list", "instanceId", "path", "tag", "layer" },
+            ReadOnly = true)]
         public static object GameObjectFind(string name = null, bool useRegex = false, string tag = null, string layer = null, string component = null, int limit = 50)
         {
             // Efficiency: If tag is provided, use FindGameObjectsWithTag (faster).
@@ -227,7 +284,7 @@ namespace UnitySkills
             if (!string.IsNullOrEmpty(tag))
                 results = GameObject.FindGameObjectsWithTag(tag);
             else
-                results = FindHelper.FindAll<GameObject>();
+                results = GameObjectFinder.GetSceneObjects();
 
             // Filter by Name (Regex or Contains)
             if (!string.IsNullOrEmpty(name))
@@ -239,7 +296,7 @@ namespace UnitySkills
                 }
                 else
                 {
-                    results = results.Where(go => go.name.Contains(name));
+                    results = results.Where(go => go.name.IndexOf(name, System.StringComparison.OrdinalIgnoreCase) >= 0);
                 }
             }
             
@@ -258,10 +315,7 @@ namespace UnitySkills
             // Filter by Component
             if (!string.IsNullOrEmpty(component))
             {
-                var compType = System.Type.GetType(component) ?? 
-                    System.AppDomain.CurrentDomain.GetAssemblies()
-                        .SelectMany(a => { try { return a.GetTypes(); } catch { return new System.Type[0]; } })
-                        .FirstOrDefault(t => t.Name == component || t.FullName == component);
+                var compType = ComponentSkills.FindComponentType(component);
                 
                 if (compType != null)
                     results = results.Where(go => go.GetComponent(compType) != null);
@@ -271,7 +325,7 @@ namespace UnitySkills
             {
                 name = go.name,
                 instanceId = go.GetInstanceID(),
-                path = GameObjectFinder.GetPath(go),
+                path = GameObjectFinder.GetCachedPath(go),
                 tag = go.tag,
                 layer = LayerMask.LayerToName(go.layer),
                 position = new { x = go.transform.position.x, y = go.transform.position.y, z = go.transform.position.z }
@@ -280,7 +334,12 @@ namespace UnitySkills
             return new { count = list.Length, objects = list };
         }
 
-        [UnitySkill("gameobject_set_transform", "Set transform properties. For UI/RectTransform: use anchorX/Y, pivotX/Y, sizeDeltaX/Y. For 3D: use posX/Y/Z, rotX/Y/Z, scaleX/Y/Z", TracksWorkflow = true)]
+        [UnitySkill("gameobject_set_transform", "Set transform properties. For UI/RectTransform: use anchorX/Y, pivotX/Y, sizeDeltaX/Y. For 3D: use posX/Y/Z, rotX/Y/Z, scaleX/Y/Z",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "transform", "position", "rotation", "scale", "rectTransform" },
+            Outputs = new[] { "instanceId", "position", "rotation", "scale" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectSetTransform(
             string name = null, int instanceId = 0, string path = null,
             // World transform (3D objects)
@@ -432,7 +491,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("gameobject_set_transform_batch", "Set transform properties for multiple objects (Efficient). items: JSON array of objects with optional fields (name, posX, rotX, scaleX, etc.)", TracksWorkflow = true)]
+        [UnitySkill("gameobject_set_transform_batch", "Set transform properties for multiple objects (Efficient). items: JSON array of objects with optional fields (name, posX, rotX, scaleX, etc.)",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "transform", "position", "rotation", "scale", "batch" },
+            Outputs = new[] { "instanceId", "position" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectSetTransformBatch(string items)
         {
             return BatchExecutor.Execute<BatchTransformItem>(items, item =>
@@ -533,7 +597,12 @@ namespace UnitySkills
             public float? height { get; set; }
         }
 
-        [UnitySkill("gameobject_duplicate", "Duplicate a GameObject (supports name/instanceId/path). Returns: originalName, copyName, copyInstanceId, copyPath", TracksWorkflow = true)]
+        [UnitySkill("gameobject_duplicate", "Duplicate a GameObject (supports name/instanceId/path). Returns: originalName, copyName, copyInstanceId, copyPath",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Create,
+            Tags = new[] { "duplicate", "copy", "clone", "hierarchy" },
+            Outputs = new[] { "copyName", "copyInstanceId", "copyPath" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectDuplicate(string name = null, int instanceId = 0, string path = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -553,7 +622,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("gameobject_duplicate_batch", "Duplicate multiple GameObjects in one call (Efficient). items: JSON array of {name, instanceId, path}. Returns array with originalName, copyName, copyInstanceId for each.")]
+        [UnitySkill("gameobject_duplicate_batch", "Duplicate multiple GameObjects in one call (Efficient). items: JSON array of {name, instanceId, path}. Returns array with originalName, copyName, copyInstanceId for each.",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Create,
+            Tags = new[] { "duplicate", "copy", "clone", "hierarchy", "batch" },
+            Outputs = new[] { "copyName", "copyInstanceId", "copyPath" },
+            RequiresInput = new[] { "gameObject" })]
         public static object GameObjectDuplicateBatch(string items)
         {
             return BatchExecutor.Execute<BatchDuplicateItem>(items, item =>
@@ -584,7 +657,12 @@ namespace UnitySkills
             public string path { get; set; }
         }
 
-        [UnitySkill("gameobject_set_parent", "Set the parent of a GameObject (supports name/instanceId/path)", TracksWorkflow = true)]
+        [UnitySkill("gameobject_set_parent", "Set the parent of a GameObject (supports name/instanceId/path)",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "parent", "hierarchy", "reparent" },
+            Outputs = new[] { "child", "parent", "newPath" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectSetParent(string childName = null, int childInstanceId = 0, string childPath = null, 
             string parentName = null, int parentInstanceId = 0, string parentPath = null)
         {
@@ -609,28 +687,42 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("gameobject_get_info", "Get detailed info about a GameObject (supports name/instanceId/path)")]
+        [UnitySkill("gameobject_get_info", "Get detailed info about a GameObject (supports name/instanceId/path)",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Query,
+            Tags = new[] { "inspect", "info", "details", "components" },
+            Outputs = new[] { "instanceId", "path", "tag", "layer", "components", "children" },
+            RequiresInput = new[] { "gameObject" },
+            ReadOnly = true)]
         public static object GameObjectGetInfo(string name = null, int instanceId = 0, string path = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
             if (error != null) return error;
 
-            var components = go.GetComponents<Component>()
-                .Where(c => c != null)
-                .Select(c => c.GetType().Name)
-                .ToArray();
+            var componentBuffer = new List<Component>(8);
+            go.GetComponents(componentBuffer);
+            var components = new List<string>(componentBuffer.Count);
+            foreach (var component in componentBuffer)
+            {
+                if (component != null)
+                    components.Add(component.GetType().Name);
+            }
 
-            var children = new List<object>();
+            var children = new List<object>(go.transform.childCount);
             foreach (Transform child in go.transform)
             {
-                children.Add(new { name = child.name, instanceId = child.gameObject.GetInstanceID() });
+                children.Add(new
+                {
+                    name = child.name,
+                    instanceId = child.gameObject.GetInstanceID(),
+                    path = GameObjectFinder.GetCachedPath(child.gameObject)
+                });
             }
 
             return new
             {
                 name = go.name,
                 instanceId = go.GetInstanceID(),
-                path = GameObjectFinder.GetPath(go),
+                path = GameObjectFinder.GetCachedPath(go),
                 tag = go.tag,
                 layer = LayerMask.LayerToName(go.layer),
                 isActive = go.activeSelf,
@@ -638,13 +730,19 @@ namespace UnitySkills
                 rotation = new { x = go.transform.eulerAngles.x, y = go.transform.eulerAngles.y, z = go.transform.eulerAngles.z },
                 scale = new { x = go.transform.localScale.x, y = go.transform.localScale.y, z = go.transform.localScale.z },
                 parent = go.transform.parent?.name,
+                parentPath = go.transform.parent != null ? GameObjectFinder.GetCachedPath(go.transform.parent.gameObject) : null,
                 childCount = go.transform.childCount,
                 children,
-                components
+                components = components.ToArray()
             };
         }
 
-        [UnitySkill("gameobject_set_active", "Enable or disable a GameObject (supports name/instanceId/path)", TracksWorkflow = true)]
+        [UnitySkill("gameobject_set_active", "Enable or disable a GameObject (supports name/instanceId/path)",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "active", "enable", "disable", "visibility" },
+            Outputs = new[] { "name", "active" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object GameObjectSetActive(string name = null, int instanceId = 0, string path = null, bool active = true)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -657,7 +755,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, active };
         }
 
-        [UnitySkill("gameobject_set_active_batch", "Enable or disable multiple GameObjects. items: JSON array of {name, active}")]
+        [UnitySkill("gameobject_set_active_batch", "Enable or disable multiple GameObjects. items: JSON array of {name, active}",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "active", "enable", "disable", "visibility", "batch" },
+            Outputs = new[] { "name", "active" },
+            RequiresInput = new[] { "gameObject" })]
         public static object GameObjectSetActiveBatch(string items)
         {
             return BatchExecutor.Execute<BatchSetActiveItem>(items, item =>
@@ -680,7 +782,11 @@ namespace UnitySkills
             public bool active { get; set; } = true;
         }
 
-        [UnitySkill("gameobject_set_layer_batch", "Set layer for multiple GameObjects. items: JSON array of {name, layer, recursive}")]
+        [UnitySkill("gameobject_set_layer_batch", "Set layer for multiple GameObjects. items: JSON array of {name, layer, recursive}",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "layer", "rendering", "physics", "batch" },
+            Outputs = new[] { "name", "layer" },
+            RequiresInput = new[] { "gameObject" })]
         public static object GameObjectSetLayerBatch(string items)
         {
             return BatchExecutor.Execute<BatchSetLayerItem>(items, item =>
@@ -718,7 +824,11 @@ namespace UnitySkills
             public bool recursive { get; set; } = false;
         }
 
-        [UnitySkill("gameobject_set_tag_batch", "Set tag for multiple GameObjects. items: JSON array of {name, tag}")]
+        [UnitySkill("gameobject_set_tag_batch", "Set tag for multiple GameObjects. items: JSON array of {name, tag}",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "tag", "identity", "batch" },
+            Outputs = new[] { "name", "tag" },
+            RequiresInput = new[] { "gameObject" })]
         public static object GameObjectSetTagBatch(string items)
         {
             return BatchExecutor.Execute<BatchSetTagItem>(items, item =>
@@ -741,7 +851,11 @@ namespace UnitySkills
             public string tag { get; set; }
         }
 
-        [UnitySkill("gameobject_set_parent_batch", "Set parent for multiple GameObjects. items: JSON array of {childName, parentName, ...}")]
+        [UnitySkill("gameobject_set_parent_batch", "Set parent for multiple GameObjects. items: JSON array of {childName, parentName, ...}",
+            Category = SkillCategory.GameObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "parent", "hierarchy", "reparent", "batch" },
+            Outputs = new[] { "child", "parent" },
+            RequiresInput = new[] { "gameObject" })]
         public static object GameObjectSetParentBatch(string items)
         {
             return BatchExecutor.Execute<BatchSetParentItem>(items, item =>

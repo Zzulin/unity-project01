@@ -9,7 +9,11 @@ namespace UnitySkills
     /// </summary>
     public static class CameraSkills
     {
-        [UnitySkill("camera_align_view_to_object", "Align Scene View camera to look at an object.")]
+        [UnitySkill("camera_align_view_to_object", "Align Scene View camera to look at an object.",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Execute,
+            Tags = new[] { "scene-view", "align", "look-at", "focus" },
+            Outputs = new[] { "message" },
+            RequiresInput = new[] { "gameObject" })]
         public static object CameraAlignViewToObject(string name = null, int instanceId = 0, string path = null)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -24,7 +28,11 @@ namespace UnitySkills
             return new { error = "No active Scene View found" };
         }
 
-        [UnitySkill("camera_get_info", "Get Scene View camera position and rotation.")]
+        [UnitySkill("camera_get_info", "Get Scene View camera position and rotation.",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Query,
+            Tags = new[] { "scene-view", "position", "rotation", "info" },
+            Outputs = new[] { "position", "rotation", "pivot", "size", "orthographic" },
+            ReadOnly = true)]
         public static object CameraGetInfo()
         {
             if (SceneView.lastActiveSceneView != null)
@@ -42,7 +50,10 @@ namespace UnitySkills
             return new { error = "No active Scene View found" };
         }
 
-        [UnitySkill("camera_set_transform", "Set Scene View camera position/rotation manually.")]
+        [UnitySkill("camera_set_transform", "Set Scene View camera position/rotation manually.",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Modify,
+            Tags = new[] { "scene-view", "position", "rotation", "transform" },
+            Outputs = new[] { "message" })]
         public static object CameraSetTransform(
             float posX, float posY, float posZ,
             float rotX, float rotY, float rotZ,
@@ -63,7 +74,10 @@ namespace UnitySkills
             return new { error = "No active Scene View found" };
         }
         
-        [UnitySkill("camera_look_at", "Focus Scene View camera on a point.")]
+        [UnitySkill("camera_look_at", "Focus Scene View camera on a point.",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Execute,
+            Tags = new[] { "scene-view", "look-at", "focus", "navigate" },
+            Outputs = new[] { "success" })]
         public static object CameraLookAt(float x, float y, float z)
         {
              if (SceneView.lastActiveSceneView != null)
@@ -75,7 +89,11 @@ namespace UnitySkills
             return new { error = "No active Scene View found" };
         }
 
-        [UnitySkill("camera_create", "Create a new Game Camera", TracksWorkflow = true)]
+        [UnitySkill("camera_create", "Create a new Game Camera",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Create,
+            Tags = new[] { "camera", "game-camera", "create", "audio-listener" },
+            Outputs = new[] { "name", "instanceId" },
+            TracksWorkflow = true)]
         public static object CameraCreate(string name = "New Camera", float x = 0, float y = 1, float z = -10, bool addAudioListener = false)
         {
             var go = new GameObject(name);
@@ -87,7 +105,12 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID() };
         }
 
-        [UnitySkill("camera_get_properties", "Get Game Camera properties (supports name/instanceId/path)")]
+        [UnitySkill("camera_get_properties", "Get Game Camera properties (supports name/instanceId/path)",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Query,
+            Tags = new[] { "camera", "properties", "fov", "clip-plane" },
+            Outputs = new[] { "name", "fieldOfView", "nearClipPlane", "farClipPlane", "orthographic", "depth", "clearFlags" },
+            RequiresInput = new[] { "gameObject" },
+            ReadOnly = true)]
         public static object CameraGetProperties(string name = null, int instanceId = 0, string path = null)
         {
             var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -106,7 +129,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("camera_set_properties", "Set Game Camera properties (FOV, clip planes, clear flags, background color, depth)", TracksWorkflow = true)]
+        [UnitySkill("camera_set_properties", "Set Game Camera properties (FOV, clip planes, clear flags, background color, depth)",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Modify,
+            Tags = new[] { "camera", "properties", "fov", "background" },
+            Outputs = new[] { "name" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object CameraSetProperties(
             string name = null, int instanceId = 0, string path = null,
             float? fieldOfView = null, float? nearClipPlane = null, float? farClipPlane = null,
@@ -132,7 +160,12 @@ namespace UnitySkills
             return new { success = true, name = go.name };
         }
 
-        [UnitySkill("camera_set_culling_mask", "Set Game Camera culling mask by layer names (comma-separated)", TracksWorkflow = true)]
+        [UnitySkill("camera_set_culling_mask", "Set Game Camera culling mask by layer names (comma-separated)",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Modify,
+            Tags = new[] { "camera", "culling-mask", "layer", "visibility" },
+            Outputs = new[] { "cullingMask" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object CameraSetCullingMask(string layerNames, string name = null, int instanceId = 0, string path = null)
         {
             var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -151,7 +184,11 @@ namespace UnitySkills
             return new { success = true, cullingMask = mask };
         }
 
-        [UnitySkill("camera_screenshot", "Capture a screenshot from a Game Camera to file")]
+        [UnitySkill("camera_screenshot", "Capture a screenshot from a Game Camera to file",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Execute,
+            Tags = new[] { "screenshot", "capture", "render", "png" },
+            Outputs = new[] { "path", "width", "height" },
+            RequiresInput = new[] { "gameObject" })]
         public static object CameraScreenshot(string savePath = "Assets/screenshot.png", int width = 1920, int height = 1080, string name = null, int instanceId = 0, string path = null)
         {
             var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -186,7 +223,12 @@ namespace UnitySkills
             return new { success = true, path = savePath, width, height };
         }
 
-        [UnitySkill("camera_set_orthographic", "Switch Game Camera between orthographic and perspective mode", TracksWorkflow = true)]
+        [UnitySkill("camera_set_orthographic", "Switch Game Camera between orthographic and perspective mode",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Modify,
+            Tags = new[] { "camera", "orthographic", "perspective", "projection" },
+            Outputs = new[] { "orthographic", "orthographicSize" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object CameraSetOrthographic(bool orthographic, float? orthographicSize = null, string name = null, int instanceId = 0, string path = null)
         {
             var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -200,7 +242,11 @@ namespace UnitySkills
             return new { success = true, orthographic, orthographicSize = cam.orthographicSize };
         }
 
-        [UnitySkill("camera_list", "List all cameras in the scene")]
+        [UnitySkill("camera_list", "List all cameras in the scene",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Query,
+            Tags = new[] { "camera", "list", "scene", "enumerate" },
+            Outputs = new[] { "count", "cameras" },
+            ReadOnly = true)]
         public static object CameraList()
         {
             var cameras = FindHelper.FindAll<Camera>();

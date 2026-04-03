@@ -13,7 +13,12 @@ namespace UnitySkills
     /// </summary>
     public static class EventSkills
     {
-        [UnitySkill("event_get_listeners", "Get persistent listeners of a UnityEvent")]
+        [UnitySkill("event_get_listeners", "Get persistent listeners of a UnityEvent",
+            Category = SkillCategory.Event, Operation = SkillOperation.Query,
+            Tags = new[] { "event", "listeners", "unityevent", "inspect" },
+            Outputs = new[] { "gameObject", "component", "eventName", "listenerCount", "listeners" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName" },
+            ReadOnly = true)]
         public static object EventGetListeners(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -70,7 +75,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("event_add_listener", "Add a persistent listener to a UnityEvent (Editor time). Supported args: void, int, float, string, bool, Object.", TracksWorkflow = true)]
+        [UnitySkill("event_add_listener", "Add a persistent listener to a UnityEvent (Editor time). Supported args: void, int, float, string, bool, Object.", TracksWorkflow = true,
+            Category = SkillCategory.Event, Operation = SkillOperation.Modify,
+            Tags = new[] { "event", "listener", "add", "callback" },
+            Outputs = new[] { "message", "index" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName", "targetObjectName", "methodName" })]
         public static object EventAddListener(
             string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null,
             string targetObjectName = null, string targetComponentName = null, string methodName = null,
@@ -203,7 +212,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("event_remove_listener", "Remove a persistent listener by index", TracksWorkflow = true)]
+        [UnitySkill("event_remove_listener", "Remove a persistent listener by index", TracksWorkflow = true,
+            Category = SkillCategory.Event, Operation = SkillOperation.Delete,
+            Tags = new[] { "event", "listener", "remove", "delete" },
+            Outputs = new[] { "remainingCount" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName" })]
         public static object EventRemoveListener(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null, int index = 0)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -231,7 +244,11 @@ namespace UnitySkills
             return new { success = true, remainingCount = unityEvent.GetPersistentEventCount() };
         }
 
-        [UnitySkill("event_invoke", "Invoke a UnityEvent explicitly (Runtime only)")]
+        [UnitySkill("event_invoke", "Invoke a UnityEvent explicitly (Runtime only)",
+            Category = SkillCategory.Event, Operation = SkillOperation.Execute,
+            Tags = new[] { "event", "invoke", "trigger", "runtime" },
+            Outputs = new[] { "message" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName" })]
         public static object EventInvoke(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null)
         {
              var (go, goErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -285,7 +302,11 @@ namespace UnitySkills
             return (evt, component, null);
         }
 
-        [UnitySkill("event_clear_listeners", "Remove all persistent listeners from a UnityEvent", TracksWorkflow = true)]
+        [UnitySkill("event_clear_listeners", "Remove all persistent listeners from a UnityEvent", TracksWorkflow = true,
+            Category = SkillCategory.Event, Operation = SkillOperation.Delete,
+            Tags = new[] { "event", "clear", "listeners", "remove" },
+            Outputs = new[] { "removed" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName" })]
         public static object EventClearListeners(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null)
         {
             var (evt, comp, err) = FindEvent(name, instanceId, path, componentName, eventName);
@@ -298,7 +319,11 @@ namespace UnitySkills
             return new { success = true, removed = count };
         }
 
-        [UnitySkill("event_set_listener_state", "Set a listener's call state (Off, RuntimeOnly, EditorAndRuntime)", TracksWorkflow = true)]
+        [UnitySkill("event_set_listener_state", "Set a listener's call state (Off, RuntimeOnly, EditorAndRuntime)", TracksWorkflow = true,
+            Category = SkillCategory.Event, Operation = SkillOperation.Modify,
+            Tags = new[] { "event", "listener", "state", "callstate" },
+            Outputs = new[] { "index", "state" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName" })]
         public static object EventSetListenerState(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null, int index = 0, string state = null)
         {
             var (evt, comp, err) = FindEvent(name, instanceId, path, componentName, eventName);
@@ -311,7 +336,12 @@ namespace UnitySkills
             return new { success = true, index, state = callState.ToString() };
         }
 
-        [UnitySkill("event_list_events", "List all UnityEvent fields on a component")]
+        [UnitySkill("event_list_events", "List all UnityEvent fields on a component",
+            Category = SkillCategory.Event, Operation = SkillOperation.Query,
+            Tags = new[] { "event", "list", "fields", "component" },
+            Outputs = new[] { "component", "count", "events" },
+            RequiresInput = new[] { "gameObject", "componentName" },
+            ReadOnly = true)]
         public static object EventListEvents(string name = null, int instanceId = 0, string path = null, string componentName = null)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -326,7 +356,11 @@ namespace UnitySkills
             return new { success = true, component = componentName, count = events.Length, events };
         }
 
-        [UnitySkill("event_add_listener_batch", "Add multiple listeners at once. items: JSON array of {targetObjectName, targetComponentName, methodName}", TracksWorkflow = true)]
+        [UnitySkill("event_add_listener_batch", "Add multiple listeners at once. items: JSON array of {targetObjectName, targetComponentName, methodName}", TracksWorkflow = true,
+            Category = SkillCategory.Event, Operation = SkillOperation.Modify,
+            Tags = new[] { "event", "listener", "batch", "bulk" },
+            Outputs = new[] { "added", "total" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName", "items" })]
         public static object EventAddListenerBatch(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null, string items = null)
         {
             var list = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BatchListenerItem>>(items);
@@ -348,7 +382,11 @@ namespace UnitySkills
             public string methodName { get; set; }
         }
 
-        [UnitySkill("event_copy_listeners", "Copy listeners from one event to another", TracksWorkflow = true)]
+        [UnitySkill("event_copy_listeners", "Copy listeners from one event to another", TracksWorkflow = true,
+            Category = SkillCategory.Event, Operation = SkillOperation.Modify,
+            Tags = new[] { "event", "copy", "listeners", "duplicate" },
+            Outputs = new[] { "copied" },
+            RequiresInput = new[] { "sourceObject", "sourceComponent", "sourceEvent", "targetObject", "targetComponent", "targetEvent" })]
         public static object EventCopyListeners(string sourceObject, string sourceComponent, string sourceEvent,
             string targetObject, string targetComponent, string targetEvent)
         {
@@ -376,7 +414,12 @@ namespace UnitySkills
             return new { success = true, copied };
         }
 
-        [UnitySkill("event_get_listener_count", "Get the number of persistent listeners on a UnityEvent")]
+        [UnitySkill("event_get_listener_count", "Get the number of persistent listeners on a UnityEvent",
+            Category = SkillCategory.Event, Operation = SkillOperation.Query,
+            Tags = new[] { "event", "listener", "count" },
+            Outputs = new[] { "count" },
+            RequiresInput = new[] { "gameObject", "componentName", "eventName" },
+            ReadOnly = true)]
         public static object EventGetListenerCount(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null)
         {
             var (evt, comp, err) = FindEvent(name, instanceId, path, componentName, eventName);

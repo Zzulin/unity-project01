@@ -28,7 +28,10 @@ namespace UnitySkills
         // Shape Creation
         // ==================================================================================
 
-        [UnitySkill("probuilder_create_shape", "Create a ProBuilder primitive shape (Cube/Sphere/Cylinder/Cone/Torus/Prism/Arch/Pipe/Stairs/Door/Plane)", TracksWorkflow = true)]
+        [UnitySkill("probuilder_create_shape", "Create a ProBuilder primitive shape (Cube/Sphere/Cylinder/Cone/Torus/Prism/Arch/Pipe/Stairs/Door/Plane)", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Create,
+            Tags = new[] { "probuilder", "shape", "primitive", "mesh", "modeling" },
+            Outputs = new[] { "success", "name", "instanceId", "shape", "vertexCount", "faceCount" })]
         public static object ProBuilderCreateShape(
             string shape = "Cube",
             string name = null,
@@ -70,7 +73,11 @@ namespace UnitySkills
         // Face Operations
         // ==================================================================================
 
-        [UnitySkill("probuilder_extrude_faces", "Extrude faces on a ProBuilder mesh (method: IndividualFaces/FaceNormal/VertexNormal)", TracksWorkflow = true)]
+        [UnitySkill("probuilder_extrude_faces", "Extrude faces on a ProBuilder mesh (method: IndividualFaces/FaceNormal/VertexNormal)", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "extrude", "face", "modeling" },
+            Outputs = new[] { "success", "extrudedFaceCount", "totalFaces", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderExtrudeFaces(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null,
@@ -112,7 +119,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_delete_faces", "Delete faces from a ProBuilder mesh by index", TracksWorkflow = true)]
+        [UnitySkill("probuilder_delete_faces", "Delete faces from a ProBuilder mesh by index", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Delete,
+            Tags = new[] { "probuilder", "delete", "face", "modeling" },
+            Outputs = new[] { "success", "deletedCount", "remainingFaces", "remainingVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderDeleteFaces(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null)
@@ -156,7 +167,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_merge_faces", "Merge multiple faces into a single face on a ProBuilder mesh", TracksWorkflow = true)]
+        [UnitySkill("probuilder_merge_faces", "Merge multiple faces into a single face on a ProBuilder mesh", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "merge", "face", "combine" },
+            Outputs = new[] { "success", "mergedFromCount", "totalFaces", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderMergeFaces(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null)
@@ -193,7 +208,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_flip_normals", "Flip face normals on a ProBuilder mesh", TracksWorkflow = true)]
+        [UnitySkill("probuilder_flip_normals", "Flip face normals on a ProBuilder mesh", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "normals", "flip", "face" },
+            Outputs = new[] { "success", "flippedCount" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderFlipNormals(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null)
@@ -227,7 +246,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_detach_faces", "Detach faces from a ProBuilder mesh (creates independent faces or a new object)", TracksWorkflow = true)]
+        [UnitySkill("probuilder_detach_faces", "Detach faces from a ProBuilder mesh (creates independent faces or a new object)", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "detach", "face", "separate" },
+            Outputs = new[] { "success", "detachedFaceCount", "totalFaces", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderDetachFaces(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null,
@@ -268,7 +291,11 @@ namespace UnitySkills
         // Edge Operations
         // ==================================================================================
 
-        [UnitySkill("probuilder_bevel_edges", "Bevel (chamfer) edges on a ProBuilder mesh", TracksWorkflow = true)]
+        [UnitySkill("probuilder_bevel_edges", "Bevel (chamfer) edges on a ProBuilder mesh", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "bevel", "chamfer", "edge" },
+            Outputs = new[] { "success", "beveledEdgeCount", "newFaceCount", "totalFaces", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderBevelEdges(
             string name = null, int instanceId = 0, string path = null,
             string edgeIndexes = null,
@@ -322,7 +349,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_extrude_edges", "Extrude edges outward on a ProBuilder mesh to create walls, rails, or flanges", TracksWorkflow = true)]
+        [UnitySkill("probuilder_extrude_edges", "Extrude edges outward on a ProBuilder mesh to create walls, rails, or flanges", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "extrude", "edge", "wall" },
+            Outputs = new[] { "success", "extrudedEdgeCount", "newEdgeCount", "totalFaces", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderExtrudeEdges(
             string name = null, int instanceId = 0, string path = null,
             string edgeIndexes = null,
@@ -366,7 +397,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_bridge_edges", "Bridge two edges with a new face (create doorways, windows, connections)", TracksWorkflow = true)]
+        [UnitySkill("probuilder_bridge_edges", "Bridge two edges with a new face (create doorways, windows, connections)", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Create | SkillOperation.Modify,
+            Tags = new[] { "probuilder", "bridge", "edge", "connect" },
+            Outputs = new[] { "success", "bridgedEdge", "totalFaces", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderBridgeEdges(
             string name = null, int instanceId = 0, string path = null,
             string edgeA = null,
@@ -413,7 +448,11 @@ namespace UnitySkills
         // Mesh Operations
         // ==================================================================================
 
-        [UnitySkill("probuilder_subdivide", "Subdivide a ProBuilder mesh or selected faces", TracksWorkflow = true)]
+        [UnitySkill("probuilder_subdivide", "Subdivide a ProBuilder mesh or selected faces", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "subdivide", "mesh", "detail" },
+            Outputs = new[] { "success", "totalFaces", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderSubdivide(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null)
@@ -458,7 +497,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_conform_normals", "Make all face normals on a ProBuilder mesh point consistently outward", TracksWorkflow = true)]
+        [UnitySkill("probuilder_conform_normals", "Make all face normals on a ProBuilder mesh point consistently outward", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "normals", "conform", "consistency" },
+            Outputs = new[] { "success", "status", "faceCount" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderConformNormals(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null)
@@ -493,7 +536,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_weld_vertices", "Weld (merge) nearby vertices within a radius on a ProBuilder mesh", TracksWorkflow = true)]
+        [UnitySkill("probuilder_weld_vertices", "Weld (merge) nearby vertices within a radius on a ProBuilder mesh", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "weld", "vertex", "merge" },
+            Outputs = new[] { "success", "inputVertexCount", "weldedVertexCount", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderWeldVertices(
             string name = null, int instanceId = 0, string path = null,
             string vertexIndexes = null,
@@ -541,7 +588,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_set_face_material", "Set material on specific faces of a ProBuilder mesh", TracksWorkflow = true)]
+        [UnitySkill("probuilder_set_face_material", "Set material on specific faces of a ProBuilder mesh", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "material", "face", "submesh" },
+            Outputs = new[] { "success", "affectedFaces", "materialCount" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderSetFaceMaterial(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null,
@@ -623,7 +674,12 @@ namespace UnitySkills
         // Info & Transform
         // ==================================================================================
 
-        [UnitySkill("probuilder_get_info", "Get ProBuilder mesh info (vertices, faces, edges, materials, bounds)")]
+        [UnitySkill("probuilder_get_info", "Get ProBuilder mesh info (vertices, faces, edges, materials, bounds)",
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Query,
+            Tags = new[] { "probuilder", "info", "mesh", "topology" },
+            Outputs = new[] { "vertexCount", "faceCount", "edgeCount", "triangleCount", "shapeType", "bounds" },
+            RequiresInput = new[] { "proBuilderMesh" },
+            ReadOnly = true)]
         public static object ProBuilderGetInfo(
             string name = null, int instanceId = 0, string path = null)
         {
@@ -668,7 +724,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_center_pivot", "Center pivot or set pivot to a world position on a ProBuilder mesh", TracksWorkflow = true)]
+        [UnitySkill("probuilder_center_pivot", "Center pivot or set pivot to a world position on a ProBuilder mesh", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "pivot", "center", "transform" },
+            Outputs = new[] { "success", "pivot" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderCenterPivot(
             string name = null, int instanceId = 0, string path = null,
             float? worldX = null, float? worldY = null, float? worldZ = null)
@@ -712,7 +772,11 @@ namespace UnitySkills
         // UV Operations
         // ==================================================================================
 
-        [UnitySkill("probuilder_project_uv", "Project UVs onto ProBuilder mesh faces using box projection", TracksWorkflow = true)]
+        [UnitySkill("probuilder_project_uv", "Project UVs onto ProBuilder mesh faces using box projection", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "uv", "projection", "texture" },
+            Outputs = new[] { "success", "projectedFaceCount", "channel", "method" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderProjectUV(
             string name = null, int instanceId = 0, string path = null,
             string faceIndexes = null,
@@ -838,7 +902,10 @@ namespace UnitySkills
         // Batch & Level Design
         // ==================================================================================
 
-        [UnitySkill("probuilder_create_batch", "Batch create multiple ProBuilder shapes in one call. items: JSON array of {shape, name, x, y, z, sizeX, sizeY, sizeZ, rotX, rotY, rotZ, parent, materialPath}", TracksWorkflow = true)]
+        [UnitySkill("probuilder_create_batch", "Batch create multiple ProBuilder shapes in one call. items: JSON array of {shape, name, x, y, z, sizeX, sizeY, sizeZ, rotX, rotY, rotZ, parent, materialPath}", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Create,
+            Tags = new[] { "probuilder", "batch", "create", "level-design" },
+            Outputs = new[] { "success", "results" })]
         public static object ProBuilderCreateBatch(string items, string defaultParent = null)
         {
 #if !PROBUILDER
@@ -893,7 +960,11 @@ namespace UnitySkills
             public string materialPath { get; set; }
         }
 
-        [UnitySkill("probuilder_move_vertices", "Move vertices of a ProBuilder mesh by index. Use to create ramps, slopes, and custom shapes from primitives", TracksWorkflow = true)]
+        [UnitySkill("probuilder_move_vertices", "Move vertices of a ProBuilder mesh by index. Use to create ramps, slopes, and custom shapes from primitives", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "vertex", "move", "deform" },
+            Outputs = new[] { "success", "movedVertexCount", "delta", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderMoveVertices(
             string name = null, int instanceId = 0, string path = null,
             string vertexIndexes = null,
@@ -941,7 +1012,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_set_vertices", "Set absolute positions of specific vertices on a ProBuilder mesh. vertices: JSON array of {index, x, y, z}", TracksWorkflow = true)]
+        [UnitySkill("probuilder_set_vertices", "Set absolute positions of specific vertices on a ProBuilder mesh. vertices: JSON array of {index, x, y, z}", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "vertex", "position", "absolute" },
+            Outputs = new[] { "success", "setVertexCount", "totalVertices" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderSetVertices(
             string name = null, int instanceId = 0, string path = null,
             string vertices = null)
@@ -993,7 +1068,12 @@ namespace UnitySkills
             public float z { get; set; }
         }
 
-        [UnitySkill("probuilder_get_vertices", "Get vertex positions of a ProBuilder mesh (all or by index). Essential for understanding mesh topology before vertex edits")]
+        [UnitySkill("probuilder_get_vertices", "Get vertex positions of a ProBuilder mesh (all or by index). Essential for understanding mesh topology before vertex edits",
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Query,
+            Tags = new[] { "probuilder", "vertex", "position", "topology" },
+            Outputs = new[] { "vertexCount", "faceCount", "vertices" },
+            RequiresInput = new[] { "proBuilderMesh" },
+            ReadOnly = true)]
         public static object ProBuilderGetVertices(
             string name = null, int instanceId = 0, string path = null,
             string vertexIndexes = null, bool verbose = true)
@@ -1046,7 +1126,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_combine_meshes", "Combine multiple ProBuilder meshes into one (for optimization). Provide comma-separated names or 'selected' for Selection", TracksWorkflow = true)]
+        [UnitySkill("probuilder_combine_meshes", "Combine multiple ProBuilder meshes into one (for optimization). Provide comma-separated names or 'selected' for Selection", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify | SkillOperation.Delete,
+            Tags = new[] { "probuilder", "combine", "merge", "optimization" },
+            Outputs = new[] { "success", "combinedCount", "vertexCount", "faceCount" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderCombineMeshes(string names = null)
         {
 #if !PROBUILDER
@@ -1107,7 +1191,11 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("probuilder_set_material", "Set material on an entire ProBuilder mesh (all faces). Quick way to color objects", TracksWorkflow = true)]
+        [UnitySkill("probuilder_set_material", "Set material on an entire ProBuilder mesh (all faces). Quick way to color objects", TracksWorkflow = true,
+            Category = SkillCategory.ProBuilder, Operation = SkillOperation.Modify,
+            Tags = new[] { "probuilder", "material", "color", "appearance" },
+            Outputs = new[] { "success", "material", "color" },
+            RequiresInput = new[] { "proBuilderMesh" })]
         public static object ProBuilderSetMaterial(
             string name = null, int instanceId = 0, string path = null,
             string materialPath = null,

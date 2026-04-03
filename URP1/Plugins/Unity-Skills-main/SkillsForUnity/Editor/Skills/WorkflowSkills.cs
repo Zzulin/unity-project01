@@ -24,7 +24,10 @@ namespace UnitySkills
             public System.DateTime createdAt;
         }
 
-        [UnitySkill("bookmark_set", "Save current selection and scene view position as a bookmark")]
+        [UnitySkill("bookmark_set", "Save current selection and scene view position as a bookmark",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Create,
+            Tags = new[] { "bookmark", "selection", "scene-view", "save" },
+            Outputs = new[] { "bookmark", "selectedCount", "hasSceneView" })]
         public static object BookmarkSet(string bookmarkName, string note = null)
         {
             if (string.IsNullOrEmpty(bookmarkName))
@@ -58,7 +61,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("bookmark_goto", "Restore selection and scene view from a bookmark")]
+        [UnitySkill("bookmark_goto", "Restore selection and scene view from a bookmark",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "bookmark", "selection", "restore", "navigate" },
+            Outputs = new[] { "bookmark", "restoredSelection", "note" },
+            RequiresInput = new[] { "bookmarkName" })]
         public static object BookmarkGoto(string bookmarkName)
         {
             if (!_bookmarks.TryGetValue(bookmarkName, out var bookmark))
@@ -94,7 +101,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("bookmark_list", "List all saved bookmarks")]
+        [UnitySkill("bookmark_list", "List all saved bookmarks",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
+            Tags = new[] { "bookmark", "list", "overview" },
+            Outputs = new[] { "count", "bookmarks" },
+            ReadOnly = true)]
         public static object BookmarkList()
         {
             var list = _bookmarks.Select(kv => new
@@ -109,7 +120,11 @@ namespace UnitySkills
             return new { success = true, count = list.Count, bookmarks = list };
         }
 
-        [UnitySkill("bookmark_delete", "Delete a bookmark")]
+        [UnitySkill("bookmark_delete", "Delete a bookmark",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Delete,
+            Tags = new[] { "bookmark", "delete", "remove" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "bookmarkName" })]
         public static object BookmarkDelete(string bookmarkName)
         {
             if (_bookmarks.Remove(bookmarkName))
@@ -117,7 +132,10 @@ namespace UnitySkills
             return new { success = false, error = $"Bookmark '{bookmarkName}' not found" };
         }
 
-        [UnitySkill("history_undo", "Undo the last operation (or multiple steps)")]
+        [UnitySkill("history_undo", "Undo the last operation (or multiple steps)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "undo", "history", "revert" },
+            Outputs = new[] { "undoneSteps" })]
         public static object HistoryUndo(int steps = 1)
         {
             if (steps < 1)
@@ -129,7 +147,10 @@ namespace UnitySkills
             return new { success = true, undoneSteps = steps };
         }
 
-        [UnitySkill("history_redo", "Redo the last undone operation (or multiple steps)")]
+        [UnitySkill("history_redo", "Redo the last undone operation (or multiple steps)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "redo", "history", "restore" },
+            Outputs = new[] { "redoneSteps" })]
         public static object HistoryRedo(int steps = 1)
         {
             if (steps < 1)
@@ -141,7 +162,11 @@ namespace UnitySkills
             return new { success = true, redoneSteps = steps };
         }
 
-        [UnitySkill("history_get_current", "Get the name of the current undo group")]
+        [UnitySkill("history_get_current", "Get the name of the current undo group",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
+            Tags = new[] { "undo", "history", "current", "group" },
+            Outputs = new[] { "currentGroup", "groupIndex" },
+            ReadOnly = true)]
         public static object HistoryGetCurrent()
         {
             return new
@@ -154,7 +179,10 @@ namespace UnitySkills
 
         // --- Persistent Workflow Skills ---
 
-        [UnitySkill("workflow_task_start", "Start a new persistent workflow task to track changes for undo. Call workflow_task_end when done.")]
+        [UnitySkill("workflow_task_start", "Start a new persistent workflow task to track changes for undo. Call workflow_task_end when done.",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "task", "undo", "tracking", "transaction" },
+            Outputs = new[] { "taskId", "message" })]
         public static object WorkflowTaskStart(string tag, string description = "")
         {
             var task = WorkflowManager.BeginTask(tag, description);
@@ -166,7 +194,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("workflow_task_end", "End the current workflow task and save it. Requires an active task (call workflow_task_start first).")]
+        [UnitySkill("workflow_task_end", "End the current workflow task and save it. Requires an active task (call workflow_task_start first).",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "task", "undo", "tracking", "save" },
+            Outputs = new[] { "taskId", "snapshotCount", "message" })]
         public static object WorkflowTaskEnd()
         {
             if (!WorkflowManager.IsRecording)
@@ -186,7 +217,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("workflow_snapshot_object", "Manually snapshot an object's state before modification. Requires an active task (call workflow_task_start first).")]
+        [UnitySkill("workflow_snapshot_object", "Manually snapshot an object's state before modification. Requires an active task (call workflow_task_start first).",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "snapshot", "undo", "object", "state" },
+            Outputs = new[] { "objectName", "type" },
+            RequiresInput = new[] { "gameObject" })]
         public static object WorkflowSnapshotObject(string name = null, int instanceId = 0)
         {
             if (!WorkflowManager.IsRecording)
@@ -205,7 +240,11 @@ namespace UnitySkills
             return new { success = true, objectName = target.name, type = target.GetType().Name };
         }
 
-        [UnitySkill("workflow_list", "List persistent workflow history")]
+        [UnitySkill("workflow_list", "List persistent workflow history",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
+            Tags = new[] { "workflow", "history", "list", "task" },
+            Outputs = new[] { "count", "history" },
+            ReadOnly = true)]
         public static object WorkflowList()
         {
             var history = WorkflowManager.History;
@@ -221,14 +260,21 @@ namespace UnitySkills
             return new { success = true, count = list.Count, history = list };
         }
 
-        [UnitySkill("workflow_undo_task", "Undo changes from a specific task (restore to previous state)")]
+        [UnitySkill("workflow_undo_task", "Undo changes from a specific task (restore to previous state)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "undo", "task", "revert", "restore" },
+            Outputs = new[] { "taskId" },
+            RequiresInput = new[] { "taskId" })]
         public static object WorkflowUndoTask(string taskId)
         {
             bool result = WorkflowManager.UndoTask(taskId);
             return new { success = result, taskId = taskId };
         }
 
-        [UnitySkill("workflow_redo_task", "Redo a previously undone task (restore changes)")]
+        [UnitySkill("workflow_redo_task", "Redo a previously undone task (restore changes)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "redo", "task", "restore", "changes" },
+            Outputs = new[] { "taskId" })]
         public static object WorkflowRedoTask(string taskId = null)
         {
             // If no taskId provided, redo the most recent undone task
@@ -244,7 +290,11 @@ namespace UnitySkills
             return new { success = result, taskId = taskId };
         }
 
-        [UnitySkill("workflow_undone_list", "List all undone tasks that can be redone")]
+        [UnitySkill("workflow_undone_list", "List all undone tasks that can be redone",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
+            Tags = new[] { "undo", "redo", "list", "history" },
+            Outputs = new[] { "count", "undoneStack" },
+            ReadOnly = true)]
         public static object WorkflowUndoneList()
         {
             var undoneStack = WorkflowManager.GetUndoneStack();
@@ -260,13 +310,21 @@ namespace UnitySkills
             return new { success = true, count = list.Count, undoneStack = list };
         }
 
-        [UnitySkill("workflow_revert_task", "Alias for workflow_undo_task (deprecated, use workflow_undo_task instead)")]
+        [UnitySkill("workflow_revert_task", "Alias for workflow_undo_task (deprecated, use workflow_undo_task instead)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "undo", "task", "revert", "deprecated" },
+            Outputs = new[] { "taskId" },
+            RequiresInput = new[] { "taskId" })]
         public static object WorkflowRevertTask(string taskId)
         {
             return WorkflowUndoTask(taskId);
         }
 
-        [UnitySkill("workflow_snapshot_created", "Record a newly created object for undo tracking. Requires an active task (call workflow_task_start first).")]
+        [UnitySkill("workflow_snapshot_created", "Record a newly created object for undo tracking. Requires an active task (call workflow_task_start first).",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "snapshot", "undo", "created", "tracking" },
+            Outputs = new[] { "objectName", "type" },
+            RequiresInput = new[] { "gameObject" })]
         public static object WorkflowSnapshotCreated(string name = null, int instanceId = 0)
         {
             if (!WorkflowManager.IsRecording)
@@ -289,7 +347,11 @@ namespace UnitySkills
             return new { success = true, objectName = target.name, type = target.GetType().Name };
         }
 
-        [UnitySkill("workflow_delete_task", "Delete a task from history (does not revert changes)")]
+        [UnitySkill("workflow_delete_task", "Delete a task from history (does not revert changes)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Delete,
+            Tags = new[] { "task", "delete", "history", "cleanup" },
+            Outputs = new[] { "deletedId" },
+            RequiresInput = new[] { "taskId" })]
         public static object WorkflowDeleteTask(string taskId)
         {
             WorkflowManager.DeleteTask(taskId);
@@ -298,7 +360,10 @@ namespace UnitySkills
 
         // --- Session Management (Conversation-Level Undo) ---
 
-        [UnitySkill("workflow_session_start", "Start a new session (conversation-level). All changes will be tracked and can be undone together.")]
+        [UnitySkill("workflow_session_start", "Start a new session (conversation-level). All changes will be tracked and can be undone together.",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "session", "conversation", "tracking", "start" },
+            Outputs = new[] { "sessionId", "message" })]
         public static object WorkflowSessionStart(string tag = null)
         {
             string sessionId = WorkflowManager.BeginSession(tag);
@@ -310,7 +375,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("workflow_session_end", "End the current session and save all tracked changes.")]
+        [UnitySkill("workflow_session_end", "End the current session and save all tracked changes.",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "session", "conversation", "tracking", "end" },
+            Outputs = new[] { "sessionId", "message" })]
         public static object WorkflowSessionEnd()
         {
             if (!WorkflowManager.HasActiveSession)
@@ -326,7 +394,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("workflow_session_undo", "Undo all changes made during a specific session (conversation-level undo)")]
+        [UnitySkill("workflow_session_undo", "Undo all changes made during a specific session (conversation-level undo)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Execute,
+            Tags = new[] { "session", "undo", "conversation", "revert" },
+            Outputs = new[] { "sessionId", "message" })]
         public static object WorkflowSessionUndo(string sessionId = null)
         {
             // If no sessionId provided, try to get the most recent session
@@ -347,7 +418,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("workflow_session_list", "List all recorded sessions (conversation-level history)")]
+        [UnitySkill("workflow_session_list", "List all recorded sessions (conversation-level history)",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
+            Tags = new[] { "session", "list", "history", "conversation" },
+            Outputs = new[] { "count", "currentSessionId", "sessions" },
+            ReadOnly = true)]
         public static object WorkflowSessionList()
         {
             var sessions = WorkflowManager.GetSessions();
@@ -368,7 +443,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("workflow_session_status", "Get the current session status")]
+        [UnitySkill("workflow_session_status", "Get the current session status",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
+            Tags = new[] { "session", "status", "current", "recording" },
+            Outputs = new[] { "hasActiveSession", "currentSessionId", "isRecording", "currentTaskId" },
+            ReadOnly = true)]
         public static object WorkflowSessionStatus()
         {
             return new

@@ -22,7 +22,10 @@ namespace UnitySkills
             public System.DateTime time;
         }
 
-        [UnitySkill("console_start_capture", "Start capturing console logs")]
+        [UnitySkill("console_start_capture", "Start capturing console logs",
+            Category = SkillCategory.Console, Operation = SkillOperation.Execute,
+            Tags = new[] { "console", "capture", "logs", "start" },
+            Outputs = new[] { "message" })]
         public static object ConsoleStartCapture()
         {
             if (!_capturing)
@@ -34,7 +37,10 @@ namespace UnitySkills
             return new { success = true, message = "Console capture started" };
         }
 
-        [UnitySkill("console_stop_capture", "Stop capturing console logs")]
+        [UnitySkill("console_stop_capture", "Stop capturing console logs",
+            Category = SkillCategory.Console, Operation = SkillOperation.Execute,
+            Tags = new[] { "console", "capture", "logs", "stop" },
+            Outputs = new[] { "message", "capturedCount" })]
         public static object ConsoleStopCapture()
         {
             if (_capturing)
@@ -47,7 +53,11 @@ namespace UnitySkills
             return new { success = true, message = "Console capture stopped", capturedCount = count };
         }
 
-        [UnitySkill("console_get_logs", "Get Unity Console logs. Reads existing console history directly (no setup needed). Use type=All/Error/Warning/Log to filter. When console_start_capture is active, returns captured logs with timestamps instead.")]
+        [UnitySkill("console_get_logs", "Get Unity Console logs. Reads existing console history directly (no setup needed). Use type=All/Error/Warning/Log to filter. When console_start_capture is active, returns captured logs with timestamps instead.",
+            Category = SkillCategory.Console, Operation = SkillOperation.Query,
+            Tags = new[] { "console", "logs", "filter", "errors" },
+            Outputs = new[] { "count", "logs", "source" },
+            ReadOnly = true)]
         public static object ConsoleGetLogs(string type = "All", string filter = null, int limit = 100)
         {
             if (_capturing)
@@ -93,7 +103,10 @@ namespace UnitySkills
             }
         }
 
-        [UnitySkill("console_clear", "Clear the Unity console")]
+        [UnitySkill("console_clear", "Clear the Unity console",
+            Category = SkillCategory.Console, Operation = SkillOperation.Execute,
+            Tags = new[] { "console", "clear", "logs" },
+            Outputs = new[] { "message" })]
         public static object ConsoleClear()
         {
             var assembly = System.Reflection.Assembly.GetAssembly(typeof(SceneView));
@@ -105,7 +118,10 @@ namespace UnitySkills
             return new { success = true, message = "Console cleared" };
         }
 
-        [UnitySkill("console_log", "Write a message to the console")]
+        [UnitySkill("console_log", "Write a message to the console",
+            Category = SkillCategory.Console, Operation = SkillOperation.Execute,
+            Tags = new[] { "console", "log", "debug", "message" },
+            Outputs = new[] { "logged" })]
         public static object ConsoleLog(string message, string type = "log")
         {
             switch (type.ToLower())
@@ -141,7 +157,10 @@ namespace UnitySkills
             }
         }
 
-        [UnitySkill("console_set_pause_on_error", "Enable or disable Error Pause in Play mode", TracksWorkflow = true)]
+        [UnitySkill("console_set_pause_on_error", "Enable or disable Error Pause in Play mode", TracksWorkflow = true,
+            Category = SkillCategory.Console, Operation = SkillOperation.Modify,
+            Tags = new[] { "console", "pause", "error", "playmode" },
+            Outputs = new[] { "enabled" })]
         public static object ConsoleSetPauseOnError(bool enabled = true)
         {
             var consoleType = System.Type.GetType("UnityEditor.ConsoleWindow, UnityEditor");
@@ -154,7 +173,10 @@ namespace UnitySkills
             return new { success = true, enabled };
         }
 
-        [UnitySkill("console_export", "Export console logs to a file. Uses captured buffer when console_start_capture is active; otherwise reads directly from Unity Console history (no setup needed).")]
+        [UnitySkill("console_export", "Export console logs to a file. Uses captured buffer when console_start_capture is active; otherwise reads directly from Unity Console history (no setup needed).",
+            Category = SkillCategory.Console, Operation = SkillOperation.Execute,
+            Tags = new[] { "console", "export", "file", "logs" },
+            Outputs = new[] { "path", "count", "source" })]
         public static object ConsoleExport(string savePath = "Assets/console_log.txt")
         {
             if (Validate.SafePath(savePath, "savePath") is object pathErr) return pathErr;
@@ -179,7 +201,11 @@ namespace UnitySkills
             return new { success = true, path = savePath, count = entries.Count, source = "console" };
         }
 
-        [UnitySkill("console_get_stats", "Get log statistics (count by type). Uses captured buffer when console_start_capture is active; otherwise reads directly from Unity Console history.")]
+        [UnitySkill("console_get_stats", "Get log statistics (count by type). Uses captured buffer when console_start_capture is active; otherwise reads directly from Unity Console history.",
+            Category = SkillCategory.Console, Operation = SkillOperation.Query,
+            Tags = new[] { "console", "stats", "count", "summary" },
+            Outputs = new[] { "total", "logs", "warnings", "errors", "source" },
+            ReadOnly = true)]
         public static object ConsoleGetStats()
         {
             if (_capturing || _logs.Count > 0)
@@ -214,13 +240,19 @@ namespace UnitySkills
             return new { success = true, total = entries.Count, source = "console", logs = logCount, warnings = warnCount, errors = errCount };
         }
 
-        [UnitySkill("console_set_collapse", "Set console log collapse mode", TracksWorkflow = true)]
+        [UnitySkill("console_set_collapse", "Set console log collapse mode", TracksWorkflow = true,
+            Category = SkillCategory.Console, Operation = SkillOperation.Modify,
+            Tags = new[] { "console", "collapse", "settings" },
+            Outputs = new[] { "setting", "enabled" })]
         public static object ConsoleSetCollapse(bool enabled)
         {
             return SetConsoleFlag(32, enabled, "Collapse");
         }
 
-        [UnitySkill("console_set_clear_on_play", "Set clear on play mode", TracksWorkflow = true)]
+        [UnitySkill("console_set_clear_on_play", "Set clear on play mode", TracksWorkflow = true,
+            Category = SkillCategory.Console, Operation = SkillOperation.Modify,
+            Tags = new[] { "console", "clear", "playmode", "settings" },
+            Outputs = new[] { "setting", "enabled" })]
         public static object ConsoleSetClearOnPlay(bool enabled)
         {
             return SetConsoleFlag(16, enabled, "ClearOnPlay");

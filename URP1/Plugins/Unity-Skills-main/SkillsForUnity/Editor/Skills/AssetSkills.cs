@@ -11,7 +11,11 @@ namespace UnitySkills
     /// </summary>
     public static class AssetSkills
     {
-        [UnitySkill("asset_import", "Import an asset from external path", TracksWorkflow = true)]
+        [UnitySkill("asset_import", "Import an asset from external path",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Create,
+            Tags = new[] { "import", "copy", "external" },
+            Outputs = new[] { "imported", "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetImport(string sourcePath, string destinationPath)
         {
             if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
@@ -54,7 +58,12 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("asset_delete", "Delete an asset", TracksWorkflow = true)]
+        [UnitySkill("asset_delete", "Delete an asset",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Delete,
+            Tags = new[] { "delete", "remove", "cleanup" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetDelete(string assetPath)
         {
             if (Validate.SafePath(assetPath, "assetPath", isDelete: true) is object err) return err;
@@ -90,7 +99,12 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("asset_move", "Move or rename an asset", TracksWorkflow = true)]
+        [UnitySkill("asset_move", "Move or rename an asset",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Modify,
+            Tags = new[] { "move", "rename", "reorganize" },
+            Outputs = new[] { "from", "to" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetMove(string sourcePath, string destinationPath)
         {
             if (Validate.SafePath(sourcePath, "sourcePath") is object err1) return err1;
@@ -128,7 +142,11 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("asset_import_batch", "Import multiple assets. items: JSON array of {sourcePath, destinationPath}", TracksWorkflow = true)]
+        [UnitySkill("asset_import_batch", "Import multiple assets. items: JSON array of {sourcePath, destinationPath}",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Create,
+            Tags = new[] { "import", "copy", "external", "batch" },
+            Outputs = new[] { "imported", "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetImportBatch(string items)
         {
             return BatchExecutor.Execute<BatchImportItem>(items, item =>
@@ -167,7 +185,12 @@ namespace UnitySkills
 
         private class BatchImportItem { public string sourcePath; public string destinationPath; }
 
-        [UnitySkill("asset_delete_batch", "Delete multiple assets. items: JSON array of {path}", TracksWorkflow = true)]
+        [UnitySkill("asset_delete_batch", "Delete multiple assets. items: JSON array of {path}",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Delete,
+            Tags = new[] { "delete", "remove", "cleanup", "batch" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetDeleteBatch(string items)
         {
             return BatchExecutor.Execute<BatchDeleteItem>(items, item =>
@@ -199,7 +222,12 @@ namespace UnitySkills
 
         private class BatchDeleteItem { public string path; }
 
-        [UnitySkill("asset_move_batch", "Move multiple assets. items: JSON array of {sourcePath, destinationPath}", TracksWorkflow = true)]
+        [UnitySkill("asset_move_batch", "Move multiple assets. items: JSON array of {sourcePath, destinationPath}",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Modify,
+            Tags = new[] { "move", "rename", "reorganize", "batch" },
+            Outputs = new[] { "from", "to" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetMoveBatch(string items)
         {
             return BatchExecutor.Execute<BatchMoveItem>(items, item =>
@@ -238,7 +266,12 @@ namespace UnitySkills
 
         private class BatchMoveItem { public string sourcePath; public string destinationPath; }
 
-        [UnitySkill("asset_duplicate", "Duplicate an asset", TracksWorkflow = true)]
+        [UnitySkill("asset_duplicate", "Duplicate an asset",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Create,
+            Tags = new[] { "duplicate", "copy", "clone" },
+            Outputs = new[] { "original", "copy" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object AssetDuplicate(string assetPath)
         {
             if (Validate.SafePath(assetPath, "assetPath") is object err) return err;
@@ -274,7 +307,11 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("asset_find", "Find assets by name, type, or label")]
+        [UnitySkill("asset_find", "Find assets by name, type, or label",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Query,
+            Tags = new[] { "search", "filter", "database" },
+            Outputs = new[] { "count", "assets", "assetPath" },
+            ReadOnly = true)]
         public static object AssetFind(string searchFilter, int limit = 50)
         {
             var guids = AssetDatabase.FindAssets(searchFilter);
@@ -293,7 +330,11 @@ namespace UnitySkills
             return new { count = results.Length, totalFound = guids.Length, assets = results };
         }
 
-        [UnitySkill("asset_create_folder", "Create a new folder in Assets", TracksWorkflow = true)]
+        [UnitySkill("asset_create_folder", "Create a new folder in Assets",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Create,
+            Tags = new[] { "folder", "directory", "organize" },
+            Outputs = new[] { "path", "guid" },
+            TracksWorkflow = true)]
         public static object AssetCreateFolder(string folderPath)
         {
             if (Validate.SafePath(folderPath, "folderPath") is object pathErr) return pathErr;
@@ -310,7 +351,10 @@ namespace UnitySkills
             return new { success = true, path = folderPath, guid };
         }
 
-        [UnitySkill("asset_refresh", "Refresh the Asset Database")]
+        [UnitySkill("asset_refresh", "Refresh the Asset Database",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Execute,
+            Tags = new[] { "refresh", "reimport", "database" },
+            Outputs = new[] { "message" })]
         public static object AssetRefresh()
         {
             AssetDatabase.Refresh();
@@ -329,7 +373,12 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("asset_get_info", "Get information about an asset")]
+        [UnitySkill("asset_get_info", "Get information about an asset",
+            Category = SkillCategory.Asset, Operation = SkillOperation.Query,
+            Tags = new[] { "info", "metadata", "inspect" },
+            Outputs = new[] { "assetPath", "name", "type", "guid", "labels" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object AssetGetInfo(string assetPath)
         {
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);

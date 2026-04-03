@@ -111,8 +111,17 @@ namespace UnitySkills
     /// </summary>
     public static class GameObjectFinder
     {
-        // Request-level cache for GetAllSceneObjects - invalidated after each request via InvalidateCache()
-        private static List<GameObject> _cachedSceneObjects;
+        private sealed class SceneObjectCache
+        {
+            public readonly List<GameObject> Objects = new List<GameObject>();
+            public readonly Dictionary<int, string> PathsByInstanceId = new Dictionary<int, string>();
+            public readonly Dictionary<int, int> DepthsByInstanceId = new Dictionary<int, int>();
+            public readonly Dictionary<string, GameObject> PathLookup =
+                new Dictionary<string, GameObject>(System.StringComparer.OrdinalIgnoreCase);
+        }
+
+        // Request-level cache for scene traversal metadata - invalidated after each request via InvalidateCache()
+        private static SceneObjectCache _cachedSceneData;
         private static bool _cacheValid = false;
 
         /// <summary>
@@ -120,36 +129,110 @@ namespace UnitySkills
         /// </summary>
         public static void InvalidateCache()
         {
-            _cachedSceneObjects = null;
+            _cachedSceneData = null;
             _cacheValid = false;
         }
 
         /// <summary>
-        /// Efficiently iterate all GameObjects in scene using root traversal (faster than FindObjectsOfType).
-        /// Results are cached per-frame to avoid repeated traversals within the same request.
+        /// Build and cache scene traversal metadata once per request.
         /// </summary>
-        private static IEnumerable<GameObject> GetAllSceneObjects()
+        private static SceneObjectCache GetOrBuildSceneCache()
         {
-            if (_cachedSceneObjects != null && _cacheValid)
-                return _cachedSceneObjects;
+            if (_cachedSceneData != null && _cacheValid)
+                return _cachedSceneData;
 
-            var result = new List<GameObject>();
+            var cache = new SceneObjectCache();
             var roots = GetLoadedSceneRoots();
-            var stack = new Stack<Transform>();
+            var stack = new Stack<(Transform transform, string path, string sceneName, int depth)>();
             foreach (var root in roots)
-                stack.Push(root.transform);
+                stack.Push((root.transform, root.name, root.scene.name, 0));
 
             while (stack.Count > 0)
             {
-                var t = stack.Pop();
-                result.Add(t.gameObject);
-                foreach (Transform child in t)
-                    stack.Push(child);
+                var (transform, path, sceneName, depth) = stack.Pop();
+                var gameObject = transform.gameObject;
+                var instanceId = gameObject.GetInstanceID();
+
+                cache.Objects.Add(gameObject);
+                cache.PathsByInstanceId[instanceId] = path;
+                cache.DepthsByInstanceId[instanceId] = depth;
+                AddPathLookup(cache.PathLookup, path, gameObject);
+
+                if (!string.IsNullOrEmpty(sceneName))
+                    AddPathLookup(cache.PathLookup, sceneName + "/" + path, gameObject);
+
+                foreach (Transform child in transform)
+                    stack.Push((child, path + "/" + child.name, sceneName, depth + 1));
             }
 
-            _cachedSceneObjects = result;
+            _cachedSceneData = cache;
             _cacheValid = true;
-            return result;
+            return cache;
+        }
+
+        /// <summary>
+        /// Efficiently iterate all GameObjects in scene using root traversal (faster than FindObjectsOfType).
+        /// Results are cached per request to avoid repeated traversals within the same skill execution.
+        /// </summary>
+        private static IEnumerable<GameObject> GetAllSceneObjects()
+        {
+            return GetOrBuildSceneCache().Objects;
+        }
+
+        /// <summary>
+        /// Get the cached scene object list for the current request.
+        /// </summary>
+        public static IReadOnlyList<GameObject> GetSceneObjects()
+        {
+            return GetOrBuildSceneCache().Objects;
+        }
+
+        /// <summary>
+        /// Get cached hierarchy depth for a scene object. Falls back to parent traversal for non-scene objects.
+        /// </summary>
+        public static int GetDepth(GameObject go)
+        {
+            if (go == null)
+                return 0;
+
+            var instanceId = go.GetInstanceID();
+            if (_cachedSceneData != null && _cacheValid &&
+                _cachedSceneData.DepthsByInstanceId.TryGetValue(instanceId, out var depth))
+                return depth;
+
+            depth = 0;
+            var parent = go.transform.parent;
+            while (parent != null)
+            {
+                depth++;
+                parent = parent.parent;
+            }
+
+            if (_cachedSceneData != null && _cacheValid)
+                _cachedSceneData.DepthsByInstanceId[instanceId] = depth;
+
+            return depth;
+        }
+
+        private static void AddPathLookup(Dictionary<string, GameObject> lookup, string path, GameObject go)
+        {
+            if (string.IsNullOrEmpty(path) || lookup.ContainsKey(path))
+                return;
+
+            lookup[path] = go;
+        }
+
+        private static string NormalizePathKey(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            var parts = path
+                .Split(new[] { '/' }, System.StringSplitOptions.RemoveEmptyEntries)
+                .Where(part => !string.IsNullOrWhiteSpace(part))
+                .ToArray();
+
+            return parts.Length == 0 ? null : string.Join("/", parts);
         }
 
         private static IEnumerable<GameObject> GetLoadedSceneRoots()
@@ -234,10 +317,15 @@ namespace UnitySkills
         /// </summary>
         public static GameObject FindByPath(string path)
         {
-            if (string.IsNullOrEmpty(path))
+            var normalizedPath = NormalizePathKey(path);
+            if (string.IsNullOrEmpty(normalizedPath))
                 return null;
 
-            var parts = path.Split(new[] { '/' }, System.StringSplitOptions.RemoveEmptyEntries);
+            var cache = GetOrBuildSceneCache();
+            if (cache.PathLookup.TryGetValue(normalizedPath, out var cachedGo))
+                return cachedGo;
+
+            var parts = normalizedPath.Split(new[] { '/' }, System.StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0)
                 return null;
 
@@ -380,6 +468,25 @@ namespace UnitySkills
                 path = parent.name + "/" + path;
                 parent = parent.parent;
             }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Get the full hierarchy path using the request-level cache. Prefer this for large read-only traversals.
+        /// </summary>
+        public static string GetCachedPath(GameObject go)
+        {
+            if (go == null)
+                return null;
+
+            var instanceId = go.GetInstanceID();
+            var cache = GetOrBuildSceneCache();
+            if (cache.PathsByInstanceId.TryGetValue(instanceId, out var cachedPath))
+                return cachedPath;
+
+            var path = GetPath(go);
+            cache.PathsByInstanceId[instanceId] = path;
             return path;
         }
 

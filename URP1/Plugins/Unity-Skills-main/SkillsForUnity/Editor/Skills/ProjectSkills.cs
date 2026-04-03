@@ -108,7 +108,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_get_info", "Get project information including render pipeline, Unity version, and settings")]
+        [UnitySkill("project_get_info", "Get project information including render pipeline, Unity version, and settings",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "info", "version", "render pipeline", "settings" },
+            Outputs = new[] { "unityVersion", "productName", "renderPipeline", "recommendedShaders", "projectPath", "isPlaying" },
+            ReadOnly = true)]
         public static object ProjectGetInfo()
         {
             var pipeline = DetectRenderPipeline();
@@ -139,7 +143,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_get_render_pipeline", "Get current render pipeline type and recommended shaders")]
+        [UnitySkill("project_get_render_pipeline", "Get current render pipeline type and recommended shaders",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "render pipeline", "shader", "urp", "hdrp" },
+            Outputs = new[] { "pipelineType", "pipelineName", "defaultShader", "unlitShader", "availableShaders" },
+            ReadOnly = true)]
         public static object ProjectGetRenderPipeline()
         {
             var pipeline = DetectRenderPipeline();
@@ -197,7 +205,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_list_shaders", "List all available shaders in the project")]
+        [UnitySkill("project_list_shaders", "List all available shaders in the project",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "shader", "list", "search" },
+            Outputs = new[] { "count", "shaders" },
+            ReadOnly = true)]
         public static object ProjectListShaders(string filter = null, int limit = 50)
         {
             var shaderNames = new List<string>();
@@ -254,7 +266,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_get_quality_settings", "Get current quality settings")]
+        [UnitySkill("project_get_quality_settings", "Get current quality settings",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "quality", "settings", "graphics" },
+            Outputs = new[] { "currentLevel", "currentName", "allLevels", "shadows", "antiAliasing" },
+            ReadOnly = true)]
         public static object ProjectGetQualitySettings()
         {
             var qualityNames = QualitySettings.names;
@@ -275,7 +291,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_get_build_settings", "Get build settings (platform, scenes)")]
+        [UnitySkill("project_get_build_settings", "Get build settings (platform, scenes)",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "build", "platform", "scenes" },
+            Outputs = new[] { "activeBuildTarget", "buildTargetGroup", "sceneCount", "scenes" },
+            ReadOnly = true)]
         public static object ProjectGetBuildSettings()
         {
             var scenes = EditorBuildSettings.scenes.Select((s, i) => new { index = i, path = s.path, enabled = s.enabled }).ToArray();
@@ -289,7 +309,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_get_packages", "List installed UPM packages")]
+        [UnitySkill("project_get_packages", "List installed UPM packages",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "packages", "upm", "manifest" },
+            Outputs = new[] { "manifest" },
+            ReadOnly = true)]
         public static object ProjectGetPackages()
         {
             var manifestPath = "Packages/manifest.json";
@@ -299,21 +323,33 @@ namespace UnitySkills
             return new { success = true, manifest };
         }
 
-        [UnitySkill("project_get_layers", "Get all Layer definitions")]
+        [UnitySkill("project_get_layers", "Get all Layer definitions",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "layers", "physics", "collision" },
+            Outputs = new[] { "count", "layers" },
+            ReadOnly = true)]
         public static object ProjectGetLayers()
         {
             var layers = UnityEditorInternal.InternalEditorUtility.layers;
             return new { success = true, count = layers.Length, layers };
         }
 
-        [UnitySkill("project_get_tags", "Get all Tag definitions")]
+        [UnitySkill("project_get_tags", "Get all Tag definitions",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "tags", "label" },
+            Outputs = new[] { "count", "tags" },
+            ReadOnly = true)]
         public static object ProjectGetTags()
         {
             var tags = UnityEditorInternal.InternalEditorUtility.tags;
             return new { success = true, count = tags.Length, tags };
         }
 
-        [UnitySkill("project_add_tag", "Add a custom Tag", TracksWorkflow = true)]
+        [UnitySkill("project_add_tag", "Add a custom Tag",
+            Category = SkillCategory.Project, Operation = SkillOperation.Create,
+            Tags = new[] { "project", "tag", "add", "custom" },
+            Outputs = new[] { "tag" },
+            TracksWorkflow = true)]
         public static object ProjectAddTag(string tagName)
         {
             if (Validate.Required(tagName, "tagName") is object err) return err;
@@ -331,7 +367,11 @@ namespace UnitySkills
             return new { success = true, tag = tagName };
         }
 
-        [UnitySkill("project_get_player_settings", "Get Player Settings")]
+        [UnitySkill("project_get_player_settings", "Get Player Settings",
+            Category = SkillCategory.Project, Operation = SkillOperation.Query,
+            Tags = new[] { "project", "player", "settings", "build" },
+            Outputs = new[] { "productName", "companyName", "bundleVersion", "scriptingBackend", "apiCompatibility" },
+            ReadOnly = true)]
         public static object ProjectGetPlayerSettings()
         {
             return new
@@ -348,7 +388,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_set_quality_level", "Switch quality level by index or name", TracksWorkflow = true)]
+        [UnitySkill("project_set_quality_level", "Switch quality level by index or name",
+            Category = SkillCategory.Project, Operation = SkillOperation.Modify,
+            Tags = new[] { "project", "quality", "level", "graphics" },
+            Outputs = new[] { "level", "name" },
+            TracksWorkflow = true)]
         public static object ProjectSetQualityLevel(int level = -1, string levelName = null)
         {
             if (!string.IsNullOrEmpty(levelName))

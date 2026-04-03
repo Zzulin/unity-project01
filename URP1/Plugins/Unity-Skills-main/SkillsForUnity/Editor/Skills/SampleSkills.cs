@@ -9,7 +9,10 @@ namespace UnitySkills
     /// </summary>
     public static class SampleSkills
     {
-        [UnitySkill("create_cube", "Create a cube at the specified position")]
+        [UnitySkill("create_cube", "Create a cube at the specified position",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Create,
+            Tags = new[] { "cube", "primitive", "3d", "quick" },
+            Outputs = new[] { "name", "instanceId", "position", "message" })]
         public static object CreateCube(float x = 0, float y = 0, float z = 0, string name = "Cube")
         {
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -20,7 +23,10 @@ namespace UnitySkills
             return new { success = true, name = cube.name, instanceId = cube.GetInstanceID(), position = new { x, y, z }, message = $"Created {name} at ({x},{y},{z})" };
         }
 
-        [UnitySkill("create_sphere", "Create a sphere at the specified position")]
+        [UnitySkill("create_sphere", "Create a sphere at the specified position",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Create,
+            Tags = new[] { "sphere", "primitive", "3d", "quick" },
+            Outputs = new[] { "name", "instanceId", "position", "message" })]
         public static object CreateSphere(float x = 0, float y = 0, float z = 0, string name = "Sphere")
         {
             var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -31,7 +37,11 @@ namespace UnitySkills
             return new { success = true, name = sphere.name, instanceId = sphere.GetInstanceID(), position = new { x, y, z }, message = $"Created {name} at ({x},{y},{z})" };
         }
 
-        [UnitySkill("delete_object", "Delete a GameObject by name")]
+        [UnitySkill("delete_object", "Delete a GameObject by name",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Delete,
+            Tags = new[] { "delete", "destroy", "remove", "quick" },
+            Outputs = new[] { "deleted", "message" },
+            RequiresInput = new[] { "gameObject" })]
         public static object DeleteObject(string objectName)
         {
             var (obj, err) = GameObjectFinder.FindOrError(objectName);
@@ -41,7 +51,11 @@ namespace UnitySkills
             return new { success = true, deleted = objectName, message = $"Deleted {objectName}" };
         }
 
-        [UnitySkill("get_scene_info", "Get current scene information")]
+        [UnitySkill("get_scene_info", "Get current scene information",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Query,
+            Tags = new[] { "scene", "info", "overview", "quick" },
+            Outputs = new[] { "sceneName", "scenePath", "rootObjectCount", "rootObjects" },
+            ReadOnly = true)]
         public static object GetSceneInfo()
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -55,7 +69,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("set_object_position", "Set position of a GameObject")]
+        [UnitySkill("set_object_position", "Set position of a GameObject",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Modify,
+            Tags = new[] { "position", "transform", "move", "quick" },
+            Outputs = new[] { "name", "position", "message" },
+            RequiresInput = new[] { "gameObject" })]
         public static object SetObjectPosition(string objectName, float x, float y, float z)
         {
             var (obj, err) = GameObjectFinder.FindOrError(objectName);
@@ -65,7 +83,11 @@ namespace UnitySkills
             return new { success = true, name = objectName, position = new { x, y, z }, message = $"Set {objectName} position to ({x},{y},{z})" };
         }
 
-        [UnitySkill("set_object_rotation", "Set rotation of a GameObject (Euler angles)")]
+        [UnitySkill("set_object_rotation", "Set rotation of a GameObject (Euler angles)",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Modify,
+            Tags = new[] { "rotation", "transform", "euler", "quick" },
+            Outputs = new[] { "name", "rotation", "message" },
+            RequiresInput = new[] { "gameObject" })]
         public static object SetObjectRotation(string objectName, float x, float y, float z)
         {
             var (obj, err) = GameObjectFinder.FindOrError(objectName);
@@ -75,7 +97,11 @@ namespace UnitySkills
             return new { success = true, name = objectName, rotation = new { x, y, z }, message = $"Set {objectName} rotation to ({x},{y},{z})" };
         }
 
-        [UnitySkill("set_object_scale", "Set scale of a GameObject")]
+        [UnitySkill("set_object_scale", "Set scale of a GameObject",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Modify,
+            Tags = new[] { "scale", "transform", "resize", "quick" },
+            Outputs = new[] { "name", "scale", "message" },
+            RequiresInput = new[] { "gameObject" })]
         public static object SetObjectScale(string objectName, float x, float y, float z)
         {
             var (obj, err) = GameObjectFinder.FindOrError(objectName);
@@ -85,7 +111,11 @@ namespace UnitySkills
             return new { success = true, name = objectName, scale = new { x, y, z }, message = $"Set {objectName} scale to ({x},{y},{z})" };
         }
 
-        [UnitySkill("find_objects_by_name", "Find all GameObjects containing a name (param: nameContains)")]
+        [UnitySkill("find_objects_by_name", "Find all GameObjects containing a name (param: nameContains)",
+            Category = SkillCategory.Sample, Operation = SkillOperation.Query,
+            Tags = new[] { "find", "search", "name", "quick" },
+            Outputs = new[] { "query", "count", "objects" },
+            ReadOnly = true)]
         public static object FindObjectsByName(string nameContains)
         {
             var allObjects = FindHelper.FindAll<GameObject>();

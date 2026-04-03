@@ -2,8 +2,6 @@
 
 This file declares available skills for AI agents like Codex.
 
-## UnitySkills
-- unity-skills: Unity Editor automation via REST API
 <!-- UNITY CODE ASSIST INSTRUCTIONS START -->
 - Project name: URP1
 - Unity version: Unity 2022.3.62f3c1
@@ -18,3 +16,7 @@ This file declares available skills for AI agents like Codex.
   - Tag: Untagged
   - Layer: Default
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->
+
+
+## UnitySkills
+- unity-skills: Unity Editor automation via REST API

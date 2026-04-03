@@ -10,7 +10,10 @@ namespace UnitySkills
     /// </summary>
     public static class TerrainSkills
     {
-        [UnitySkill("terrain_create", "Create a new Terrain with TerrainData asset", TracksWorkflow = true)]
+        [UnitySkill("terrain_create", "Create a new Terrain with TerrainData asset", TracksWorkflow = true,
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Create,
+            Tags = new[] { "terrain", "heightmap", "landscape", "create" },
+            Outputs = new[] { "success", "name", "instanceId", "terrainDataPath", "size", "position" })]
         public static object TerrainCreate(
             string name = "Terrain",
             int width = 500,
@@ -49,7 +52,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_get_info", "Get terrain information including size, resolution, and layers")]
+        [UnitySkill("terrain_get_info", "Get terrain information including size, resolution, and layers",
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Query,
+            Tags = new[] { "terrain", "info", "resolution", "layers" },
+            Outputs = new[] { "name", "size", "heightmapResolution", "terrainLayerCount", "layers" },
+            RequiresInput = new[] { "terrain" },
+            ReadOnly = true)]
         public static object TerrainGetInfo(string name = null, int instanceId = 0)
         {
             var terrain = FindTerrain(name, instanceId);
@@ -90,7 +98,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_get_height", "Get terrain height at world position")]
+        [UnitySkill("terrain_get_height", "Get terrain height at world position",
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Query,
+            Tags = new[] { "terrain", "height", "sample", "elevation" },
+            Outputs = new[] { "height", "worldY" },
+            RequiresInput = new[] { "terrain" },
+            ReadOnly = true)]
         public static object TerrainGetHeight(float worldX, float worldZ, string name = null, int instanceId = 0)
         {
             var terrain = FindTerrain(name, instanceId);
@@ -109,7 +122,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_set_height", "Set terrain height at normalized coordinates (0-1)", TracksWorkflow = true)]
+        [UnitySkill("terrain_set_height", "Set terrain height at normalized coordinates (0-1)", TracksWorkflow = true,
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Modify,
+            Tags = new[] { "terrain", "height", "heightmap", "sculpt" },
+            Outputs = new[] { "success", "normalizedX", "normalizedZ", "height", "pixelX", "pixelZ" },
+            RequiresInput = new[] { "terrain" })]
         public static object TerrainSetHeight(
             float normalizedX, float normalizedZ, float height,
             string name = null, int instanceId = 0)
@@ -141,7 +158,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_set_heights_batch", "Set terrain heights in a rectangular region. Heights is a 2D array [z][x] with values 0-1.", TracksWorkflow = true)]
+        [UnitySkill("terrain_set_heights_batch", "Set terrain heights in a rectangular region. Heights is a 2D array [z][x] with values 0-1.", TracksWorkflow = true,
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Modify,
+            Tags = new[] { "terrain", "height", "batch", "heightmap", "region" },
+            Outputs = new[] { "success", "modifiedWidth", "modifiedLength", "totalPointsModified" },
+            RequiresInput = new[] { "terrain" })]
         public static object TerrainSetHeightsBatch(
             int startX, int startZ,
             float[][] heights,
@@ -193,7 +214,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_add_hill", "Add a smooth hill to the terrain at normalized position with radius and height")]
+        [UnitySkill("terrain_add_hill", "Add a smooth hill to the terrain at normalized position with radius and height",
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Modify,
+            Tags = new[] { "terrain", "hill", "sculpt", "heightmap" },
+            Outputs = new[] { "success", "centerX", "centerZ", "radius", "height", "affectedArea" },
+            RequiresInput = new[] { "terrain" })]
         public static object TerrainAddHill(
             float normalizedX, float normalizedZ,
             float radius = 0.2f,
@@ -262,7 +287,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_generate_perlin", "Generate terrain using Perlin noise for natural-looking landscapes")]
+        [UnitySkill("terrain_generate_perlin", "Generate terrain using Perlin noise for natural-looking landscapes",
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Execute,
+            Tags = new[] { "terrain", "perlin", "noise", "procedural", "generation" },
+            Outputs = new[] { "success", "resolution", "scale", "heightMultiplier", "octaves" },
+            RequiresInput = new[] { "terrain" })]
         public static object TerrainGeneratePerlin(
             float scale = 20f,
             float heightMultiplier = 0.3f,
@@ -328,7 +357,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_smooth", "Smooth terrain heights in a region to reduce sharp edges")]
+        [UnitySkill("terrain_smooth", "Smooth terrain heights in a region to reduce sharp edges",
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Modify,
+            Tags = new[] { "terrain", "smooth", "heightmap", "sculpt" },
+            Outputs = new[] { "success", "centerX", "centerZ", "radius", "iterations", "affectedArea" },
+            RequiresInput = new[] { "terrain" })]
         public static object TerrainSmooth(
             float normalizedX, float normalizedZ,
             float radius = 0.1f,
@@ -392,7 +425,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_flatten", "Flatten terrain to a specific height in a region")]
+        [UnitySkill("terrain_flatten", "Flatten terrain to a specific height in a region",
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Modify,
+            Tags = new[] { "terrain", "flatten", "heightmap", "level" },
+            Outputs = new[] { "success", "centerX", "centerZ", "targetHeight", "radius" },
+            RequiresInput = new[] { "terrain" })]
         public static object TerrainFlatten(
             float normalizedX, float normalizedZ,
             float targetHeight = 0.5f,
@@ -455,7 +492,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("terrain_paint_texture", "Paint terrain texture layer at normalized position. Requires terrain layers to be set up.", TracksWorkflow = true)]
+        [UnitySkill("terrain_paint_texture", "Paint terrain texture layer at normalized position. Requires terrain layers to be set up.", TracksWorkflow = true,
+            Category = SkillCategory.Terrain, Operation = SkillOperation.Modify,
+            Tags = new[] { "terrain", "paint", "texture", "splat", "layer" },
+            Outputs = new[] { "success", "layerIndex", "layerName", "brushSize", "strength" },
+            RequiresInput = new[] { "terrain", "terrainLayer" })]
         public static object TerrainPaintTexture(
             float normalizedX, float normalizedZ,
             int layerIndex,

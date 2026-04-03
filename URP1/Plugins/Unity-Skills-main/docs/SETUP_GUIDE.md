@@ -1,191 +1,265 @@
-# UnitySkills 安装与排障指南
+# UnitySkills Setup & Usage Guide
 
-本文档面向本地开发环境，说明如何安装 UnitySkills、如何把 AI Skill 模板放到目标工具、以及在编译或 Domain Reload 期间应该如何处理短暂不可达。
+> English | [中文](SETUP_GUIDE_CN.md)
 
-## 环境要求
+---
 
-- Unity：`2022.3+`
-- 推荐重点验证版本：`2022.3 LTS` 与 `Unity 6`
-- 网络环境：本地回环地址 `localhost` / `127.0.0.1`
-- 典型 AI 客户端：Claude Code、Codex、Gemini CLI、Antigravity、Cursor
+## Requirements
 
-## 安装 Unity 包
+- **Unity**: `2022.3+` (LTS recommended; Unity 6 fully supported)
+- **Network**: localhost loopback (`127.0.0.1` / `localhost`)
+- **Python** (optional): 3.7+ with `requests` package, for the Python client helper
 
-### Package Manager 安装
+---
 
-在 Unity 中打开：
+## 1. Install the Unity Package
 
-```text
-Window > Package Manager > + > Add package from git URL
+Open Unity Editor:
+
+```
+Window → Package Manager → + → Add package from git URL
 ```
 
-使用以下地址之一：
+Choose one of the following:
 
-稳定版：
+| Channel | URL |
+|---------|-----|
+| **Stable** (main) | `https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity` |
+| **Beta** (dev) | `https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#beta` |
+| **Pinned version** | `https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v1.6.8` |
 
-```text
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity
+You can also download a specific release from the [Releases page](https://github.com/Besty0728/Unity-Skills/releases).
+
+---
+
+## 2. Start the Server
+
+```
+Window → UnitySkills → Start Server
 ```
 
-Beta：
+On success, the Console will show:
 
-```text
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#beta
 ```
-
-指定版本：
-
-```text
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v1.6.4
-```
-
-## 启动服务
-
-在 Unity 编辑器中打开：
-
-```text
-Window > UnitySkills > Start Server
-```
-
-正常情况下，Console 会输出类似内容：
-
-```text
 [UnitySkills] REST Server started at http://localhost:8090/
 ```
 
-## 安装 AI Skill 模板
+Verify with:
 
-### 推荐：使用 Unity 内置安装器
-
-打开：
-
-```text
-Window > UnitySkills > Skill Installer
+```bash
+curl http://localhost:8090/health
 ```
 
-选择目标 AI 工具后执行安装。安装器会复制包内的 `unity-skills~/` 模板目录到目标位置。
+> **Note**: Script compilation, Domain Reload, and certain asset operations will briefly make the server unreachable. This is normal Unity Editor behavior — wait a few seconds and retry.
 
-目标目录应至少包含：
+---
 
-- `SKILL.md`
-- `skills/`
-- `scripts/unity_skills.py`
-- `scripts/agent_config.json`
+## 3. Install AI Skills
 
-### 手动安装
+### Recommended: One-Click Installer
 
-如果不使用安装器，请把 UPM 包内的 `SkillsForUnity/unity-skills~/` 目录内容复制到你的 AI 工具技能目录中。
+```
+Window → UnitySkills → Skill Installer
+```
 
-常见目录：
+Select your AI tool and click **Install**. The installer copies the `unity-skills~/` template directory to the correct location. The installed files include:
 
-- Claude Code：`~/.claude/skills/`
-- Codex：`~/.codex/skills/`
-- Gemini CLI：`~/.gemini/skills/`
-- Antigravity：`~/.agent/skills/`
-- Cursor：`~/.cursor/skills/`
+```
+SKILL.md                    # Main skill definition (AI reads this)
+skills/                     # Per-module skill docs (38 functional + 14 advisory)
+scripts/unity_skills.py     # Python client library
+scripts/agent_config.json   # Agent configuration
+references/                 # Unity development references
+```
 
-对于 Codex，推荐全局安装。项目级安装时，还需要在项目根目录的 `AGENTS.md` 中声明该技能。
+> **Codex Note**: Global installation is recommended. For project-level installation, declare the skill in your `AGENTS.md`.
 
-## Python 客户端行为
+### Manual Installation
 
-`unity_skills.py` 当前具备以下行为：
+If one-click installation is not available for your tool, manually copy the contents of `SkillsForUnity/unity-skills~/` to your tool's skill directory.
 
-- 默认请求超时为 `900` 秒，也就是 `15 分钟`
-- 初始化时会从 `/health` 同步服务端超时设置
-- 复用 `requests.Session`，减少频繁新建连接
-- 遇到编译或 Domain Reload 导致的短暂断连时，会把错误标记为可重试
-- `WorkflowContext` 在超时或连接异常后，会尝试读取服务端状态并恢复工作流一致性
+**Common tool paths:**
 
-## 编译、Domain Reload 与短暂不可达
+| Tool | Skill Directory |
+|------|----------------|
+| Claude Code | `~/.claude/skills/` |
+| Antigravity | `~/.agent/skills/` |
+| Gemini CLI | `~/.gemini/skills/` |
+| Codex | `~/.codex/skills/` (global) |
+| Cursor | `~/.cursor/skills/` |
 
-以下操作都可能让服务短时间不可达：
+### Supported AI Tools
 
-- `script_create`
-- `script_append`
-- `script_replace`
-- `debug_force_recompile`
-- `debug_set_defines`
-- 某些 `asset_import` / `asset_reimport` / `asset_move`
-- 测试模板创建
-- 部分包安装或移除
+The following tools have been officially tested:
 
-这是 Unity 编辑器行为，不是异常崩溃。建议做法：
+| Tool | Status | Highlights |
+|------|:------:|------------|
+| **Antigravity** | ✅ | Native `/unity-skills` slash command |
+| **Claude Code** | ✅ | Intelligent skill intent recognition |
+| **Gemini CLI** | ✅ | `experimental.skills` support |
+| **Codex** | ✅ | `$skill` explicit call + implicit intent |
 
-1. 收到“暂时不可用”或连接超时后，先等待几秒。
-2. 调用 `wait_for_unity()` 或使用 `call_skill_with_retry()`。
-3. 脚本生成后，优先读取编译反馈，再继续后续步骤。
+> ⚠️ **Universal Compatibility**: UnitySkills follows an open skill standard. **Any AI tool that can read markdown files and make HTTP requests** can use UnitySkills — not limited to the tools listed above. Simply copy the `unity-skills~/` directory contents to your tool's skill or prompt location and ensure the tool can reach `http://localhost:8090`.
 
-脚本示例：
+---
+
+## 4. Python Client
+
+### Basic Usage
 
 ```python
 import unity_skills
 
-result = unity_skills.create_script("PlayerController")
-if result.get("success"):
-    print(result.get("compilation"))
+# Check server status
+unity_skills.health()
+
+# Call a skill
+unity_skills.call_skill("gameobject_create",
+    name="MyCube", primitiveType="Cube", x=0, y=1, z=0)
+
+# Get all available skills
+unity_skills.get_skills()
 ```
 
-## 多实例路由
-
-如果本机同时打开多个 Unity 项目，优先通过版本或目标名选择实例：
+### Filtered Queries & Recommendations
 
 ```python
-import unity_skills
+# Filter skills by metadata
+unity_skills.get_skills(category="GameObject", operation="Create")
+unity_skills.get_skills(tags="batch")
+unity_skills.get_skills(read_only=True)
+unity_skills.get_skills(q="screenshot")
 
-unity_skills.set_unity_version("2022.3")
-unity_skills.call_skill("project_get_info")
+# Intent-based recommendation (server-side scoring)
+unity_skills.find_skills("create red cube", top_n=5)
+
+# Find skills that produce a specific output
+unity_skills.get_skill_chain("instanceId")
 ```
 
-也可以通过注册表枚举实例：
+### Workflow Context
 
 ```python
-import unity_skills
-
-print(unity_skills.list_instances())
+# Group operations for batch undo/redo
+with unity_skills.workflow_context("Build Scene", "Create player and environment"):
+    unity_skills.call_skill("gameobject_create", name="Player")
+    unity_skills.call_skill("component_add", name="Player", componentType="Rigidbody")
+# All operations can be rolled back with workflow_undo_task
 ```
 
-## 批量优先原则
+### CLI Usage
 
-当你要操作 2 个及以上对象时，优先使用 `*_batch` 技能，原因是：
+```bash
+python unity_skills.py --list
+python unity_skills.py gameobject_create name=MyCube primitiveType=Cube
+```
 
-- 请求数更少
-- 编译窗口更短
-- 工作流快照更集中
-- AI 更不容易在循环里打爆请求队列
+---
 
-示例：
+## 5. REST API
+
+### Direct HTTP Calls
+
+```bash
+# Health check
+curl http://localhost:8090/health
+
+# Get all skills
+curl http://localhost:8090/skills
+
+# Filter skills
+curl "http://localhost:8090/skills?category=GameObject&operation=Create"
+
+# Intent-based recommendation
+curl "http://localhost:8090/skills/recommend?intent=create+cube&topN=5"
+
+# Execute a skill
+curl -X POST http://localhost:8090/skill/gameobject_create \
+  -H "Content-Type: application/json" \
+  -d '{"name":"MyCube","primitiveType":"Cube","x":1,"y":2,"z":3}'
+```
+
+### Response Format
+
+All skills return a unified format:
+
+```json
+{
+  "status": "success",
+  "result": {
+    "success": true,
+    "name": "MyCube",
+    "instanceId": 12345,
+    "position": {"x": 1, "y": 2, "z": 3}
+  }
+}
+```
+
+---
+
+## 6. Key Concepts
+
+### Domain Reload & Temporary Unavailability
+
+The following operations may trigger Unity compilation and briefly interrupt the server:
+
+- `script_create`, `script_append`, `script_replace`
+- `debug_force_recompile`, `debug_set_defines`
+- Some `asset_import` / `asset_reimport` / `asset_move` operations
+- Package install/remove
+
+**Recommended handling**: Wait a few seconds, then call `wait_for_unity()` or use `call_skill_with_retry()`.
+
+### Batch-First Principle
+
+When operating on 2+ objects, always prefer `*_batch` skills:
 
 ```python
-unity_skills.call_skill(
-    "gameobject_create_batch",
-    items=[
-        {"name": "Cube_A", "primitiveType": "Cube", "x": -1},
-        {"name": "Cube_B", "primitiveType": "Cube", "x": 1},
-    ],
-)
+# ✅ Good — single request
+unity_skills.call_skill("gameobject_create_batch", items=[
+    {"name": "A", "primitiveType": "Cube", "x": -1},
+    {"name": "B", "primitiveType": "Cube", "x": 1},
+])
+
+# ❌ Avoid — multiple requests
+for name in ["A", "B"]:
+    unity_skills.call_skill("gameobject_create", name=name)
 ```
 
-## 测试模块说明
+### Multi-Instance Routing
 
-- `test_run` 和 `test_run_by_name` 对接的是 Unity Test Runner。
-- 调用后立即返回 `jobId`。
-- 使用 `test_get_result(jobId)` 轮询结果。
-- 这不是启动独立的 Unity 可执行进程，而是在当前编辑器上下文里执行测试任务。
+When multiple Unity projects are open simultaneously:
 
-## 常见排障
+```python
+unity_skills.set_unity_version("2022.3")   # Route by Unity version
+unity_skills.list_instances()               # Enumerate all instances
+```
 
-| 问题 | 现象 | 建议 |
-| --- | --- | --- |
-| 连接失败 | `Cannot connect to http://localhost:8090` | 检查 Unity 是否已启动服务，或是否正处于编译 / Domain Reload |
-| 请求超时 | 超过 15 分钟后返回超时 | 先确认是否是长任务；必要时在 Unity 面板中调高超时设置 |
-| 技能列表为空 | `/skills` 返回异常 | 检查控制台是否有编译错误，确保插件成功导入 |
-| 脚本创建后断连 | 创建脚本后接口暂时不可用 | 正常现象，等待编译完成后重试 |
-| 多实例误连 | 请求打到了错误项目 | 先调用 `set_unity_version()` 或按目标名连接 |
-| 工作流状态异常 | 本地认为开始了任务，但服务端状态不一致 | 重新读取 `workflow_session_status`，当前客户端已内置恢复逻辑 |
+### Test Module
 
-## 文档索引
+`test_run` and `test_run_by_name` are asynchronous — they return a `jobId` immediately. Poll with `test_get_result(jobId)` for completion.
 
-- [中文 README](../README.md)
-- [English README](../README_EN.md)
-- [AI Skill 入口](../SkillsForUnity/unity-skills~/SKILL.md)
-- [更新日志](../CHANGELOG.md)
+---
+
+## 7. Troubleshooting
+
+| Problem | Symptom | Solution |
+|---------|---------|----------|
+| Connection refused | `Cannot connect to http://localhost:8090` | Check if server is started; may be in compilation / Domain Reload |
+| Request timeout | No response after 15 minutes | Check if it's a long-running task; increase timeout in Unity panel |
+| Empty skill list | `/skills` returns error | Check Console for compilation errors |
+| Disconnect after script creation | Server unreachable after `script_create` | Normal — wait for compilation, then retry |
+| Wrong instance | Request hits wrong project | Use `set_unity_version()` or connect by project name |
+| Workflow state mismatch | Client/server state diverged | Read `workflow_session_status`; client has built-in recovery |
+
+---
+
+## 8. References
+
+| Resource | Description |
+|----------|-------------|
+| [README.md](../README.md) | Project overview (English) |
+| [README_CN.md](../README_CN.md) | Project overview (Chinese) |
+| [SKILL.md](../SkillsForUnity/unity-skills~/SKILL.md) | Complete skill API reference |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history |
+| [agent.md](../agent.md) | AI agent project overview |

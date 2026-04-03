@@ -13,7 +13,11 @@ namespace UnitySkills
     {
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
 
-        [UnitySkill("shader_create", "Create a new shader file", TracksWorkflow = true)]
+        [UnitySkill("shader_create", "Create a new shader file",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Create,
+            Tags = new[] { "shader", "create", "hlsl", "asset" },
+            Outputs = new[] { "shaderName", "path" },
+            TracksWorkflow = true)]
         public static object ShaderCreate(string shaderName, string savePath, string template = null)
         {
             if (Validate.Required(shaderName, "shaderName") is object err) return err;
@@ -88,7 +92,12 @@ namespace UnitySkills
             return new { success = true, shaderName, path = savePath };
         }
 
-        [UnitySkill("shader_read", "Read shader source code")]
+        [UnitySkill("shader_read", "Read shader source code",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Query,
+            Tags = new[] { "shader", "read", "source", "code" },
+            Outputs = new[] { "path", "lines", "content" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ShaderRead(string shaderPath)
         {
             if (Validate.SafePath(shaderPath, "shaderPath") is object pathErr) return pathErr;
@@ -101,7 +110,11 @@ namespace UnitySkills
             return new { path = shaderPath, lines, content };
         }
 
-        [UnitySkill("shader_list", "List all shaders in project")]
+        [UnitySkill("shader_list", "List all shaders in project",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Query,
+            Tags = new[] { "shader", "list", "search", "asset" },
+            Outputs = new[] { "count", "shaders" },
+            ReadOnly = true)]
         public static object ShaderList(string filter = null, int limit = 100)
         {
             var guids = AssetDatabase.FindAssets("t:Shader");
@@ -124,7 +137,12 @@ namespace UnitySkills
             return new { count = shaders.Length, shaders };
         }
 
-        [UnitySkill("shader_get_properties", "Get properties of a shader")]
+        [UnitySkill("shader_get_properties", "Get properties of a shader",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Query,
+            Tags = new[] { "shader", "property", "inspect" },
+            Outputs = new[] { "shaderName", "propertyCount", "properties" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ShaderGetProperties(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);
@@ -149,7 +167,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("shader_find", "Find shaders by name")]
+        [UnitySkill("shader_find", "Find shaders by name",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Query,
+            Tags = new[] { "shader", "find", "search" },
+            Outputs = new[] { "found", "name", "path" },
+            ReadOnly = true)]
         public static object ShaderFind(string searchName)
         {
             var shader = Shader.Find(searchName);
@@ -165,7 +187,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("shader_delete", "Delete a shader file", TracksWorkflow = true)]
+        [UnitySkill("shader_delete", "Delete a shader file",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Delete,
+            Tags = new[] { "shader", "delete", "asset" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object ShaderDelete(string shaderPath)
         {
             if (Validate.SafePath(shaderPath, "shaderPath", isDelete: true) is object pathErr) return pathErr;
@@ -179,7 +206,12 @@ namespace UnitySkills
             return new { success = true, deleted = shaderPath };
         }
 
-        [UnitySkill("shader_check_errors", "Check shader for compilation errors")]
+        [UnitySkill("shader_check_errors", "Check shader for compilation errors",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Analyze,
+            Tags = new[] { "shader", "error", "compile", "diagnostic" },
+            Outputs = new[] { "shaderName", "hasErrors", "messageCount" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ShaderCheckErrors(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);
@@ -188,7 +220,12 @@ namespace UnitySkills
             return new { shaderName = shader.name, hasErrors = msgCount > 0, messageCount = msgCount };
         }
 
-        [UnitySkill("shader_get_keywords", "Get shader keyword list")]
+        [UnitySkill("shader_get_keywords", "Get shader keyword list",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Query,
+            Tags = new[] { "shader", "keyword", "inspect" },
+            Outputs = new[] { "shaderName", "keywordCount", "keywords" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ShaderGetKeywords(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);
@@ -197,7 +234,12 @@ namespace UnitySkills
             return new { shaderName = shader.name, keywordCount = keywords.Length, keywords };
         }
 
-        [UnitySkill("shader_get_variant_count", "Get shader variant count for performance analysis")]
+        [UnitySkill("shader_get_variant_count", "Get shader variant count for performance analysis",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Analyze,
+            Tags = new[] { "shader", "variant", "performance", "optimization" },
+            Outputs = new[] { "shaderName", "subshaderCount", "totalPasses" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ShaderGetVariantCount(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);
@@ -213,7 +255,11 @@ namespace UnitySkills
             return new { shaderName = shader.name, subshaderCount, totalPasses = totalVariants };
         }
 
-        [UnitySkill("shader_create_urp", "Create a URP shader from template (type: Unlit or Lit)", TracksWorkflow = true)]
+        [UnitySkill("shader_create_urp", "Create a URP shader from template (type: Unlit or Lit)",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Create,
+            Tags = new[] { "shader", "urp", "create", "template" },
+            Outputs = new[] { "shaderName", "path", "type" },
+            TracksWorkflow = true)]
         public static object ShaderCreateUrp(string shaderName, string savePath, string type = "Unlit")
         {
             if (Validate.SafePath(savePath, "savePath") is object pathErr2) return pathErr2;
@@ -298,7 +344,11 @@ namespace UnitySkills
             return shader;
         }
 
-        [UnitySkill("shader_set_global_keyword", "Enable or disable a global shader keyword", TracksWorkflow = true)]
+        [UnitySkill("shader_set_global_keyword", "Enable or disable a global shader keyword",
+            Category = SkillCategory.Shader, Operation = SkillOperation.Modify,
+            Tags = new[] { "shader", "keyword", "global", "rendering" },
+            Outputs = new[] { "keyword", "enabled" },
+            TracksWorkflow = true)]
         public static object ShaderSetGlobalKeyword(string keyword, bool enabled)
         {
             if (enabled) Shader.EnableKeyword(keyword);

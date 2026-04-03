@@ -23,7 +23,11 @@ namespace UnitySkills
             public int count;
         }
 
-        [UnitySkill("validate_scene", "Validate current scene for common issues")]
+        [UnitySkill("validate_scene", "Validate current scene for common issues",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
+            Tags = new[] { "validation", "scene", "health", "check", "issues" },
+            Outputs = new[] { "scene", "totalIssues", "summary", "issues" },
+            ReadOnly = true)]
         public static object ValidateScene(bool checkMissingScripts = true, bool checkMissingPrefabs = true, bool checkDuplicateNames = true, bool checkEmptyGameObjects = false)
         {
             var issues = new List<ValidationIssue>();
@@ -125,7 +129,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("validate_find_missing_scripts", "Find all GameObjects with missing scripts")]
+        [UnitySkill("validate_find_missing_scripts", "Find all GameObjects with missing scripts",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
+            Tags = new[] { "validation", "missing", "scripts", "prefab" },
+            Outputs = new[] { "totalFound", "objects" },
+            ReadOnly = true)]
         public static object ValidateFindMissingScripts(bool searchInPrefabs = true)
         {
             var results = new List<object>();
@@ -180,7 +188,10 @@ namespace UnitySkills
             return new { totalFound = results.Count, objects = results };
         }
 
-        [UnitySkill("validate_cleanup_empty_folders", "Find and optionally delete empty folders")]
+        [UnitySkill("validate_cleanup_empty_folders", "Find and optionally delete empty folders",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze | SkillOperation.Delete,
+            Tags = new[] { "validation", "cleanup", "folders", "empty" },
+            Outputs = new[] { "dryRun", "emptyFolderCount", "folders", "message" })]
         public static object ValidateCleanupEmptyFolders(string rootPath = "Assets", bool dryRun = true)
         {
             if (Validate.SafePath(rootPath, "rootPath") is object pathErr) return pathErr;
@@ -235,7 +246,11 @@ namespace UnitySkills
             }
         }
 
-        [UnitySkill("validate_find_unused_assets", "Find potentially unused assets")]
+        [UnitySkill("validate_find_unused_assets", "Find potentially unused assets",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
+            Tags = new[] { "validation", "unused", "assets", "cleanup" },
+            Outputs = new[] { "assetType", "potentiallyUnusedCount", "assets" },
+            ReadOnly = true)]
         public static object ValidateFindUnusedAssets(string assetType = "Material", int limit = 100)
         {
             var filter = $"t:{assetType}";
@@ -283,7 +298,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("validate_texture_sizes", "Find textures that may need optimization")]
+        [UnitySkill("validate_texture_sizes", "Find textures that may need optimization",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
+            Tags = new[] { "validation", "texture", "size", "optimization" },
+            Outputs = new[] { "maxRecommendedSize", "largeTextureCount", "textures" },
+            ReadOnly = true)]
         public static object ValidateTextureSizes(int maxRecommendedSize = 2048, int limit = 50)
         {
             var largeTextures = new List<object>();
@@ -323,7 +342,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("validate_project_structure", "Get overview of project structure")]
+        [UnitySkill("validate_project_structure", "Get overview of project structure",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Query,
+            Tags = new[] { "validation", "project", "structure", "overview" },
+            Outputs = new[] { "rootPath", "assetCounts", "structure" },
+            ReadOnly = true)]
         public static object ValidateProjectStructure(string rootPath = "Assets", int maxDepth = 2)
         {
             var structure = GetFolderStructure(rootPath, 0, maxDepth);
@@ -364,7 +387,10 @@ namespace UnitySkills
             return subDirs;
         }
 
-        [UnitySkill("validate_fix_missing_scripts", "Remove missing script components from GameObjects")]
+        [UnitySkill("validate_fix_missing_scripts", "Remove missing script components from GameObjects",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Execute | SkillOperation.Delete,
+            Tags = new[] { "validation", "fix", "missing", "scripts" },
+            Outputs = new[] { "dryRun", "fixedCount", "objects", "message" })]
         public static object ValidateFixMissingScripts(bool dryRun = true)
         {
             var fixedObjects = new List<object>();
@@ -400,7 +426,11 @@ namespace UnitySkills
                 objects = fixedObjects
             };
         }
-        [UnitySkill("validate_missing_references", "Find null/missing object references on components in the scene")]
+        [UnitySkill("validate_missing_references", "Find null/missing object references on components in the scene",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
+            Tags = new[] { "validation", "missing", "references", "null" },
+            Outputs = new[] { "count", "issues" },
+            ReadOnly = true)]
         public static object ValidateMissingReferences(int limit = 50)
         {
             var results = new List<object>();
@@ -427,7 +457,11 @@ namespace UnitySkills
             return new { success = true, count = results.Count, issues = results };
         }
 
-        [UnitySkill("validate_mesh_collider_convex", "Find non-convex MeshColliders (potential performance issue)")]
+        [UnitySkill("validate_mesh_collider_convex", "Find non-convex MeshColliders (potential performance issue)",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
+            Tags = new[] { "validation", "mesh", "collider", "convex", "performance" },
+            Outputs = new[] { "count", "nonConvexColliders" },
+            ReadOnly = true)]
         public static object ValidateMeshColliderConvex(int limit = 50)
         {
             var colliders = FindHelper.FindAll<MeshCollider>()
@@ -439,7 +473,11 @@ namespace UnitySkills
             return new { success = true, count = colliders.Length, nonConvexColliders = colliders };
         }
 
-        [UnitySkill("validate_shader_errors", "Find shaders with compilation errors")]
+        [UnitySkill("validate_shader_errors", "Find shaders with compilation errors",
+            Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
+            Tags = new[] { "validation", "shader", "errors", "compilation" },
+            Outputs = new[] { "count", "shaders" },
+            ReadOnly = true)]
         public static object ValidateShaderErrors(int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Shader");

@@ -100,7 +100,11 @@ namespace UnitySkills
             }
             return false;
         }
-        [UnitySkill("ui_create_canvas", "Create a new Canvas", TracksWorkflow = true)]
+        [UnitySkill("ui_create_canvas", "Create a new Canvas",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "canvas", "ugui", "overlay", "render-mode" },
+            Outputs = new[] { "name", "instanceId", "renderMode" },
+            TracksWorkflow = true)]
         public static object UICreateCanvas(string name = "Canvas", string renderMode = "ScreenSpaceOverlay")
         {
             var go = new GameObject(name);
@@ -136,7 +140,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("ui_create_panel", "Create a Panel UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_panel", "Create a Panel UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "panel", "ugui", "container", "background" },
+            Outputs = new[] { "name", "instanceId", "parent" },
+            TracksWorkflow = true)]
         public static object UICreatePanel(string name = "Panel", string parent = null, float r = 1, float g = 1, float b = 1, float a = 0.5f)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -160,7 +168,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name };
         }
 
-        [UnitySkill("ui_create_button", "Create a Button UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_button", "Create a Button UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "button", "ugui", "interactive", "click" },
+            Outputs = new[] { "name", "instanceId", "parent", "text" },
+            TracksWorkflow = true)]
         public static object UICreateButton(string name = "Button", string parent = null, string text = "Button", float width = 160, float height = 30)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -194,7 +206,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, text };
         }
 
-        [UnitySkill("ui_create_text", "Create a Text UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_text", "Create a Text UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "text", "ugui", "label", "tmp" },
+            Outputs = new[] { "name", "instanceId", "parent", "usingTMP" },
+            TracksWorkflow = true)]
         public static object UICreateText(string name = "Text", string parent = null, string text = "New Text", int fontSize = 14, float r = 0, float g = 0, float b = 0)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -215,7 +231,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, usingTMP = IsTMPAvailable() };
         }
 
-        [UnitySkill("ui_create_image", "Create an Image UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_image", "Create an Image UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "image", "ugui", "sprite", "graphic" },
+            Outputs = new[] { "name", "instanceId", "parent" },
+            TracksWorkflow = true)]
         public static object UICreateImage(string name = "Image", string parent = null, string spritePath = null, float width = 100, float height = 100)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -243,7 +263,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name };
         }
 
-        [UnitySkill("ui_create_batch", "Create multiple UI elements (Efficient). items: JSON array of {type, name, parent, text, width, height, ...}", TracksWorkflow = true)]
+        [UnitySkill("ui_create_batch", "Create multiple UI elements (Efficient). items: JSON array of {type, name, parent, text, width, height, ...}",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "batch", "ugui", "bulk", "multiple" },
+            Outputs = new[] { "totalRequested", "succeeded", "failed", "results" },
+            TracksWorkflow = true)]
         public static object UICreateBatch(string items)
         {
             return BatchExecutor.Execute<BatchUIItem>(items, item =>
@@ -322,7 +346,11 @@ namespace UnitySkills
             public float numberOfSteps { get; set; } = 0;
         }
 
-        [UnitySkill("ui_create_inputfield", "Create an InputField UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_inputfield", "Create an InputField UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "inputfield", "ugui", "text-input", "tmp" },
+            Outputs = new[] { "name", "instanceId", "parent", "placeholder", "usingTMP" },
+            TracksWorkflow = true)]
         public static object UICreateInputField(string name = "InputField", string parent = null, string placeholder = "Enter text...", float width = 200, float height = 30)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -426,7 +454,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, placeholder, usingTMP = IsTMPAvailable() };
         }
 
-        [UnitySkill("ui_create_slider", "Create a Slider UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_slider", "Create a Slider UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "slider", "ugui", "range", "interactive" },
+            Outputs = new[] { "name", "instanceId", "parent", "minValue", "maxValue", "value" },
+            TracksWorkflow = true)]
         public static object UICreateSlider(string name = "Slider", string parent = null, float minValue = 0, float maxValue = 1, float value = 0.5f, float width = 160, float height = 20)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -495,7 +527,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, minValue, maxValue, value };
         }
 
-        [UnitySkill("ui_create_toggle", "Create a Toggle UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_toggle", "Create a Toggle UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "toggle", "ugui", "checkbox", "interactive" },
+            Outputs = new[] { "name", "instanceId", "parent", "label", "isOn" },
+            TracksWorkflow = true)]
         public static object UICreateToggle(string name = "Toggle", string parent = null, string label = "Toggle", bool isOn = false)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -552,7 +588,12 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, label, isOn };
         }
 
-        [UnitySkill("ui_set_text", "Set text content on a UI Text element (supports name/instanceId/path)", TracksWorkflow = true)]
+        [UnitySkill("ui_set_text", "Set text content on a UI Text element (supports name/instanceId/path)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "text", "ugui", "content", "tmp" },
+            Outputs = new[] { "name", "text", "usingTMP" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UISetText(string name = null, int instanceId = 0, string path = null, string text = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -584,7 +625,11 @@ namespace UnitySkills
             return new { error = "No Text component found (checked both TMP and Legacy UI)" };
         }
 
-        [UnitySkill("ui_find_all", "Find all UI elements in the scene")]
+        [UnitySkill("ui_find_all", "Find all UI elements in the scene",
+            Category = SkillCategory.UI, Operation = SkillOperation.Query,
+            Tags = new[] { "find", "ugui", "search", "list" },
+            Outputs = new[] { "count", "elements" },
+            ReadOnly = true)]
         public static object UIFindAll(string uiType = null, int limit = 50)
         {
             var canvases = FindHelper.FindAll<Canvas>();
@@ -598,14 +643,14 @@ namespace UnitySkills
                     if (results.Count >= limit) break;
 
                     var type = GetUIType(element.gameObject);
-                    if (!string.IsNullOrEmpty(uiType) && type.ToLower() != uiType.ToLower())
+                    if (!string.IsNullOrEmpty(uiType) && !string.Equals(type, uiType, StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     results.Add(new
                     {
                         name = element.name,
                         instanceId = element.gameObject.GetInstanceID(),
-                        path = GameObjectFinder.GetPath(element.gameObject),
+                        path = GameObjectFinder.GetCachedPath(element.gameObject),
                         uiType = type,
                         active = element.gameObject.activeInHierarchy
                     });
@@ -666,7 +711,12 @@ namespace UnitySkills
         // Advanced UI Layout Skills
         // ==================================================================================
 
-        [UnitySkill("ui_set_anchor", "Set anchor preset for a UI element (TopLeft, TopCenter, TopRight, MiddleLeft, MiddleCenter, MiddleRight, BottomLeft, BottomCenter, BottomRight, StretchHorizontal, StretchVertical, StretchAll)", TracksWorkflow = true)]
+        [UnitySkill("ui_set_anchor", "Set anchor preset for a UI element (TopLeft, TopCenter, TopRight, MiddleLeft, MiddleCenter, MiddleRight, BottomLeft, BottomCenter, BottomRight, StretchHorizontal, StretchVertical, StretchAll)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "anchor", "ugui", "layout", "rect-transform" },
+            Outputs = new[] { "name", "preset", "anchorMin", "anchorMax" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UISetAnchor(string name = null, int instanceId = 0, string path = null, string preset = "MiddleCenter", bool setPivot = true)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -716,7 +766,12 @@ namespace UnitySkills
             return new { success = true, name = go.name, preset, anchorMin = $"({anchorMin.x}, {anchorMin.y})", anchorMax = $"({anchorMax.x}, {anchorMax.y})" };
         }
 
-        [UnitySkill("ui_set_rect", "Set RectTransform size, position, and padding (offsets)", TracksWorkflow = true)]
+        [UnitySkill("ui_set_rect", "Set RectTransform size, position, and padding (offsets)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "rect-transform", "ugui", "size", "position" },
+            Outputs = new[] { "name", "sizeDelta", "anchoredPosition" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UISetRect(
             string name = null, int instanceId = 0, string path = null,
             float? width = null, float? height = null,
@@ -769,7 +824,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, sizeDelta = $"({rect.sizeDelta.x}, {rect.sizeDelta.y})", anchoredPosition = $"({rect.anchoredPosition.x}, {rect.anchoredPosition.y})" };
         }
 
-        [UnitySkill("ui_layout_children", "Arrange child UI elements in a layout (Vertical, Horizontal, Grid)")]
+        [UnitySkill("ui_layout_children", "Arrange child UI elements in a layout (Vertical, Horizontal, Grid)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "layout", "ugui", "vertical", "horizontal", "grid" },
+            Outputs = new[] { "parent", "layoutType", "childCount" },
+            RequiresInput = new[] { "gameObject" })]
         public static object UILayoutChildren(
             string name = null, int instanceId = 0, string path = null,
             string layoutType = "Vertical",  // Vertical, Horizontal, Grid
@@ -845,7 +904,11 @@ namespace UnitySkills
             return new { success = true, parent = parentGo.name, layoutType, childCount = rect.childCount };
         }
 
-        [UnitySkill("ui_align_selected", "Align selected UI elements (Left, Center, Right, Top, Middle, Bottom)")]
+        [UnitySkill("ui_align_selected", "Align selected UI elements (Left, Center, Right, Top, Middle, Bottom)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "align", "ugui", "layout", "selection" },
+            Outputs = new[] { "alignment", "count" },
+            RequiresInput = new[] { "selectedGameObjects" })]
         public static object UIAlignSelected(string alignment = "Center")
         {
             var selected = Selection.gameObjects.Where(g => g.GetComponent<RectTransform>() != null).ToList();
@@ -894,7 +957,11 @@ namespace UnitySkills
             return new { success = true, alignment, count = selected.Count };
         }
 
-        [UnitySkill("ui_distribute_selected", "Distribute selected UI elements evenly (Horizontal, Vertical)")]
+        [UnitySkill("ui_distribute_selected", "Distribute selected UI elements evenly (Horizontal, Vertical)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "distribute", "ugui", "layout", "spacing" },
+            Outputs = new[] { "direction", "count" },
+            RequiresInput = new[] { "selectedGameObjects" })]
         public static object UIDistributeSelected(string direction = "Horizontal")
         {
             var selected = Selection.gameObjects
@@ -936,7 +1003,11 @@ namespace UnitySkills
         // New UI Element Creation Skills
         // ==================================================================================
 
-        [UnitySkill("ui_create_dropdown", "Create a Dropdown UI element with options", TracksWorkflow = true)]
+        [UnitySkill("ui_create_dropdown", "Create a Dropdown UI element with options",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "dropdown", "ugui", "select", "options" },
+            Outputs = new[] { "name", "instanceId", "parent", "optionCount" },
+            TracksWorkflow = true)]
         public static object UICreateDropdown(string name = "Dropdown", string parent = null, string options = null, float width = 160, float height = 30)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -1109,7 +1180,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, optionCount = optionList.Count };
         }
 
-        [UnitySkill("ui_create_scrollview", "Create a ScrollRect (ScrollView) UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_scrollview", "Create a ScrollRect (ScrollView) UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "scrollview", "ugui", "scroll-rect", "container" },
+            Outputs = new[] { "name", "instanceId", "parent", "horizontal", "vertical" },
+            TracksWorkflow = true)]
         public static object UICreateScrollview(
             string name = "ScrollView", string parent = null,
             float width = 300, float height = 200,
@@ -1164,7 +1239,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, horizontal, vertical };
         }
 
-        [UnitySkill("ui_create_rawimage", "Create a RawImage UI element (for Texture2D/RenderTexture)", TracksWorkflow = true)]
+        [UnitySkill("ui_create_rawimage", "Create a RawImage UI element (for Texture2D/RenderTexture)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "rawimage", "ugui", "texture", "render-texture" },
+            Outputs = new[] { "name", "instanceId", "parent", "hasTexture" },
+            TracksWorkflow = true)]
         public static object UICreateRawImage(string name = "RawImage", string parent = null, string texturePath = null, float width = 100, float height = 100)
         {
             var parentGo = FindOrCreateCanvas(parent);
@@ -1192,7 +1271,11 @@ namespace UnitySkills
             return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, hasTexture = rawImage.texture != null };
         }
 
-        [UnitySkill("ui_create_scrollbar", "Create a standalone Scrollbar UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_create_scrollbar", "Create a standalone Scrollbar UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "scrollbar", "ugui", "scroll", "navigation" },
+            Outputs = new[] { "name", "instanceId", "parent", "direction" },
+            TracksWorkflow = true)]
         public static object UICreateScrollbar(
             string name = "Scrollbar", string parent = null,
             string direction = "BottomToTop", float value = 0, float size = 0.2f, int numberOfSteps = 0)
@@ -1248,7 +1331,12 @@ namespace UnitySkills
         // UI Property Configuration Skills
         // ==================================================================================
 
-        [UnitySkill("ui_set_image", "Set Image properties (type, fillMethod, fillAmount, preserveAspect, sprite)", TracksWorkflow = true)]
+        [UnitySkill("ui_set_image", "Set Image properties (type, fillMethod, fillAmount, preserveAspect, sprite)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "image", "ugui", "sprite", "fill" },
+            Outputs = new[] { "name", "type", "fillMethod", "fillAmount", "preserveAspect" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UISetImage(
             string name = null, int instanceId = 0, string path = null,
             string type = null,
@@ -1298,7 +1386,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("ui_add_layout_element", "Add or configure LayoutElement on a UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_add_layout_element", "Add or configure LayoutElement on a UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create | SkillOperation.Modify,
+            Tags = new[] { "layout-element", "ugui", "sizing", "flexible" },
+            Outputs = new[] { "name", "minWidth", "minHeight", "preferredWidth", "preferredHeight", "flexibleWidth", "flexibleHeight" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UIAddLayoutElement(
             string name = null, int instanceId = 0, string path = null,
             float? minWidth = null, float? minHeight = null,
@@ -1332,7 +1425,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("ui_add_canvas_group", "Add or configure CanvasGroup on a UI element (alpha, interactable, blocksRaycasts)", TracksWorkflow = true)]
+        [UnitySkill("ui_add_canvas_group", "Add or configure CanvasGroup on a UI element (alpha, interactable, blocksRaycasts)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create | SkillOperation.Modify,
+            Tags = new[] { "canvas-group", "ugui", "alpha", "interactable" },
+            Outputs = new[] { "name", "alpha", "interactable", "blocksRaycasts" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UIAddCanvasGroup(
             string name = null, int instanceId = 0, string path = null,
             float? alpha = null, bool? interactable = null,
@@ -1358,7 +1456,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("ui_add_mask", "Add Mask or RectMask2D to a UI element (maskType: Mask or RectMask2D)", TracksWorkflow = true)]
+        [UnitySkill("ui_add_mask", "Add Mask or RectMask2D to a UI element (maskType: Mask or RectMask2D)",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create | SkillOperation.Modify,
+            Tags = new[] { "mask", "ugui", "clipping", "rect-mask" },
+            Outputs = new[] { "name", "maskType", "showMaskGraphic" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UIAddMask(
             string name = null, int instanceId = 0, string path = null,
             string maskType = "RectMask2D", bool showMaskGraphic = true)
@@ -1388,7 +1491,12 @@ namespace UnitySkills
             return new { success = true, name = go.name, maskType = applied, showMaskGraphic };
         }
 
-        [UnitySkill("ui_add_outline", "Add Shadow or Outline effect to a UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_add_outline", "Add Shadow or Outline effect to a UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Create,
+            Tags = new[] { "outline", "ugui", "shadow", "effect" },
+            Outputs = new[] { "name", "effectType", "effectColor", "effectDistance" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UIAddOutline(
             string name = null, int instanceId = 0, string path = null,
             string effectType = "Outline",
@@ -1426,7 +1534,12 @@ namespace UnitySkills
             return new { success = true, name = go.name, effectType = applied, effectColor = $"({r},{g},{b},{a})", effectDistance = $"({distanceX},{distanceY})" };
         }
 
-        [UnitySkill("ui_configure_selectable", "Configure Selectable properties (transition, colors, navigation) on a UI element", TracksWorkflow = true)]
+        [UnitySkill("ui_configure_selectable", "Configure Selectable properties (transition, colors, navigation) on a UI element",
+            Category = SkillCategory.UI, Operation = SkillOperation.Modify,
+            Tags = new[] { "selectable", "ugui", "transition", "navigation", "colors" },
+            Outputs = new[] { "name", "transition", "interactable", "navigationMode" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UIConfigureSelectable(
             string name = null, int instanceId = 0, string path = null,
             string transition = null,

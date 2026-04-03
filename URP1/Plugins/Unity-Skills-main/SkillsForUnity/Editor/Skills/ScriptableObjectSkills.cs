@@ -12,7 +12,11 @@ namespace UnitySkills
     /// </summary>
     public static class ScriptableObjectSkills
     {
-        [UnitySkill("scriptableobject_create", "Create a new ScriptableObject asset", TracksWorkflow = true)]
+        [UnitySkill("scriptableobject_create", "Create a new ScriptableObject asset",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Create,
+            Tags = new[] { "scriptableobject", "create", "asset", "data" },
+            Outputs = new[] { "type", "path" },
+            TracksWorkflow = true)]
         public static object ScriptableObjectCreate(string typeName, string savePath)
         {
             if (Validate.SafePath(savePath, "savePath") is object pathErr) return pathErr;
@@ -36,7 +40,12 @@ namespace UnitySkills
             return new { success = true, type = typeName, path = savePath };
         }
 
-        [UnitySkill("scriptableobject_get", "Get properties of a ScriptableObject")]
+        [UnitySkill("scriptableobject_get", "Get properties of a ScriptableObject",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Query,
+            Tags = new[] { "scriptableobject", "get", "inspect", "properties" },
+            Outputs = new[] { "path", "typeName", "fields", "properties" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ScriptableObjectGet(string assetPath)
         {
             var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
@@ -66,7 +75,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("scriptableobject_set", "Set a field/property on a ScriptableObject", TracksWorkflow = true)]
+        [UnitySkill("scriptableobject_set", "Set a field/property on a ScriptableObject",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "scriptableobject", "set", "field", "property" },
+            Outputs = new[] { "field", "value" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object ScriptableObjectSet(string assetPath, string fieldName, string value)
         {
             var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
@@ -107,7 +121,11 @@ namespace UnitySkills
             }
         }
 
-        [UnitySkill("scriptableobject_list_types", "List available ScriptableObject types")]
+        [UnitySkill("scriptableobject_list_types", "List available ScriptableObject types",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Query,
+            Tags = new[] { "scriptableobject", "types", "list", "search" },
+            Outputs = new[] { "count", "types" },
+            ReadOnly = true)]
         public static object ScriptableObjectListTypes(string filter = null, int limit = 50)
         {
             var types = System.AppDomain.CurrentDomain.GetAssemblies()
@@ -121,7 +139,11 @@ namespace UnitySkills
             return new { count = types.Length, types };
         }
 
-        [UnitySkill("scriptableobject_duplicate", "Duplicate a ScriptableObject asset")]
+        [UnitySkill("scriptableobject_duplicate", "Duplicate a ScriptableObject asset",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Create,
+            Tags = new[] { "scriptableobject", "duplicate", "copy", "clone" },
+            Outputs = new[] { "original", "copy" },
+            RequiresInput = new[] { "assetPath" })]
         public static object ScriptableObjectDuplicate(string assetPath)
         {
             if (Validate.SafePath(assetPath, "assetPath") is object pathErr) return pathErr;
@@ -140,7 +162,12 @@ namespace UnitySkills
             return new { success = true, original = assetPath, copy = newPath };
         }
 
-        [UnitySkill("scriptableobject_set_batch", "Set multiple fields on a ScriptableObject at once. fields: JSON object {fieldName: value, ...}", TracksWorkflow = true)]
+        [UnitySkill("scriptableobject_set_batch", "Set multiple fields on a ScriptableObject at once. fields: JSON object {fieldName: value, ...}",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "scriptableobject", "set", "batch", "fields" },
+            Outputs = new[] { "fieldsSet" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object ScriptableObjectSetBatch(string assetPath, string fields)
         {
             var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
@@ -161,7 +188,12 @@ namespace UnitySkills
             return new { success = true, fieldsSet = set };
         }
 
-        [UnitySkill("scriptableobject_delete", "Delete a ScriptableObject asset", TracksWorkflow = true)]
+        [UnitySkill("scriptableobject_delete", "Delete a ScriptableObject asset",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Delete,
+            Tags = new[] { "scriptableobject", "delete", "remove", "asset" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object ScriptableObjectDelete(string assetPath)
         {
             if (Validate.SafePath(assetPath, "assetPath", isDelete: true) is object pathErr) return pathErr;
@@ -172,7 +204,11 @@ namespace UnitySkills
             return new { success = true, deleted = assetPath };
         }
 
-        [UnitySkill("scriptableobject_find", "Find ScriptableObject assets by type name")]
+        [UnitySkill("scriptableobject_find", "Find ScriptableObject assets by type name",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Query,
+            Tags = new[] { "scriptableobject", "find", "search", "asset" },
+            Outputs = new[] { "count", "assets" },
+            ReadOnly = true)]
         public static object ScriptableObjectFind(string typeName, string searchPath = "Assets", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets($"t:{typeName}", new[] { searchPath });
@@ -184,7 +220,12 @@ namespace UnitySkills
             return new { success = true, count = results.Length, assets = results };
         }
 
-        [UnitySkill("scriptableobject_export_json", "Export a ScriptableObject to JSON")]
+        [UnitySkill("scriptableobject_export_json", "Export a ScriptableObject to JSON",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Query,
+            Tags = new[] { "scriptableobject", "export", "json", "serialize" },
+            Outputs = new[] { "json", "path" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ScriptableObjectExportJson(string assetPath, string savePath = null)
         {
             var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
@@ -199,7 +240,12 @@ namespace UnitySkills
             return new { success = true, json };
         }
 
-        [UnitySkill("scriptableobject_import_json", "Import JSON data into a ScriptableObject", TracksWorkflow = true)]
+        [UnitySkill("scriptableobject_import_json", "Import JSON data into a ScriptableObject",
+            Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Modify,
+            Tags = new[] { "scriptableobject", "import", "json", "deserialize" },
+            Outputs = new[] { "assetPath" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object ScriptableObjectImportJson(string assetPath, string json = null, string jsonFilePath = null)
         {
             var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);

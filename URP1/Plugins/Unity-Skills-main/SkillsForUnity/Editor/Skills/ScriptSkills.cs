@@ -16,7 +16,10 @@ namespace UnitySkills
         private const int DefaultDiagnosticLimit = 20;
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
 
-        [UnitySkill("script_create", "Create a new C# script. Before generating gameplay scripts, actively consider coupling, performance, and maintainability. Optional: namespace", TracksWorkflow = true)]
+        [UnitySkill("script_create", "Create a new C# script. Before generating gameplay scripts, actively consider coupling, performance, and maintainability. Optional: namespace", TracksWorkflow = true,
+            Category = SkillCategory.Script, Operation = SkillOperation.Create,
+            Tags = new[] { "script", "csharp", "create", "template" },
+            Outputs = new[] { "path", "className", "namespaceName", "compilation" })]
         public static object ScriptCreate(
             string scriptName = null,
             string name = null,
@@ -65,7 +68,10 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("script_create_batch", "Create multiple scripts efficiently. Before batch-generating gameplay scripts, actively consider coupling, performance, and maintainability for each class role. items: JSON array of {scriptName, folder, template, namespace}", TracksWorkflow = true)]
+        [UnitySkill("script_create_batch", "Create multiple scripts efficiently. Before batch-generating gameplay scripts, actively consider coupling, performance, and maintainability for each class role. items: JSON array of {scriptName, folder, template, namespace}", TracksWorkflow = true,
+            Category = SkillCategory.Script, Operation = SkillOperation.Create,
+            Tags = new[] { "script", "batch", "create", "bulk" },
+            Outputs = new[] { "totalCount", "successCount", "results" })]
         public static object ScriptCreateBatch(string items)
         {
             return BatchExecutor.Execute<BatchScriptItem>(items, item =>
@@ -92,7 +98,12 @@ namespace UnitySkills
             public string @namespace { get; set; }
         }
 
-        [UnitySkill("script_read", "Read the contents of a script")]
+        [UnitySkill("script_read", "Read the contents of a script",
+            Category = SkillCategory.Script, Operation = SkillOperation.Query,
+            Tags = new[] { "script", "read", "content", "source" },
+            Outputs = new[] { "path", "lines", "content" },
+            RequiresInput = new[] { "scriptPath" },
+            ReadOnly = true)]
         public static object ScriptRead(string scriptPath)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;
@@ -103,7 +114,11 @@ namespace UnitySkills
             return new { path = NormalizePath(scriptPath), lines = content.Split('\n').Length, content };
         }
 
-        [UnitySkill("script_delete", "Delete a script file", TracksWorkflow = true)]
+        [UnitySkill("script_delete", "Delete a script file", TracksWorkflow = true,
+            Category = SkillCategory.Script, Operation = SkillOperation.Delete,
+            Tags = new[] { "script", "delete", "remove", "file" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "scriptPath" })]
         public static object ScriptDelete(string scriptPath)
         {
             if (Validate.SafePath(scriptPath, "scriptPath", isDelete: true) is object pathErr) return pathErr;
@@ -126,7 +141,11 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("script_find_in_file", "Search for pattern in scripts")]
+        [UnitySkill("script_find_in_file", "Search for pattern in scripts",
+            Category = SkillCategory.Script, Operation = SkillOperation.Query,
+            Tags = new[] { "script", "search", "pattern", "grep" },
+            Outputs = new[] { "pattern", "matchCount", "matches" },
+            ReadOnly = true)]
         public static object ScriptFindInFile(string pattern, string folder = "Assets", bool isRegex = false, int limit = 50)
         {
             if (!string.IsNullOrEmpty(folder) && Validate.SafePath(folder, "folder") is object folderErr) return folderErr;
@@ -165,7 +184,11 @@ namespace UnitySkills
             return new { pattern, matchCount = results.Count, matches = results };
         }
 
-        [UnitySkill("script_append", "Append content to a script", TracksWorkflow = true)]
+        [UnitySkill("script_append", "Append content to a script", TracksWorkflow = true,
+            Category = SkillCategory.Script, Operation = SkillOperation.Modify,
+            Tags = new[] { "script", "append", "insert", "code" },
+            Outputs = new[] { "path", "compilation" },
+            RequiresInput = new[] { "scriptPath" })]
         public static object ScriptAppend(string scriptPath, string content, int atLine = -1, bool checkCompile = true, int diagnosticLimit = DefaultDiagnosticLimit)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;
@@ -192,7 +215,11 @@ namespace UnitySkills
             return CreateScriptMutationResult(scriptPath, checkCompile, diagnosticLimit);
         }
 
-        [UnitySkill("script_replace", "Find and replace content in a script file", TracksWorkflow = true)]
+        [UnitySkill("script_replace", "Find and replace content in a script file", TracksWorkflow = true,
+            Category = SkillCategory.Script, Operation = SkillOperation.Modify,
+            Tags = new[] { "script", "replace", "find", "refactor" },
+            Outputs = new[] { "path", "replacements", "compilation" },
+            RequiresInput = new[] { "scriptPath" })]
         public static object ScriptReplace(string scriptPath, string find, string replace, bool isRegex = false, bool checkCompile = true, int diagnosticLimit = DefaultDiagnosticLimit)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;
@@ -218,7 +245,11 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("script_list", "List C# script files in the project")]
+        [UnitySkill("script_list", "List C# script files in the project",
+            Category = SkillCategory.Script, Operation = SkillOperation.Query,
+            Tags = new[] { "script", "list", "project", "files" },
+            Outputs = new[] { "count", "scripts" },
+            ReadOnly = true)]
         public static object ScriptList(string folder = "Assets", string filter = null, int limit = 100)
         {
             var guids = AssetDatabase.FindAssets("t:MonoScript", new[] { folder });
@@ -233,7 +264,12 @@ namespace UnitySkills
             return new { count = scripts.Length, scripts };
         }
 
-        [UnitySkill("script_get_info", "Get script info (class name, base class, methods)")]
+        [UnitySkill("script_get_info", "Get script info (class name, base class, methods)",
+            Category = SkillCategory.Script, Operation = SkillOperation.Query,
+            Tags = new[] { "script", "info", "class", "reflection" },
+            Outputs = new[] { "path", "className", "baseClass", "publicMethods", "publicFields" },
+            RequiresInput = new[] { "scriptPath" },
+            ReadOnly = true)]
         public static object ScriptGetInfo(string scriptPath)
         {
             var monoScript = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptPath);
@@ -261,7 +297,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("script_rename", "Rename a script file", TracksWorkflow = true)]
+        [UnitySkill("script_rename", "Rename a script file", TracksWorkflow = true,
+            Category = SkillCategory.Script, Operation = SkillOperation.Modify,
+            Tags = new[] { "script", "rename", "refactor", "file" },
+            Outputs = new[] { "path", "oldPath", "newName", "compilation" },
+            RequiresInput = new[] { "scriptPath" })]
         public static object ScriptRename(string scriptPath, string newName, bool checkCompile = true, int diagnosticLimit = DefaultDiagnosticLimit)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;
@@ -283,7 +323,11 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("script_move", "Move a script to a new folder", TracksWorkflow = true)]
+        [UnitySkill("script_move", "Move a script to a new folder", TracksWorkflow = true,
+            Category = SkillCategory.Script, Operation = SkillOperation.Modify,
+            Tags = new[] { "script", "move", "reorganize", "file" },
+            Outputs = new[] { "oldPath", "newPath", "compilation" },
+            RequiresInput = new[] { "scriptPath" })]
         public static object ScriptMove(string scriptPath, string newFolder, bool checkCompile = true, int diagnosticLimit = DefaultDiagnosticLimit)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;
@@ -306,7 +350,12 @@ namespace UnitySkills
             return result;
         }
 
-        [UnitySkill("script_get_compile_feedback", "Get compile diagnostics related to a specific script. Use after script_create/script_append/script_replace/script_rename/script_move.")]
+        [UnitySkill("script_get_compile_feedback", "Get compile diagnostics related to a specific script. Use after script_create/script_append/script_replace/script_rename/script_move.",
+            Category = SkillCategory.Script, Operation = SkillOperation.Query,
+            Tags = new[] { "script", "compile", "diagnostics", "errors" },
+            Outputs = new[] { "scriptPath", "isCompiling", "hasErrors", "errorCount", "errors" },
+            RequiresInput = new[] { "scriptPath" },
+            ReadOnly = true)]
         public static object ScriptGetCompileFeedback(string scriptPath, int limit = DefaultDiagnosticLimit)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;

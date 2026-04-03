@@ -2,6 +2,93 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [1.6.9] - 2026-04-03
+
+### Added
+- **依赖链查询端点 `/skills/chain`** — 新增 GET `/skills/chain?output=instanceId` 端点，基于 `Outputs` 元数据构建的反向索引，快速查找能产出指定字段的 Skill 链，支持 AI Agent 自动编排多步工作流。
+- **Dry-Run 模式** — POST `/skill/{name}?dryRun=true` 仅验证参数合法性而不实际执行技能，返回参数解析结果和缺失必选参数提示，便于 Agent 预检查调用可行性。
+- **意图解析增强** — `SkillRouter` 新增中英文同义词映射表（70+ 条目）、操作类型提取（Create/Delete/Query/Modify/Execute/Analyze）和分类关键词匹配，`/skills/recommend` 端点支持中文子串匹配（如"创建方块"直接匹配到 `gameobject_create`）。
+- **输出索引** — `SkillRouter` 初始化时构建 `output field → producing skills` 反向索引，支撑依赖链查询和意图推荐的输出字段匹配。
+
+### Fixed
+- **Domain Reload 后服务器偶发不重启** — 新增 `ProcessJobQueue` 安全网机制：每 5 秒检测服务器是否应运行但未运行，自动触发恢复，不再完全依赖 `EditorApplication.delayCall`（该 API 在某些 Unity 版本/状态下可能不触发）。同时将端口释放等待从 500ms 增加到 2000ms，`delayCall` 恢复增加 1 秒延迟缓冲端口释放。
+- **连续失败计数过于激进** — `MaxConsecutiveFailures` 从 5 提升到 10；新增 5 分钟时间衰减机制，距上次失败超过 5 分钟自动重置计数器，防止历史失败累积导致服务器永久放弃自动重启。
+- **必选参数判定优化** — `SkillRouter` 新增 `IsParameterRequired()` 方法替代简单的 `!p.HasDefaultValue` 判断，正确处理值类型可空参数的必选性识别。
+
+### Changed
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.6.9`。
+
+## [1.6.8] - 2026-04-03
+
+### Fixed
+- **`gameobject_create` parentName 参数失效** — 文档声称 `gameobject_create` 支持 `parentName` 参数，但 C# 实现中缺失该参数，SkillRouter 静默忽略导致子物体被创建在场景根层级而非预期父物体下。现已在方法签名中添加 `parentName`/`parentInstanceId`/`parentPath` 三种父物体标识参数，创建后自动 `SetParent`，坐标改为 `localPosition` 语义。
+- **`gameobject_create_batch` 缺少 parent 支持** — `BatchCreateItem` 同步添加 `parentName`/`parentInstanceId`/`parentPath` 字段，批量创建时支持为每个物体指定父物体。
+- **`prefab_instantiate` 缺少 parent 支持** — 新增 `parentName`/`parentInstanceId`/`parentPath` 参数，实例化后自动设置父物体，返回值新增 `path` 字段。
+- **`prefab_instantiate_batch` 缺少 parent 支持** — `BatchInstantiateItem` 同步添加 parent 相关字段。
+
+### Changed
+- **文档与实现一致性修复** — `gameobject/SKILL.md` 补充 `parentInstanceId`/`parentPath` 参数说明，`prefab/SKILL.md` 同步更新参数表和 batch item 属性列表。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.6.8`。
+
+## [1.6.7] - 2026-04-02
+
+### Added
+- **Intent-Level Skill Metadata (v1.7 Attributes)** — 全部 513 个 Skill 的 `[UnitySkill]` 特性新增 6 个结构化元数据字段：`Category`（SkillCategory 枚举）、`Operation`（SkillOperation Flags 枚举: Query/Create/Modify/Delete/Execute/Analyze）、`Tags`（语义标签数组）、`Outputs`（返回字段声明）、`RequiresInput`（前置依赖声明）、`ReadOnly`（纯查询标记）。
+- **`/skills` 过滤查询 API** — GET `/skills` 端点支持 query string 过滤：`category`、`operation`、`tags`、`readOnly`、`q`（文本搜索 name+description+tags），多条件 AND 组合。无参数调用完全向后兼容。
+- **`/skills/recommend` 意图推荐端点** — 新增 GET `/skills/recommend?intent=create+cube&topN=10`，基于关键词评分排序（name=3分, tags=2分, description=1分），返回 top-N 匹配 Skill 及 relevance score。
+- **Metadata Validation 工具** — 编辑器 Skills 标签页新增 **Validate** 按钮，检查 6 条元数据规则（Category/Operation/Tags/Outputs 完整性、ReadOnly 与 TracksWorkflow 矛盾检测、Delete/Modify 操作的 RequiresInput 检查），结果输出到 Console。
+- **Python 客户端增强** — `get_skills()` 新增 `category`/`operation`/`tags`/`read_only`/`q` 过滤参数；新增 `find_skills(intent, top_n)` 调用服务端推荐；新增 `get_skill_chain(target_output)` 查找产出特定字段的 Skill 链。
+
+### Changed
+- **SkillsHttpServer QueryString 管道** — `RequestJob` 新增 `QueryString` 字段，HTTP 请求的查询字符串从 `ListenLoop` 完整传递到 `ProcessJob`，支撑过滤和推荐端点。
+- **SkillRouter Manifest 增强** — `/skills` manifest 新增 `categories` 和 `operationTypes` 顶层字段；每个 Skill 条目新增 `category`、`operation`、`tags`、`outputs`、`requiresInput`、`readOnly` 字段。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.6.7`。
+
+## [1.6.6] - 2026-03-26
+
+### Fixed
+- **CM3 `PrioritySettings` 编译兼容修复** — `CinemachineSkills.cs` 不再依赖 `PrioritySettings` 的隐式 `int` 转换；`cinemachine_create_vcam` 和 `cinemachine_set_active` 统一改为使用 `Priority.Value` 这一最低公共 API，修复 Unity 2022.3 项目在安装部分 `Cinemachine 3.0.x` 预览版本时出现的 `CS0029` / `CS0030` 编译错误。
+- **`cinemachine_set_active` 返回值修正** — CM3 分支返回消息现在输出实际优先级数值，而不是 `PrioritySettings` 结构体对象文本。
+
+### Changed
+- **CM3 支持边界说明** — 文档明确当前 `Cinemachine 3` 兼容策略以 `3.0.0-pre.5+ / stable 3.x` 的共同 API 为基线；更早的 `3.0.0-pre.1/.2` 因核心相机 API 仍在演化，不纳入当前兼容范围。
+- **Package Manager 元数据补全** — `SkillsForUnity/package.json` 新增 `changelogUrl`，Unity Package Manager 的 `Changelog` 按钮现在会跳转到仓库中的 `CHANGELOG.md`。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和安装文档同步提升到 `1.6.6`。
+
+## [1.6.5] - 2026-03-20
+
+### Added
+- **SKILL.md 双模式系统 (Semi-Auto / Full-Auto)**：全新操作模式机制，默认半自动模式仅激活 ~80 个高频 Skills（script/perception/scene/editor/asset/workflow/debug/console + 14 advisory），大幅降低 Token 消耗；用户说"全自动模式"/"full auto" 时激活全部 513 Skills。
+- **防幻觉 Guardrails**：全部 39 个功能模块 SKILL.md 新增 `## Guardrails` 段落，包含 Mode 声明、DO NOT 幻觉列表（常见不存在的 Skill 名称和参数错误）、Routing 路由提示（引导 AI 使用正确模块）。
+- **Skill 命名约定**：模块索引新增 `Skill Naming Convention` 段落，列出全部有效 module 前缀，AI 可据此判断 Skill 是否存在。
+- **Advisory 模块触发词优化**：14 个 advisory 模块的 YAML description 全面升级，增加自然语言触发词（"怎么组织代码"、"太慢了"、"用什么模式好" 等）和问题描述型触发词，中英文覆盖更智能。
+- **`component_set_property` 新增 `assetPath` 参数**：支持将 Project Asset（ScriptableObject、Prefab、Material、Texture、AudioClip 等）赋值给组件的 Object 引用字段。通过 `AssetDatabase.LoadAssetAtPath` 加载资产，支持精确类型匹配与降级兼容。`component_set_property_batch` 同步支持。
+- **`prefab_set_property` (1 skill)**：新增 Prefab 资产属性编辑技能，通过 `SerializedObject` + `SerializedProperty` 直接编辑 Prefab Asset 文件的组件字段（无需实例化到场景）。支持：
+  - 基本类型（int/float/bool/string/enum）、Vector2/3/4、Color、Rect、Bounds、LayerMask
+  - Asset 引用赋值（通过 `assetReferencePath` 参数）
+  - Prefab 内子对象编辑（通过 `gameObjectName` 参数）
+  - 属性名自动回退（`propertyName` → `m_PropertyName` → `_propertyName` → `m_propertyName`）
+
+### Changed
+- **SKILL.md 模块索引新增 Mode 列**：38 个功能模块标注 SA (Semi-Auto) 或 FA (Full-Auto)，14 个 advisory 模块明确标注"双模式均可用"。
+- **主入口 SKILL.md**：YAML description 新增 16 个中英文触发词（含模式切换词）；Core Rule #2 添加 `[Full-Auto]` 前缀；workflow/gameobject 示例标注为 Full-Auto 示例。
+- **全部模块 SKILL.md 触发词标准化**：54 个 SKILL.md 文件均包含标准 `Triggers:` 格式的中英文双语触发词。
+- **REST Skills 总数**：512 → 513（+1 prefab_set_property）。
+- **Prefab 模块**：10 → 11 skills。
+
+### Docs (SKILL.md 文档质量审计与修复 — 26 文件)
+- **Batch Skill 返回值补全**：为 9 个模块共 25 个 batch 技能补全 `**Returns**` 结构文档：gameobject（9）、component（3）、light（2）、material（4）、asset（3）、importer（3）、prefab（1）、ui（1）、script（1）。
+- **三元定位参数补全**：修复 `gameobject_set_transform`、`gameobject_set_parent`、`gameobject_set_active` 缺失的 `instanceId`/`path` 参数文档；`gameobject_set_parent` 参数名从 `name`/`parentName` 修正为 C# 实际签名 `childName`/`childInstanceId`/`childPath`/`parentName`/`parentInstanceId`/`parentPath`（6 参数完整文档）。
+- **Object Targeting 统一说明**：为 gameobject、component、light、material 四个功能模块顶部新增"Object Targeting"注释段落，说明所有单对象 Skill 支持 `name`/`instanceId`/`path` 三元定位。
+- **Batch 参数文档增强**：`gameobject_set_parent_batch` 补全 6 参数说明 + 三种定位方式示例；`light_set_properties_batch` 补全全部可用参数（identifier + `r`/`g`/`b`/`intensity`/`range`/`shadows`）+ 混合示例。
+- **`component_set_property` 类型示例**：新增 5 种 `value` 参数类型的用法示例（float/bool、Vector3 JSON、Color JSON、Enum 字符串），消除类型模糊导致的幻觉风险。
+- **Component 技能可见性**：`component_set_enabled` 和 `component_copy` 从 "Additional Skills" 部分提升到 Skills Overview 表格，提高 AI 发现率。
+- **Advisory 模块 Mode 自声明**：13 个 advisory 模块（architecture/adr/performance/asmdef/blueprints/script-roles/scene-contracts/testability/patterns/async/inspector/scriptdesign/project-scout）新增 `**Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills` 声明，实现 52/52 模块 SKILL.md 全覆盖 Mode 标记（8 SA + 31 FA + 13 Both）。
+- **缺失 Guardrails 补建**：为 patterns、async、inspector 三个 advisory 模块新建 `## Guardrails` 段落（含 Mode 声明和反模式指导），实现全部 advisory 模块 Guardrails 100% 覆盖。
+- **Cinemachine deprecated 增强**：`cinemachine_add_component` 弃用标记从行内括号改为醒目 blockquote `> **DEPRECATED**`，并补全 `instanceId`/`path`/`componentType` 参数文档。
+- **`cinemachine_set_targets` 参数补全**：新增 `instanceId` 和 `path` 参数说明，支持精确定位 VCam。
+- **Terrain layerIndex 说明**：`terrain_paint_texture` 的 `layerIndex` 参数补充"0-based"说明和 `terrain_get_info` 查询引导。
+
 ## [1.6.4] - 2026-03-15
 
 ### Added

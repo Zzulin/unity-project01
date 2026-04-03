@@ -89,6 +89,10 @@ namespace UnitySkills
         private const double WatchdogInterval = 15.0;
         private static double _lastWatchdogCheck = 0;
 
+        // Safety net: recover server after Domain Reload if delayCall failed to fire
+        private const double SafetyNetInterval = 5.0;
+        private static double _lastSafetyNetCheck = 0;
+
         // KeepAlive: unconditional wakeup interval (ticks; 5s = 50_000_000 ticks)
         private static long _lastForceWakeTicks = 0;
 
@@ -113,7 +117,7 @@ namespace UnitySkills
         private static string PREF_TOTAL_PROCESSED => PrefKey("TotalProcessed");
         private static string PREF_LAST_PORT => PrefKey("LastPort");
         private static string PREF_CONSECUTIVE_FAILURES => PrefKey("ConsecutiveRestartFailures");
-        private const int MaxConsecutiveFailures = 5;
+        private const int MaxConsecutiveFailures = 10;
 
         // Domain Reload tracking
         private static bool _domainReloadPending = false;
@@ -182,6 +186,7 @@ namespace UnitySkills
             public long EnqueueTimeTicks;
             public string RequestId;
             public string AgentId;
+            public string QueryString;
 
             // Result (set by Main thread)
             public string ResponseJson;
@@ -191,7 +196,7 @@ namespace UnitySkills
             public int PoolReturned;
             public ManualResetEventSlim CompletionSignal = new ManualResetEventSlim(false);
 
-            public void Prepare(HttpListenerContext context, string httpMethod, string path, string body, string requestId, string agentId)
+            public void Prepare(HttpListenerContext context, string httpMethod, string path, string body, string requestId, string agentId, string queryString = null)
             {
                 Context = context;
                 HttpMethod = httpMethod;
@@ -200,6 +205,7 @@ namespace UnitySkills
                 EnqueueTimeTicks = DateTime.UtcNow.Ticks;
                 RequestId = requestId;
                 AgentId = agentId;
+                QueryString = queryString;
                 ResponseJson = null;
                 StatusCode = 200;
                 IsProcessed = false;
@@ -217,6 +223,7 @@ namespace UnitySkills
                 EnqueueTimeTicks = 0;
                 RequestId = null;
                 AgentId = null;
+                QueryString = null;
                 ResponseJson = null;
                 StatusCode = 200;
                 IsProcessed = false;
@@ -373,7 +380,7 @@ namespace UnitySkills
             
             // Check if we should auto-restart after Domain Reload
             // Use delayed call to ensure Unity is fully initialized
-            EditorApplication.delayCall += CheckAndRestoreServer;
+            EditorApplication.delayCall += () => ScheduleDelayedCall(1.0, CheckAndRestoreServer);
         }
         
         /// <summary>
@@ -403,7 +410,7 @@ namespace UnitySkills
                 try { _listener?.Stop(); } catch { }
                 try { _listener?.Close(); } catch { }
                 // Wait for threads to exit so port is fully released
-                try { _listenerThread?.Join(500); } catch { }
+                try { _listenerThread?.Join(2000); } catch { }
                 try { _keepAliveThread?.Join(100); } catch { }
             }
         }
@@ -464,6 +471,21 @@ namespace UnitySkills
             if (shouldRun && autoStart && !_isRunning)
             {
                 int failures = EditorPrefs.GetInt(PREF_CONSECUTIVE_FAILURES, 0);
+
+                // Decay: if last failure was more than 5 minutes ago, reset counter
+                if (failures > 0)
+                {
+                    string lastFailTimeKey = PrefKey("LastFailTime");
+                    double lastFailTime = 0;
+                    double.TryParse(EditorPrefs.GetString(lastFailTimeKey, "0"), out lastFailTime);
+                    if (EditorApplication.timeSinceStartup - lastFailTime > 300)
+                    {
+                        failures = 0;
+                        EditorPrefs.SetInt(PREF_CONSECUTIVE_FAILURES, 0);
+                        SkillsLogger.LogVerbose("[UnitySkills] Consecutive failure counter reset (5 min decay)");
+                    }
+                }
+
                 if (failures >= MaxConsecutiveFailures)
                 {
                     SkillsLogger.LogError(
@@ -495,6 +517,7 @@ namespace UnitySkills
                     // 本轮所有重试耗尽
                     _restoreRetryCount = 0;
                     EditorPrefs.SetInt(PREF_CONSECUTIVE_FAILURES, failures + 1);
+                    EditorPrefs.SetString(PrefKey("LastFailTime"), EditorApplication.timeSinceStartup.ToString());
                     SkillsLogger.LogError(
                         $"[UnitySkills] Server failed to restart (consecutive failures: {failures + 1}/{MaxConsecutiveFailures}). " +
                         "Will retry on next Domain Reload. Manual start: Window > UnitySkills > Start Server");
@@ -819,7 +842,8 @@ namespace UnitySkills
                             request.Url.AbsolutePath,
                             body,
                             $"req_{Interlocked.Increment(ref _requestIdCounter):X8}",
-                            DetectAgent(request));
+                            DetectAgent(request),
+                            request.Url.Query);
 
                         Interlocked.Increment(ref _totalRequestsReceived);
 
@@ -1067,11 +1091,28 @@ namespace UnitySkills
                     }
                 }
             }
-        }
 
-        /// <summary>
-        /// Processes a single job. Runs on MAIN THREAD - all Unity API safe.
-        /// </summary>
+            // Safety net: recover server after Domain Reload if delayCall failed to fire
+            if (!_isRunning && !_domainReloadPending)
+            {
+                if (now - _lastSafetyNetCheck > SafetyNetInterval)
+                {
+                    _lastSafetyNetCheck = now;
+                    bool shouldRun = EditorPrefs.GetBool(PREF_SERVER_SHOULD_RUN, false);
+                    if (shouldRun && AutoStart)
+                    {
+                        int failures = EditorPrefs.GetInt(PREF_CONSECUTIVE_FAILURES, 0);
+                        if (failures < MaxConsecutiveFailures)
+                        {
+                            SkillsLogger.Log("[SafetyNet] Server should be running but isn't — attempting recovery...");
+                            int lastPort = EditorPrefs.GetInt(PREF_LAST_PORT, 0);
+                            int restorePort = (lastPort >= 8090 && lastPort <= 8100) ? lastPort : PreferredPort;
+                            Start(restorePort, fallbackToAuto: true);
+                        }
+                    }
+                }
+            }
+        }
         private static void ProcessJob(RequestJob job)
         {
             // Handle OPTIONS (CORS preflight)
@@ -1120,11 +1161,29 @@ namespace UnitySkills
                 return;
             }
             
-            // Get skills manifest
+            // Get skills manifest (with optional filtering)
             if (path == "/skills" && job.HttpMethod == "GET")
             {
                 job.StatusCode = 200;
-                job.ResponseJson = SkillRouter.GetManifest();
+                job.ResponseJson = string.IsNullOrEmpty(job.QueryString)
+                    ? SkillRouter.GetManifest()
+                    : SkillRouter.GetFilteredManifest(job.QueryString);
+                return;
+            }
+
+            // Skill recommendation by intent
+            if (path == "/skills/recommend" && job.HttpMethod == "GET")
+            {
+                job.StatusCode = 200;
+                job.ResponseJson = SkillRouter.GetRecommendations(job.QueryString);
+                return;
+            }
+
+            // Skill dependency chain
+            if (path == "/skills/chain" && job.HttpMethod == "GET")
+            {
+                job.StatusCode = 200;
+                job.ResponseJson = SkillRouter.GetSkillChain(job.QueryString);
                 return;
             }
             
@@ -1158,6 +1217,15 @@ namespace UnitySkills
                     return;
                 }
                 
+                // Dry-run mode: validate parameters without executing
+                var skillQs = SkillRouter.ParseQueryString(job.QueryString);
+                if (skillQs.TryGetValue("dryRun", out var dryRunVal) && dryRunVal.Equals("true", StringComparison.OrdinalIgnoreCase))
+                {
+                    job.StatusCode = 200;
+                    job.ResponseJson = SkillRouter.DryRun(skillName, job.Body);
+                    return;
+                }
+
                 // Execute skill (safe - on main thread)
                 try
                 {
@@ -1184,7 +1252,7 @@ namespace UnitySkills
             job.StatusCode = 404;
             job.ResponseJson = JsonConvert.SerializeObject(new {
                 error = "Not found",
-                endpoints = new[] { "GET /skills", "POST /skill/{name}", "GET /health" }
+                endpoints = new[] { "GET /skills", "GET /skills/recommend", "GET /skills/chain", "POST /skill/{name}", "POST /skill/{name}?dryRun=true", "GET /health" }
             }, _jsonSettings);
         }
 

@@ -32,7 +32,10 @@ namespace UnitySkills
             public System.DateTime StartTime;
         }
 
-        [UnitySkill("test_run", "Run Unity tests asynchronously. Returns a jobId immediately — poll with test_get_result(jobId) to check status.")]
+        [UnitySkill("test_run", "Run Unity tests asynchronously. Returns a jobId immediately — poll with test_get_result(jobId) to check status.",
+            Category = SkillCategory.Test, Operation = SkillOperation.Execute,
+            Tags = new[] { "test", "run", "async", "editmode", "playmode" },
+            Outputs = new[] { "jobId", "testMode", "message" })]
         public static object TestRun(string testMode = "EditMode", string filter = null)
         {
             if (_api == null)
@@ -66,7 +69,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("test_get_result", "Get the result of a test run. Requires the jobId returned by test_run or test_run_by_name.")]
+        [UnitySkill("test_get_result", "Get the result of a test run. Requires the jobId returned by test_run or test_run_by_name.",
+            Category = SkillCategory.Test, Operation = SkillOperation.Query,
+            Tags = new[] { "test", "result", "status", "poll" },
+            Outputs = new[] { "jobId", "status", "totalTests", "passedTests", "failedTests", "failedTestNames" },
+            RequiresInput = new[] { "jobId" },
+            ReadOnly = true)]
         public static object TestGetResult(string jobId)
         {
             // Clean stale entries older than 1 hour
@@ -90,7 +98,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("test_list", "List available tests")]
+        [UnitySkill("test_list", "List available tests",
+            Category = SkillCategory.Test, Operation = SkillOperation.Query,
+            Tags = new[] { "test", "list", "discover", "enumerate" },
+            Outputs = new[] { "testMode", "count", "tests" },
+            ReadOnly = true)]
         public static object TestList(string testMode = "EditMode", int limit = 100)
         {
             if (_api == null)
@@ -107,7 +119,11 @@ namespace UnitySkills
             return new { testMode, count = tests.Count, tests };
         }
 
-        [UnitySkill("test_cancel", "Cancel a running test")]
+        [UnitySkill("test_cancel", "Cancel a running test",
+            Category = SkillCategory.Test, Operation = SkillOperation.Execute,
+            Tags = new[] { "test", "cancel", "abort", "stop" },
+            Outputs = new[] { "cancelled" },
+            RequiresInput = new[] { "jobId" })]
         public static object TestCancel(string jobId = null)
         {
             if (_api == null)
@@ -191,7 +207,10 @@ namespace UnitySkills
             }
         }
 
-        [UnitySkill("test_run_by_name", "Run specific tests by class or method name")]
+        [UnitySkill("test_run_by_name", "Run specific tests by class or method name",
+            Category = SkillCategory.Test, Operation = SkillOperation.Execute,
+            Tags = new[] { "test", "run", "name", "specific" },
+            Outputs = new[] { "jobId", "testName", "testMode" })]
         public static object TestRunByName(string testName, string testMode = "EditMode")
         {
             if (_api == null) _api = ScriptableObject.CreateInstance<TestRunnerApi>();
@@ -204,7 +223,11 @@ namespace UnitySkills
             return new { success = true, jobId, testName, testMode };
         }
 
-        [UnitySkill("test_get_last_result", "Get the most recent test run result")]
+        [UnitySkill("test_get_last_result", "Get the most recent test run result",
+            Category = SkillCategory.Test, Operation = SkillOperation.Query,
+            Tags = new[] { "test", "result", "last", "recent" },
+            Outputs = new[] { "jobId", "status", "total", "passed", "failed", "failedNames" },
+            ReadOnly = true)]
         public static object TestGetLastResult()
         {
             if (_runningTests.Count == 0) return new { error = "No test runs found" };
@@ -212,7 +235,11 @@ namespace UnitySkills
             return new { jobId = last.JobId, status = last.Status, total = last.TotalTests, passed = last.PassedTests, failed = last.FailedTests, failedNames = last.FailedTestNames.ToArray() };
         }
 
-        [UnitySkill("test_list_categories", "List test categories")]
+        [UnitySkill("test_list_categories", "List test categories",
+            Category = SkillCategory.Test, Operation = SkillOperation.Query,
+            Tags = new[] { "test", "categories", "list", "nunit" },
+            Outputs = new[] { "count", "categories" },
+            ReadOnly = true)]
         public static object TestListCategories(string testMode = "EditMode")
         {
             if (_api == null) _api = ScriptableObject.CreateInstance<TestRunnerApi>();
@@ -230,7 +257,10 @@ namespace UnitySkills
                 foreach (var child in test.Children) CollectCategories(child, categories);
         }
 
-        [UnitySkill("test_create_editmode", "Create an EditMode test script template")]
+        [UnitySkill("test_create_editmode", "Create an EditMode test script template",
+            Category = SkillCategory.Test, Operation = SkillOperation.Create,
+            Tags = new[] { "test", "create", "editmode", "template" },
+            Outputs = new[] { "path", "testName" })]
         public static object TestCreateEditMode(string testName, string folder = "Assets/Tests/Editor")
         {
             if (Validate.Required(testName, "testName") is object nameErr) return nameErr;
@@ -266,7 +296,10 @@ public class {testName}
             };
         }
 
-        [UnitySkill("test_create_playmode", "Create a PlayMode test script template")]
+        [UnitySkill("test_create_playmode", "Create a PlayMode test script template",
+            Category = SkillCategory.Test, Operation = SkillOperation.Create,
+            Tags = new[] { "test", "create", "playmode", "template" },
+            Outputs = new[] { "path", "testName" })]
         public static object TestCreatePlayMode(string testName, string folder = "Assets/Tests/Runtime")
         {
             if (Validate.Required(testName, "testName") is object nameErr) return nameErr;
@@ -304,7 +337,11 @@ public class {testName}
             };
         }
 
-        [UnitySkill("test_get_summary", "Get aggregated test summary across all runs")]
+        [UnitySkill("test_get_summary", "Get aggregated test summary across all runs",
+            Category = SkillCategory.Test, Operation = SkillOperation.Query,
+            Tags = new[] { "test", "summary", "aggregate", "report" },
+            Outputs = new[] { "totalRuns", "completedRuns", "totalPassed", "totalFailed", "allFailedTests" },
+            ReadOnly = true)]
         public static object TestGetSummary()
         {
             var runs = _runningTests.Values.ToList();

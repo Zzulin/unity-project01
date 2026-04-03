@@ -16,9 +16,148 @@ namespace UnitySkills
         private static volatile Dictionary<string, SkillInfo> _skills;
         private static volatile bool _initialized;
         private static string _cachedManifest;
+        private static Dictionary<string, List<SkillInfo>> _outputIndex;
         private static readonly object _initLock = new object();
 
         private static HashSet<string> _workflowTrackedSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // ========== Intent Synonym Maps ==========
+
+        private static readonly Dictionary<string, string[]> _synonymMap = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Chinese → English
+            {"创建", new[]{"create"}}, {"新建", new[]{"create"}}, {"添加", new[]{"add","create"}},
+            {"删除", new[]{"delete"}}, {"移除", new[]{"delete","remove"}},
+            {"移动", new[]{"move","position"}}, {"位置", new[]{"position","transform"}},
+            {"旋转", new[]{"rotate","rotation"}}, {"缩放", new[]{"scale"}},
+            {"修改", new[]{"modify","set"}}, {"设置", new[]{"set","modify"}},
+            {"获取", new[]{"get","query"}}, {"查询", new[]{"query","get","list","find"}},
+            {"查找", new[]{"find","search"}}, {"搜索", new[]{"search","find"}},
+            {"复制", new[]{"duplicate","copy"}}, {"克隆", new[]{"duplicate","clone"}},
+            {"重命名", new[]{"rename"}}, {"命名", new[]{"name","rename"}},
+            {"颜色", new[]{"color","material"}}, {"上色", new[]{"color","material","set_color"}},
+            {"材质", new[]{"material"}}, {"贴图", new[]{"texture"}}, {"纹理", new[]{"texture"}},
+            {"灯光", new[]{"light"}}, {"光照", new[]{"light","lighting"}},
+            {"摄像机", new[]{"camera"}}, {"相机", new[]{"camera"}},
+            {"物理", new[]{"physics","rigidbody","collider"}},
+            {"碰撞", new[]{"collider","collision","physics"}},
+            {"刚体", new[]{"rigidbody","physics"}},
+            {"动画", new[]{"animation","animator"}}, {"动画控制器", new[]{"animator","controller"}},
+            {"预制体", new[]{"prefab"}}, {"预制件", new[]{"prefab"}},
+            {"实例化", new[]{"instantiate","prefab"}}, {"生成", new[]{"instantiate","create","spawn"}},
+            {"场景", new[]{"scene"}}, {"层级", new[]{"hierarchy","parent"}},
+            {"父物体", new[]{"parent","set_parent"}}, {"子物体", new[]{"child","parent"}},
+            {"组件", new[]{"component"}}, {"脚本", new[]{"script"}},
+            {"方块", new[]{"cube"}}, {"球体", new[]{"sphere"}}, {"圆柱", new[]{"cylinder"}},
+            {"平面", new[]{"plane"}}, {"胶囊", new[]{"capsule"}},
+            {"地形", new[]{"terrain"}}, {"导航", new[]{"navmesh","navigation"}},
+            {"音频", new[]{"audio"}}, {"声音", new[]{"audio","sound"}},
+            {"UI", new[]{"ui","canvas"}}, {"界面", new[]{"ui","canvas"}},
+            {"着色器", new[]{"shader"}}, {"模型", new[]{"model","mesh"}},
+            {"截图", new[]{"screenshot","capture"}}, {"截屏", new[]{"screenshot","capture"}},
+            {"撤销", new[]{"undo"}}, {"重做", new[]{"redo"}},
+            {"保存", new[]{"save"}}, {"加载", new[]{"load"}},
+            {"清理", new[]{"clean","cleanup"}}, {"优化", new[]{"optimize","optimization"}},
+            {"调试", new[]{"debug"}}, {"日志", new[]{"console","log"}},
+            {"测试", new[]{"test"}}, {"验证", new[]{"validate","validation"}},
+            {"工作流", new[]{"workflow"}}, {"批量", new[]{"batch"}},
+            {"包", new[]{"package"}}, {"资源", new[]{"asset"}}, {"导入", new[]{"import"}},
+            // English aliases
+            {"spawn", new[]{"instantiate","create"}}, {"remove", new[]{"delete"}},
+            {"color", new[]{"material","set_color"}}, {"colour", new[]{"material","set_color"}},
+            {"transform", new[]{"position","rotation","scale"}},
+            {"pos", new[]{"position"}}, {"rot", new[]{"rotation"}},
+            {"hierarchy", new[]{"parent","child","gameobject"}},
+            {"mesh", new[]{"model"}}, {"tex", new[]{"texture"}}, {"mat", new[]{"material"}},
+            {"anim", new[]{"animation","animator"}}, {"nav", new[]{"navmesh","navigation"}},
+            {"rb", new[]{"rigidbody"}}, {"col", new[]{"collider"}},
+            {"cam", new[]{"camera"}}, {"img", new[]{"texture","image"}},
+            {"fx", new[]{"particle","effect"}}, {"vfx", new[]{"particle","effect"}},
+        };
+
+        private static readonly Dictionary<string, SkillOperation> _operationKeywords = new Dictionary<string, SkillOperation>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"create", SkillOperation.Create}, {"创建", SkillOperation.Create}, {"新建", SkillOperation.Create},
+            {"add", SkillOperation.Create}, {"添加", SkillOperation.Create},
+            {"delete", SkillOperation.Delete}, {"删除", SkillOperation.Delete}, {"remove", SkillOperation.Delete}, {"移除", SkillOperation.Delete},
+            {"query", SkillOperation.Query}, {"get", SkillOperation.Query}, {"list", SkillOperation.Query}, {"find", SkillOperation.Query},
+            {"查询", SkillOperation.Query}, {"获取", SkillOperation.Query}, {"查找", SkillOperation.Query},
+            {"modify", SkillOperation.Modify}, {"set", SkillOperation.Modify}, {"update", SkillOperation.Modify},
+            {"修改", SkillOperation.Modify}, {"设置", SkillOperation.Modify},
+            {"execute", SkillOperation.Execute}, {"run", SkillOperation.Execute}, {"执行", SkillOperation.Execute},
+            {"analyze", SkillOperation.Analyze}, {"check", SkillOperation.Analyze}, {"分析", SkillOperation.Analyze}, {"检查", SkillOperation.Analyze},
+        };
+
+        private static readonly Dictionary<string, SkillCategory> _categoryKeywords = new Dictionary<string, SkillCategory>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"gameobject", SkillCategory.GameObject}, {"物体", SkillCategory.GameObject}, {"对象", SkillCategory.GameObject},
+            {"component", SkillCategory.Component}, {"组件", SkillCategory.Component},
+            {"scene", SkillCategory.Scene}, {"场景", SkillCategory.Scene},
+            {"material", SkillCategory.Material}, {"材质", SkillCategory.Material},
+            {"light", SkillCategory.Light}, {"灯光", SkillCategory.Light}, {"光照", SkillCategory.Light},
+            {"camera", SkillCategory.Camera}, {"摄像机", SkillCategory.Camera}, {"相机", SkillCategory.Camera},
+            {"physics", SkillCategory.Physics}, {"物理", SkillCategory.Physics},
+            {"prefab", SkillCategory.Prefab}, {"预制体", SkillCategory.Prefab},
+            {"script", SkillCategory.Script}, {"脚本", SkillCategory.Script},
+            {"ui", SkillCategory.UI}, {"界面", SkillCategory.UI},
+            {"uitoolkit", SkillCategory.UIToolkit},
+            {"animator", SkillCategory.Animator}, {"animation", SkillCategory.Animator}, {"动画", SkillCategory.Animator},
+            {"audio", SkillCategory.Audio}, {"音频", SkillCategory.Audio}, {"声音", SkillCategory.Audio},
+            {"texture", SkillCategory.Texture}, {"贴图", SkillCategory.Texture},
+            {"shader", SkillCategory.Shader}, {"着色器", SkillCategory.Shader},
+            {"terrain", SkillCategory.Terrain}, {"地形", SkillCategory.Terrain},
+            {"navmesh", SkillCategory.NavMesh}, {"导航", SkillCategory.NavMesh},
+            {"model", SkillCategory.Model}, {"模型", SkillCategory.Model},
+            {"asset", SkillCategory.Asset}, {"资源", SkillCategory.Asset},
+            {"editor", SkillCategory.Editor}, {"编辑器", SkillCategory.Editor},
+            {"package", SkillCategory.Package}, {"包", SkillCategory.Package},
+            {"workflow", SkillCategory.Workflow}, {"工作流", SkillCategory.Workflow},
+            {"debug", SkillCategory.Debug}, {"调试", SkillCategory.Debug},
+            {"console", SkillCategory.Console}, {"控制台", SkillCategory.Console},
+            {"test", SkillCategory.Test}, {"测试", SkillCategory.Test},
+            {"validation", SkillCategory.Validation}, {"验证", SkillCategory.Validation},
+            {"optimization", SkillCategory.Optimization}, {"优化", SkillCategory.Optimization},
+            {"profiler", SkillCategory.Profiler}, {"性能", SkillCategory.Profiler},
+            {"timeline", SkillCategory.Timeline}, {"时间线", SkillCategory.Timeline},
+            {"cinemachine", SkillCategory.Cinemachine},
+            {"probuilder", SkillCategory.ProBuilder},
+            {"xr", SkillCategory.XR},
+        };
+
+        /// <summary>
+        /// Matches keywords against a dictionary using exact + substring matching (for unsegmented Chinese).
+        /// </summary>
+        private static HashSet<TValue> MatchKeywords<TValue>(string[] keywords, Dictionary<string, TValue> map)
+        {
+            var results = new HashSet<TValue>();
+            foreach (var kw in keywords)
+            {
+                if (map.TryGetValue(kw, out var val)) results.Add(val);
+                foreach (var entry in map)
+                {
+                    if (entry.Key.Length >= 2 && kw.IndexOf(entry.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                        results.Add(entry.Value);
+                }
+            }
+            return results;
+        }
+
+        private static string[] ExpandIntent(string[] keywords)
+        {
+            var expanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kw in keywords) expanded.Add(kw);
+            foreach (var synonyms in MatchKeywords(keywords, _synonymMap))
+            {
+                foreach (var s in synonyms) expanded.Add(s);
+            }
+            return expanded.ToArray();
+        }
+
+        private static HashSet<SkillOperation> ExtractOperations(string[] keywords)
+            => MatchKeywords(keywords, _operationKeywords);
+
+        private static HashSet<SkillCategory> ExtractCategories(string[] keywords)
+            => MatchKeywords(keywords, _categoryKeywords);
         // Keep Unicode readable in JSON responses instead of forcing escaped sequences.
         private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
         {
@@ -32,6 +171,13 @@ namespace UnitySkills
             public MethodInfo Method;
             public ParameterInfo[] Parameters;
             public bool TracksWorkflow;
+            // Intent-level metadata (v1.7)
+            public SkillCategory Category;
+            public SkillOperation Operation;
+            public string[] Tags;
+            public string[] Outputs;
+            public string[] RequiresInput;
+            public bool ReadOnly;
         }
 
         public static void Initialize()
@@ -64,7 +210,13 @@ namespace UnitySkills
                                 Description = attr.Description ?? "",
                                 Method = method,
                                 Parameters = method.GetParameters(),
-                                TracksWorkflow = attr.TracksWorkflow
+                                TracksWorkflow = attr.TracksWorkflow,
+                                Category = attr.Category,
+                                Operation = attr.Operation,
+                                Tags = attr.Tags,
+                                Outputs = attr.Outputs,
+                                RequiresInput = attr.RequiresInput,
+                                ReadOnly = attr.ReadOnly
                             };
                             if (attr.TracksWorkflow)
                                 trackedSkills.Add(name);
@@ -74,6 +226,24 @@ namespace UnitySkills
 
                 _skills = skills; // Atomic assignment of fully-built dictionary
                 _workflowTrackedSkills = trackedSkills;
+
+                // Build reverse index: output field → producing skills
+                var outputIdx = new Dictionary<string, List<SkillInfo>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var s in skills.Values)
+                {
+                    if (s.Outputs == null) continue;
+                    foreach (var output in s.Outputs)
+                    {
+                        if (!outputIdx.TryGetValue(output, out var list))
+                        {
+                            list = new List<SkillInfo>();
+                            outputIdx[output] = list;
+                        }
+                        list.Add(s);
+                    }
+                }
+                _outputIndex = outputIdx;
+
                 _initialized = true;
                 SkillsLogger.Log($"Discovered {_skills.Count} skills");
             }
@@ -94,17 +264,25 @@ namespace UnitySkills
                     version = SkillsLogger.Version,
                     unityVersion = Application.unityVersion,
                     totalSkills = _skills.Count,
+                    categories = Enum.GetNames(typeof(SkillCategory)).Where(c => c != "Uncategorized").ToArray(),
+                    operationTypes = Enum.GetNames(typeof(SkillOperation)),
                     workflowTrackedSkills = _workflowTrackedSkills.OrderBy(name => name).ToArray(),
                     skills = _skills.Values.Select(s => new
                     {
                         name = s.Name,
                         description = s.Description,
+                        category = s.Category != SkillCategory.Uncategorized ? s.Category.ToString() : null,
+                        operation = FormatOperation(s.Operation),
+                        tags = s.Tags,
+                        outputs = s.Outputs,
+                        requiresInput = s.RequiresInput,
+                        readOnly = s.ReadOnly,
                         tracksWorkflow = s.TracksWorkflow,
                         parameters = s.Parameters.Select(p => new
                         {
                             name = p.Name,
                             type = GetJsonType(p.ParameterType),
-                            required = !p.HasDefaultValue,
+                            required = IsParameterRequired(p),
                             defaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
                         })
                     })
@@ -145,7 +323,7 @@ namespace UnitySkills
                     {
                         invoke[i] = p.DefaultValue;
                     }
-                    else if (!p.ParameterType.IsValueType || Nullable.GetUnderlyingType(p.ParameterType) != null)
+                    else if (!IsParameterRequired(p))
                     {
                         invoke[i] = null;
                     }
@@ -310,6 +488,7 @@ namespace UnitySkills
                 _initialized = false;
                 _skills = null;
                 _cachedManifest = null;
+                _outputIndex = null;
                 _workflowTrackedSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             }
             Initialize();
@@ -327,6 +506,434 @@ namespace UnitySkills
             if (underlying == typeof(bool)) return "boolean";
             if (underlying.IsArray) return "array";
             return "object";
+        }
+
+        /// <summary>
+        /// A parameter is truly required only if it has no default value and cannot accept null
+        /// (non-nullable value type). Reference types silently receive null when omitted.
+        /// </summary>
+        private static bool IsParameterRequired(ParameterInfo p)
+        {
+            if (p.HasDefaultValue) return false;
+            return p.ParameterType.IsValueType && Nullable.GetUnderlyingType(p.ParameterType) == null;
+        }
+
+        private static string[] FormatOperation(SkillOperation op)
+        {
+            if (op == 0) return null;
+            var list = new List<string>();
+            foreach (SkillOperation flag in Enum.GetValues(typeof(SkillOperation)))
+            {
+                if (flag != 0 && op.HasFlag(flag))
+                    list.Add(flag.ToString());
+            }
+            return list.Count > 0 ? list.ToArray() : null;
+        }
+
+        // ========== Filtered Manifest ==========
+
+        /// <summary>
+        /// Returns a filtered skills manifest based on query string parameters.
+        /// Supported: category, operation, tags, readOnly, q (text search).
+        /// </summary>
+        public static string GetFilteredManifest(string queryString)
+        {
+            Initialize();
+            var filters = ParseQueryString(queryString);
+            if (filters.Count == 0) return GetManifest();
+
+            IEnumerable<SkillInfo> filtered = _skills.Values;
+
+            if (filters.TryGetValue("category", out var cat))
+                filtered = filtered.Where(s => s.Category.ToString().Equals(cat, StringComparison.OrdinalIgnoreCase));
+
+            if (filters.TryGetValue("operation", out var op))
+                filtered = filtered.Where(s => s.Operation != 0 &&
+                    Enum.TryParse<SkillOperation>(op, true, out var flag) && s.Operation.HasFlag(flag));
+
+            if (filters.TryGetValue("tags", out var tag))
+                filtered = filtered.Where(s => s.Tags != null &&
+                    s.Tags.Any(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase)));
+
+            if (filters.TryGetValue("readonly", out var ro))
+                filtered = filtered.Where(s => s.ReadOnly == (ro.Equals("true", StringComparison.OrdinalIgnoreCase)));
+
+            if (filters.TryGetValue("q", out var q))
+            {
+                var keywords = q.ToLowerInvariant().Split(new[] { ' ', '+' }, StringSplitOptions.RemoveEmptyEntries);
+                filtered = filtered.Where(s => keywords.Any(kw =>
+                    s.Name.ToLowerInvariant().Contains(kw) ||
+                    (s.Description != null && s.Description.ToLowerInvariant().Contains(kw)) ||
+                    (s.Tags != null && s.Tags.Any(t => t.ToLowerInvariant().Contains(kw)))));
+            }
+
+            var results = filtered.ToList();
+            var manifest = new
+            {
+                version = SkillsLogger.Version,
+                unityVersion = Application.unityVersion,
+                totalSkills = results.Count,
+                filtered = true,
+                filters,
+                skills = results.Select(s => new
+                {
+                    name = s.Name,
+                    description = s.Description,
+                    category = s.Category != SkillCategory.Uncategorized ? s.Category.ToString() : null,
+                    operation = FormatOperation(s.Operation),
+                    tags = s.Tags,
+                    outputs = s.Outputs,
+                    requiresInput = s.RequiresInput,
+                    readOnly = s.ReadOnly,
+                    tracksWorkflow = s.TracksWorkflow,
+                    parameters = s.Parameters.Select(p => new
+                    {
+                        name = p.Name,
+                        type = GetJsonType(p.ParameterType),
+                        required = !p.HasDefaultValue,
+                        defaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
+                    })
+                })
+            };
+            return JsonConvert.SerializeObject(manifest, Formatting.Indented, _jsonSettings);
+        }
+
+        // ========== Skill Recommendations ==========
+
+        /// <summary>
+        /// Intent-based skill recommendation. Scores skills by keyword matching against
+        /// name (3pts), tags (2pts), and description (1pt). Returns top-N ranked results.
+        /// </summary>
+        public static string GetRecommendations(string queryString)
+        {
+            Initialize();
+            var filters = ParseQueryString(queryString);
+            var intent = "";
+            int topN = 10;
+            if (filters.TryGetValue("intent", out var i)) intent = i;
+            if (filters.TryGetValue("topn", out var n) && int.TryParse(n, out var parsed)) topN = Mathf.Clamp(parsed, 1, 50);
+
+            if (string.IsNullOrWhiteSpace(intent))
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    status = "error",
+                    error = "Missing required parameter: intent",
+                    example = "/skills/recommend?intent=create+cube&topN=10"
+                }, _jsonSettings);
+            }
+
+            var rawKeywords = intent.ToLowerInvariant().Split(new[] { ' ', '+', '_' }, StringSplitOptions.RemoveEmptyEntries);
+            var keywords = ExpandIntent(rawKeywords);
+            var scored = new List<(SkillInfo skill, int score, List<string> matchedOn)>();
+
+            // Pre-compute operation and category matches (with Chinese substring support)
+            var matchedOps = ExtractOperations(rawKeywords);
+            var matchedCats = ExtractCategories(rawKeywords);
+
+            foreach (var s in _skills.Values)
+            {
+                int score = 0;
+                var matchedOn = new List<string>();
+                var nameLower = s.Name.ToLowerInvariant();
+                var descLower = s.Description?.ToLowerInvariant() ?? "";
+
+                foreach (var kw in keywords)
+                {
+                    if (nameLower.Contains(kw))
+                    {
+                        score += 3;
+                        matchedOn.Add($"name:{kw}");
+                    }
+                    if (s.Tags != null && s.Tags.Any(t => t.ToLowerInvariant().Contains(kw)))
+                    {
+                        score += 2;
+                        matchedOn.Add($"tag:{kw}");
+                    }
+                    if (descLower.Contains(kw))
+                    {
+                        score += 1;
+                        matchedOn.Add($"desc:{kw}");
+                    }
+                }
+
+                // Category bonus
+                if (matchedCats.Count > 0 && s.Category != SkillCategory.Uncategorized && matchedCats.Contains(s.Category))
+                {
+                    score += 2;
+                    matchedOn.Add($"category:{s.Category}");
+                }
+
+                // Operation bonus
+                if (matchedOps.Count > 0 && s.Operation != 0)
+                {
+                    foreach (var op in matchedOps)
+                    {
+                        if (s.Operation.HasFlag(op))
+                        {
+                            score += 2;
+                            matchedOn.Add($"operation:{op}");
+                            break;
+                        }
+                    }
+                }
+
+                if (score > 0)
+                    scored.Add((s, score, matchedOn));
+            }
+
+            var results = scored.OrderByDescending(x => x.score).Take(topN).ToList();
+            var response = new
+            {
+                intent,
+                expandedKeywords = keywords.Length > rawKeywords.Length ? keywords : null,
+                topN,
+                totalMatches = scored.Count,
+                results = results.Select(x => new
+                {
+                    name = x.skill.Name,
+                    description = x.skill.Description,
+                    category = x.skill.Category != SkillCategory.Uncategorized ? x.skill.Category.ToString() : null,
+                    score = x.score,
+                    matchedOn = x.matchedOn.Distinct().ToArray()
+                })
+            };
+            return JsonConvert.SerializeObject(response, Formatting.Indented, _jsonSettings);
+        }
+
+        // ========== Skill Dependency Chain ==========
+
+        /// <summary>
+        /// Traces Outputs→RequiresInput relationships via BFS to build operation chains.
+        /// Given a target output field, finds all skills that produce it and their dependencies.
+        /// </summary>
+        public static string GetSkillChain(string queryString)
+        {
+            Initialize();
+            var filters = ParseQueryString(queryString);
+            string targetOutput = "";
+            int maxDepth = 3;
+            if (filters.TryGetValue("output", out var o)) targetOutput = o;
+            if (filters.TryGetValue("maxdepth", out var d) && int.TryParse(d, out var dp))
+                maxDepth = Mathf.Clamp(dp, 1, 10);
+
+            if (string.IsNullOrWhiteSpace(targetOutput))
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    status = "error",
+                    error = "Missing required parameter: output",
+                    example = "/skills/chain?output=instanceId&maxDepth=3"
+                }, _jsonSettings);
+            }
+
+            // BFS: find skills producing the target, then trace their RequiresInput
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var queue = new Queue<(string field, int depth)>();
+            queue.Enqueue((targetOutput, 0));
+            visited.Add(targetOutput);
+
+            var producers = new List<object>();
+
+            while (queue.Count > 0)
+            {
+                var (field, depth) = queue.Dequeue();
+
+                if (!_outputIndex.TryGetValue(field, out var fieldProducers))
+                    continue;
+
+                foreach (var s in fieldProducers)
+                {
+
+                    producers.Add(new
+                    {
+                        skill = s.Name,
+                        description = s.Description,
+                        category = s.Category != SkillCategory.Uncategorized ? s.Category.ToString() : null,
+                        depth,
+                        producesField = field,
+                        outputs = s.Outputs,
+                        requiresInput = s.RequiresInput
+                    });
+
+                    // Enqueue RequiresInput fields for next depth level
+                    if (depth < maxDepth && s.RequiresInput != null)
+                    {
+                        foreach (var req in s.RequiresInput)
+                        {
+                            if (!visited.Contains(req))
+                            {
+                                visited.Add(req);
+                                queue.Enqueue((req, depth + 1));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return JsonConvert.SerializeObject(new
+            {
+                targetOutput,
+                maxDepth,
+                totalProducers = producers.Count,
+                producers
+            }, Formatting.Indented, _jsonSettings);
+        }
+
+        // ========== Dry-Run Validation ==========
+
+        /// <summary>
+        /// Validates parameters without executing the skill.
+        /// Returns skill metadata and parameter validation results.
+        /// </summary>
+        public static string DryRun(string name, string json)
+        {
+            Initialize();
+            if (!_skills.TryGetValue(name, out var skill))
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    status = "error",
+                    error = $"Skill '{name}' not found",
+                    availableSkills = _skills.Keys.Take(20).ToArray()
+                }, _jsonSettings);
+            }
+
+            var missingParams = new List<string>();
+            var typeErrors = new List<object>();
+            var paramDetails = new List<object>();
+
+            try
+            {
+                var args = string.IsNullOrEmpty(json) ? new JObject() : JObject.Parse(json);
+                var ps = skill.Parameters;
+
+                for (int i = 0; i < ps.Length; i++)
+                {
+                    var p = ps[i];
+                    bool provided = args.TryGetValue(p.Name, StringComparison.OrdinalIgnoreCase, out var token);
+
+                    if (provided)
+                    {
+                        // Validate type conversion
+                        try
+                        {
+                            token.ToObject(p.ParameterType);
+                        }
+                        catch (Exception ex)
+                        {
+                            typeErrors.Add(new { parameter = p.Name, expectedType = GetJsonType(p.ParameterType), error = ex.Message });
+                        }
+                    }
+                    else if (IsParameterRequired(p))
+                    {
+                        missingParams.Add(p.Name);
+                    }
+
+                    paramDetails.Add(new
+                    {
+                        name = p.Name,
+                        type = GetJsonType(p.ParameterType),
+                        required = IsParameterRequired(p),
+                        provided,
+                        defaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    status = "error",
+                    error = $"Invalid JSON: {ex.Message}"
+                }, _jsonSettings);
+            }
+
+            bool valid = missingParams.Count == 0 && typeErrors.Count == 0;
+            return JsonConvert.SerializeObject(new
+            {
+                status = "dryRun",
+                valid,
+                skill = new
+                {
+                    name = skill.Name,
+                    description = skill.Description,
+                    category = skill.Category != SkillCategory.Uncategorized ? skill.Category.ToString() : null,
+                    operation = FormatOperation(skill.Operation),
+                    tags = skill.Tags,
+                    outputs = skill.Outputs,
+                    requiresInput = skill.RequiresInput,
+                    readOnly = skill.ReadOnly
+                },
+                parameters = paramDetails,
+                validation = new
+                {
+                    missingParams = missingParams.Count > 0 ? missingParams.ToArray() : null,
+                    typeErrors = typeErrors.Count > 0 ? typeErrors.ToArray() : null
+                },
+                note = "No execution performed"
+            }, Formatting.Indented, _jsonSettings);
+        }
+
+        // ========== Metadata Validation ==========
+
+        /// <summary>
+        /// Validates metadata completeness and consistency across all discovered skills.
+        /// Returns a list of diagnostic messages (WARN/ERROR prefix).
+        /// </summary>
+        public static List<string> ValidateMetadata()
+        {
+            Initialize();
+            var issues = new List<string>();
+
+            foreach (var s in _skills.Values)
+            {
+                if (s.Category == SkillCategory.Uncategorized)
+                    issues.Add($"[WARN] {s.Name}: Category is Uncategorized");
+
+                if (s.Operation == 0)
+                    issues.Add($"[WARN] {s.Name}: Operation not specified");
+
+                if (s.ReadOnly && s.TracksWorkflow)
+                    issues.Add($"[ERROR] {s.Name}: ReadOnly=true conflicts with TracksWorkflow=true");
+
+                if (s.Tags == null || s.Tags.Length == 0)
+                    issues.Add($"[WARN] {s.Name}: Tags is empty");
+
+                if (s.Outputs == null || s.Outputs.Length == 0)
+                    issues.Add($"[WARN] {s.Name}: Outputs is empty");
+
+                if (s.Operation.HasFlag(SkillOperation.Delete) || s.Operation.HasFlag(SkillOperation.Modify))
+                {
+                    if (s.RequiresInput == null || s.RequiresInput.Length == 0)
+                        issues.Add($"[WARN] {s.Name}: Delete/Modify operation but RequiresInput is empty");
+                }
+            }
+
+            return issues;
+        }
+
+        // ========== Query String Parser ==========
+
+        internal static Dictionary<string, string> ParseQueryString(string qs)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrEmpty(qs)) return result;
+
+            // Remove leading '?'
+            var raw = qs.StartsWith("?") ? qs.Substring(1) : qs;
+            if (string.IsNullOrEmpty(raw)) return result;
+
+            foreach (var pair in raw.Split('&'))
+            {
+                var eqIdx = pair.IndexOf('=');
+                if (eqIdx <= 0) continue;
+                var key = Uri.UnescapeDataString(pair.Substring(0, eqIdx)).Trim();
+                var val = Uri.UnescapeDataString(pair.Substring(eqIdx + 1)).Trim();
+                if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(val))
+                    result[key] = val;
+            }
+            return result;
         }
 
         /// <summary>

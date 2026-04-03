@@ -17,7 +17,11 @@ namespace UnitySkills
         private static readonly System.Text.UTF8Encoding Utf8NoBom = new System.Text.UTF8Encoding(false);
         // ============================ FILE OPERATIONS ============================
 
-        [UnitySkill("uitk_create_uss", "Create a USS stylesheet file for UI Toolkit", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_uss", "Create a USS stylesheet file for UI Toolkit",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "uss", "stylesheet", "ui-toolkit", "style" },
+            Outputs = new[] { "path", "lines" },
+            TracksWorkflow = true)]
         public static object UitkCreateUss(string savePath, string content = null)
         {
             if (Validate.SafePath(savePath, "savePath") is object pathErr) return pathErr;
@@ -38,7 +42,11 @@ namespace UnitySkills
             return new { success = true, path = savePath, lines = fileContent.Split('\n').Length };
         }
 
-        [UnitySkill("uitk_create_uxml", "Create a UXML layout file for UI Toolkit", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_uxml", "Create a UXML layout file for UI Toolkit",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "uxml", "layout", "ui-toolkit", "visual-tree" },
+            Outputs = new[] { "path", "lines" },
+            TracksWorkflow = true)]
         public static object UitkCreateUxml(string savePath, string content = null, string ussPath = null)
         {
             if (Validate.SafePath(savePath, "savePath") is object pathErr) return pathErr;
@@ -66,7 +74,12 @@ namespace UnitySkills
             return new { success = true, path = savePath, lines = fileContent.Split('\n').Length };
         }
 
-        [UnitySkill("uitk_read_file", "Read USS or UXML file content")]
+        [UnitySkill("uitk_read_file", "Read USS or UXML file content",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
+            Tags = new[] { "read", "uss", "uxml", "file" },
+            Outputs = new[] { "path", "type", "lines", "content" },
+            RequiresInput = new[] { "filePath" },
+            ReadOnly = true)]
         public static object UitkReadFile(string filePath)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -83,7 +96,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("uitk_write_file", "Write or overwrite a USS or UXML file", TracksWorkflow = true)]
+        [UnitySkill("uitk_write_file", "Write or overwrite a USS or UXML file",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create | SkillOperation.Modify,
+            Tags = new[] { "write", "uss", "uxml", "file" },
+            Outputs = new[] { "path", "lines" },
+            TracksWorkflow = true)]
         public static object UitkWriteFile(string filePath, string content)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -105,7 +122,12 @@ namespace UnitySkills
             return new { success = true, path = filePath, lines = content.Split('\n').Length };
         }
 
-        [UnitySkill("uitk_delete_file", "Delete a USS or UXML file", TracksWorkflow = true)]
+        [UnitySkill("uitk_delete_file", "Delete a USS or UXML file",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Delete,
+            Tags = new[] { "delete", "uss", "uxml", "file" },
+            Outputs = new[] { "deleted" },
+            RequiresInput = new[] { "filePath" },
+            TracksWorkflow = true)]
         public static object UitkDeleteFile(string filePath)
         {
             if (Validate.SafePath(filePath, "filePath", isDelete: true) is object pathErr) return pathErr;
@@ -119,7 +141,11 @@ namespace UnitySkills
             return new { success = true, deleted = filePath };
         }
 
-        [UnitySkill("uitk_find_files", "Search for USS and/or UXML files in the project (type: uss/uxml/all)")]
+        [UnitySkill("uitk_find_files", "Search for USS and/or UXML files in the project (type: uss/uxml/all)",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
+            Tags = new[] { "find", "search", "uss", "uxml" },
+            Outputs = new[] { "count", "files" },
+            ReadOnly = true)]
         public static object UitkFindFiles(string type = "all", string folder = null, string filter = null, int limit = 200)
         {
             var searchFolder = string.IsNullOrEmpty(folder) ? "Assets" : folder;
@@ -156,7 +182,11 @@ namespace UnitySkills
 
         // ============================ SCENE OPERATIONS ============================
 
-        [UnitySkill("uitk_create_document", "Create a GameObject with UIDocument component in the scene", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_document", "Create a GameObject with UIDocument component in the scene",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "ui-document", "scene", "ui-toolkit", "visual-tree" },
+            Outputs = new[] { "name", "instanceId", "hasUxml", "hasPanelSettings", "sortOrder" },
+            TracksWorkflow = true)]
         public static object UitkCreateDocument(
             string name = "UIDocument",
             string uxmlPath = null,
@@ -228,7 +258,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("uitk_set_document", "Set UIDocument properties on an existing scene GameObject", TracksWorkflow = true)]
+        [UnitySkill("uitk_set_document", "Set UIDocument properties on an existing scene GameObject",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Modify,
+            Tags = new[] { "ui-document", "configure", "uxml", "panel-settings" },
+            Outputs = new[] { "name", "instanceId", "visualTreeAsset", "panelSettings", "sortingOrder" },
+            RequiresInput = new[] { "gameObject" },
+            TracksWorkflow = true)]
         public static object UitkSetDocument(
             string name = null,
             int instanceId = 0,
@@ -276,7 +311,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("uitk_create_panel_settings", "Create a PanelSettings asset for UI Toolkit", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_panel_settings", "Create a PanelSettings asset for UI Toolkit",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "panel-settings", "asset", "scaling", "resolution" },
+            Outputs = new[] { "path", "scaleMode", "referenceResolution", "screenMatchMode" },
+            TracksWorkflow = true)]
         public static object UitkCreatePanelSettings(
             string savePath,
             string scaleMode = "ScaleWithScreenSize",
@@ -363,7 +402,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("uitk_get_panel_settings", "Read all properties of a PanelSettings asset")]
+        [UnitySkill("uitk_get_panel_settings", "Read all properties of a PanelSettings asset",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
+            Tags = new[] { "panel-settings", "inspect", "read", "properties" },
+            Outputs = new[] { "path", "scaleMode", "referenceResolution", "screenMatchMode", "dynamicAtlasSettings" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object UitkGetPanelSettings(string assetPath)
         {
             if (Validate.SafePath(assetPath, "assetPath") is object pathErr) return pathErr;
@@ -456,7 +500,12 @@ namespace UnitySkills
 #endif
         }
 
-        [UnitySkill("uitk_set_panel_settings", "Modify properties on an existing PanelSettings asset", TracksWorkflow = true)]
+        [UnitySkill("uitk_set_panel_settings", "Modify properties on an existing PanelSettings asset",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Modify,
+            Tags = new[] { "panel-settings", "configure", "scaling", "resolution" },
+            Outputs = new[] { "path", "scaleMode", "referenceResolution", "screenMatchMode" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object UitkSetPanelSettings(
             string assetPath,
             string scaleMode = null,
@@ -543,7 +592,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("uitk_list_documents", "List all UIDocument components in the active scene")]
+        [UnitySkill("uitk_list_documents", "List all UIDocument components in the active scene",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
+            Tags = new[] { "list", "ui-document", "scene", "inspect" },
+            Outputs = new[] { "count", "documents" },
+            ReadOnly = true)]
         public static object UitkListDocuments()
         {
             var docs = FindHelper.FindAll<UIDocument>();
@@ -562,7 +615,12 @@ namespace UnitySkills
 
         // ============================ INSPECTION ============================
 
-        [UnitySkill("uitk_inspect_uxml", "Parse and display UXML element hierarchy (depth controls max traversal depth)")]
+        [UnitySkill("uitk_inspect_uxml", "Parse and display UXML element hierarchy (depth controls max traversal depth)",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
+            Tags = new[] { "inspect", "uxml", "hierarchy", "parse" },
+            Outputs = new[] { "path", "hierarchy" },
+            RequiresInput = new[] { "filePath" },
+            ReadOnly = true)]
         public static object UitkInspectUxml(string filePath, int depth = 5)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -584,7 +642,11 @@ namespace UnitySkills
 
         // ============================ TEMPLATES ============================
 
-        [UnitySkill("uitk_create_from_template", "Create a UXML+USS file pair from a template (menu/hud/dialog/settings/inventory/list/tab-view/toolbar/card/notification)", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_from_template", "Create a UXML+USS file pair from a template (menu/hud/dialog/settings/inventory/list/tab-view/toolbar/card/notification)",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "template", "uxml", "uss", "scaffold" },
+            Outputs = new[] { "template", "ussPath", "uxmlPath", "name" },
+            TracksWorkflow = true)]
         public static object UitkCreateFromTemplate(string template, string savePath, string name = null)
         {
             if (Validate.Required(template, "template") is object tErr) return tErr;
@@ -621,7 +683,11 @@ namespace UnitySkills
 
         // ============================ BATCH ============================
 
-        [UnitySkill("uitk_create_batch", "Batch create USS/UXML files. items: JSON array of {type,savePath,content?,ussPath?}", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_batch", "Batch create USS/UXML files. items: JSON array of {type,savePath,content?,ussPath?}",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "batch", "uss", "uxml", "bulk" },
+            Outputs = new[] { "totalRequested", "succeeded", "failed", "results" },
+            TracksWorkflow = true)]
         public static object UitkCreateBatch(string items)
         {
             return BatchExecutor.Execute<UitkFileItem>(
@@ -1151,7 +1217,12 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
 
         private static readonly XNamespace EngineNs = "UnityEngine.UIElements";
 
-        [UnitySkill("uitk_add_element", "Add an element to a UXML file (Label/Button/Toggle/Slider/TextField/VisualElement/etc.)", TracksWorkflow = true)]
+        [UnitySkill("uitk_add_element", "Add an element to a UXML file (Label/Button/Toggle/Slider/TextField/VisualElement/etc.)",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Modify,
+            Tags = new[] { "add", "uxml", "element", "visual-element" },
+            Outputs = new[] { "path", "elementType", "elementName", "parentName" },
+            RequiresInput = new[] { "filePath" },
+            TracksWorkflow = true)]
         public static object UitkAddElement(
             string filePath, string elementType, string parentName = null,
             string elementName = null, string text = null,
@@ -1195,7 +1266,12 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
             return new { success = true, path = filePath, elementType, elementName, parentName = parentName ?? "(root)" };
         }
 
-        [UnitySkill("uitk_remove_element", "Remove an element from a UXML file by name", TracksWorkflow = true)]
+        [UnitySkill("uitk_remove_element", "Remove an element from a UXML file by name",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Delete,
+            Tags = new[] { "remove", "uxml", "element", "delete" },
+            Outputs = new[] { "path", "removedElement" },
+            RequiresInput = new[] { "filePath", "elementName" },
+            TracksWorkflow = true)]
         public static object UitkRemoveElement(string filePath, string elementName)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -1220,7 +1296,12 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
             return new { success = true, path = filePath, removedElement = elementName };
         }
 
-        [UnitySkill("uitk_modify_element", "Modify attributes of a UXML element by name", TracksWorkflow = true)]
+        [UnitySkill("uitk_modify_element", "Modify attributes of a UXML element by name",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Modify,
+            Tags = new[] { "modify", "uxml", "element", "attribute" },
+            Outputs = new[] { "path", "element" },
+            RequiresInput = new[] { "filePath", "elementName" },
+            TracksWorkflow = true)]
         public static object UitkModifyElement(
             string filePath, string elementName,
             string text = null, string classes = null, string style = null,
@@ -1256,7 +1337,12 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
             return new { success = true, path = filePath, element = newName ?? elementName };
         }
 
-        [UnitySkill("uitk_clone_element", "Clone (duplicate) an element in a UXML file by name", TracksWorkflow = true)]
+        [UnitySkill("uitk_clone_element", "Clone (duplicate) an element in a UXML file by name",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "clone", "uxml", "duplicate", "element" },
+            Outputs = new[] { "path", "clonedFrom", "newName" },
+            RequiresInput = new[] { "filePath", "elementName" },
+            TracksWorkflow = true)]
         public static object UitkCloneElement(string filePath, string elementName, string newName = null)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -1287,7 +1373,12 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
 
         // ============================ USS OPERATIONS ============================
 
-        [UnitySkill("uitk_add_uss_rule", "Add or update a USS rule in a stylesheet file", TracksWorkflow = true)]
+        [UnitySkill("uitk_add_uss_rule", "Add or update a USS rule in a stylesheet file",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create | SkillOperation.Modify,
+            Tags = new[] { "uss", "rule", "selector", "style" },
+            Outputs = new[] { "path", "selector", "action" },
+            RequiresInput = new[] { "filePath" },
+            TracksWorkflow = true)]
         public static object UitkAddUssRule(string filePath, string selector, string properties)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -1324,7 +1415,12 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
             return new { success = true, path = filePath, selector = normalizedSelector, action = existed ? "updated" : "added" };
         }
 
-        [UnitySkill("uitk_remove_uss_rule", "Remove a USS rule by selector from a stylesheet file", TracksWorkflow = true)]
+        [UnitySkill("uitk_remove_uss_rule", "Remove a USS rule by selector from a stylesheet file",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Delete,
+            Tags = new[] { "uss", "rule", "remove", "selector" },
+            Outputs = new[] { "path", "removedSelector" },
+            RequiresInput = new[] { "filePath", "selector" },
+            TracksWorkflow = true)]
         public static object UitkRemoveUssRule(string filePath, string selector)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -1351,7 +1447,12 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
             return new { success = true, path = filePath, removedSelector = normalizedSelector };
         }
 
-        [UnitySkill("uitk_list_uss_variables", "Extract all CSS custom properties (--var-name) from a USS file")]
+        [UnitySkill("uitk_list_uss_variables", "Extract all CSS custom properties (--var-name) from a USS file",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
+            Tags = new[] { "uss", "variables", "custom-properties", "css" },
+            Outputs = new[] { "path", "definedCount", "variables", "referencedVariables" },
+            RequiresInput = new[] { "filePath" },
+            ReadOnly = true)]
         public static object UitkListUssVariables(string filePath)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -1394,7 +1495,11 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
 
         // ============================ CODE GENERATION ============================
 
-        [UnitySkill("uitk_create_editor_window", "Generate an EditorWindow C# script with UI Toolkit (CreateGUI + UXML/USS binding)", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_editor_window", "Generate an EditorWindow C# script with UI Toolkit (CreateGUI + UXML/USS binding)",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "editor-window", "codegen", "script", "ui-toolkit" },
+            Outputs = new[] { "path", "className", "windowTitle", "menuPath" },
+            TracksWorkflow = true)]
         public static object UitkCreateEditorWindow(
             string savePath, string className, string windowTitle = null,
             string uxmlPath = null, string ussPath = null,
@@ -1456,7 +1561,11 @@ public class {className} : EditorWindow
             return new { success = true, path = savePath, className, windowTitle = title, menuPath = menu };
         }
 
-        [UnitySkill("uitk_create_runtime_ui", "Generate a runtime MonoBehaviour script for UI Toolkit (UIDocument query & binding)", TracksWorkflow = true)]
+        [UnitySkill("uitk_create_runtime_ui", "Generate a runtime MonoBehaviour script for UI Toolkit (UIDocument query & binding)",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Create,
+            Tags = new[] { "runtime", "codegen", "monobehaviour", "ui-document" },
+            Outputs = new[] { "path", "className" },
+            TracksWorkflow = true)]
         public static object UitkCreateRuntimeUi(
             string savePath, string className,
             string elementQueries = null)
@@ -1523,7 +1632,12 @@ public class {className} : MonoBehaviour
 
         // ============================ SCENE INSPECTION ============================
 
-        [UnitySkill("uitk_inspect_document", "Inspect the live VisualElement hierarchy of a UIDocument in the scene")]
+        [UnitySkill("uitk_inspect_document", "Inspect the live VisualElement hierarchy of a UIDocument in the scene",
+            Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
+            Tags = new[] { "inspect", "ui-document", "hierarchy", "visual-element" },
+            Outputs = new[] { "gameObject", "instanceId", "hierarchy" },
+            RequiresInput = new[] { "gameObject" },
+            ReadOnly = true)]
         public static object UitkInspectDocument(
             string name = null, int instanceId = 0, string path = null,
             int depth = 5)

@@ -9,7 +9,11 @@ namespace UnitySkills
     /// </summary>
     public static class PackageSkills
     {
-        [UnitySkill("package_list", "List all installed packages")]
+        [UnitySkill("package_list", "List all installed packages",
+            Category = SkillCategory.Package, Operation = SkillOperation.Query,
+            Tags = new[] { "package", "list", "upm", "installed" },
+            Outputs = new[] { "count", "packages" },
+            ReadOnly = true)]
         public static object PackageList()
         {
             var packages = PackageManagerHelper.InstalledPackages;
@@ -20,7 +24,12 @@ namespace UnitySkills
             return new { success = true, count = list.Count, packages = list };
         }
 
-        [UnitySkill("package_check", "Check if a package is installed. Returns version if installed.")]
+        [UnitySkill("package_check", "Check if a package is installed. Returns version if installed.",
+            Category = SkillCategory.Package, Operation = SkillOperation.Query,
+            Tags = new[] { "package", "check", "version", "installed" },
+            Outputs = new[] { "packageId", "installed", "version" },
+            RequiresInput = new[] { "packageId" },
+            ReadOnly = true)]
         public static object PackageCheck(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;
@@ -30,7 +39,11 @@ namespace UnitySkills
             return new { packageId, installed, version };
         }
 
-        [UnitySkill("package_install", "Install a package. version is optional.")]
+        [UnitySkill("package_install", "Install a package. version is optional.",
+            Category = SkillCategory.Package, Operation = SkillOperation.Execute,
+            Tags = new[] { "package", "install", "upm", "add" },
+            Outputs = new[] { "status", "message", "async" },
+            RequiresInput = new[] { "packageId" })]
         public static object PackageInstall(string packageId, string version = null)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;
@@ -57,7 +70,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("package_remove", "Remove an installed package.")]
+        [UnitySkill("package_remove", "Remove an installed package.",
+            Category = SkillCategory.Package, Operation = SkillOperation.Execute | SkillOperation.Delete,
+            Tags = new[] { "package", "remove", "uninstall", "upm" },
+            Outputs = new[] { "message", "async" },
+            RequiresInput = new[] { "packageId" })]
         public static object PackageRemove(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;
@@ -84,7 +101,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("package_refresh", "Refresh the installed package list cache.")]
+        [UnitySkill("package_refresh", "Refresh the installed package list cache.",
+            Category = SkillCategory.Package, Operation = SkillOperation.Execute,
+            Tags = new[] { "package", "refresh", "cache", "upm" },
+            Outputs = new[] { "message" })]
         public static object PackageRefresh()
         {
             if (PackageManagerHelper.IsRefreshing)
@@ -101,7 +121,10 @@ namespace UnitySkills
             return new { success = true, message = "Refreshing package list..." };
         }
 
-        [UnitySkill("package_install_cinemachine", "Install Cinemachine. version: 2 or 3 (default 3). CM3 auto-installs Splines dependency.")]
+        [UnitySkill("package_install_cinemachine", "Install Cinemachine. version: 2 or 3 (default 3). CM3 auto-installs Splines dependency.",
+            Category = SkillCategory.Package, Operation = SkillOperation.Execute,
+            Tags = new[] { "package", "install", "cinemachine", "camera" },
+            Outputs = new[] { "message", "async" })]
         public static object PackageInstallCinemachine(int version = 3)
         {
             var useV3 = version >= 3;
@@ -135,7 +158,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("package_install_splines", "Install Unity Splines package. Auto-detects correct version for Unity 6 vs Unity 2022.")]
+        [UnitySkill("package_install_splines", "Install Unity Splines package. Auto-detects correct version for Unity 6 vs Unity 2022.",
+            Category = SkillCategory.Package, Operation = SkillOperation.Execute,
+            Tags = new[] { "package", "install", "splines", "path" },
+            Outputs = new[] { "message", "async" })]
         public static object PackageInstallSplines()
         {
             var currentVersion = PackageManagerHelper.GetInstalledVersion(PackageManagerHelper.SplinesPackageId);
@@ -161,7 +187,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("package_get_cinemachine_status", "Get Cinemachine installation status.")]
+        [UnitySkill("package_get_cinemachine_status", "Get Cinemachine installation status.",
+            Category = SkillCategory.Package, Operation = SkillOperation.Query,
+            Tags = new[] { "package", "cinemachine", "status", "version" },
+            Outputs = new[] { "cinemachine", "splines" },
+            ReadOnly = true)]
         public static object PackageGetCinemachineStatus()
         {
             var status = PackageManagerHelper.GetCinemachineStatus();
@@ -181,7 +211,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("package_search", "Search installed packages by name or displayName (does not search the Unity Registry)")]
+        [UnitySkill("package_search", "Search installed packages by name or displayName (does not search the Unity Registry)",
+            Category = SkillCategory.Package, Operation = SkillOperation.Query,
+            Tags = new[] { "package", "search", "find", "upm" },
+            Outputs = new[] { "query", "count", "packages" },
+            RequiresInput = new[] { "query" },
+            ReadOnly = true)]
         public static object PackageSearch(string query)
         {
             if (Validate.Required(query, "query") is object err) return err;
@@ -199,7 +234,12 @@ namespace UnitySkills
             return new { success = true, query, count = matches.Count, packages = matches };
         }
 
-        [UnitySkill("package_get_dependencies", "Get dependency list for an installed package")]
+        [UnitySkill("package_get_dependencies", "Get dependency list for an installed package",
+            Category = SkillCategory.Package, Operation = SkillOperation.Query,
+            Tags = new[] { "package", "dependencies", "upm", "info" },
+            Outputs = new[] { "packageId", "version", "dependencyCount", "dependencies" },
+            RequiresInput = new[] { "packageId" },
+            ReadOnly = true)]
         public static object PackageGetDependencies(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;
@@ -215,7 +255,12 @@ namespace UnitySkills
             return new { success = true, packageId, version = pkg.version, dependencyCount = deps?.Count ?? 0, dependencies = deps };
         }
 
-        [UnitySkill("package_get_versions", "Get all available versions for a package")]
+        [UnitySkill("package_get_versions", "Get all available versions for a package",
+            Category = SkillCategory.Package, Operation = SkillOperation.Query,
+            Tags = new[] { "package", "versions", "upm", "upgrade" },
+            Outputs = new[] { "packageId", "currentVersion", "compatibleVersion", "latestVersion", "allVersions" },
+            RequiresInput = new[] { "packageId" },
+            ReadOnly = true)]
         public static object PackageGetVersions(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;

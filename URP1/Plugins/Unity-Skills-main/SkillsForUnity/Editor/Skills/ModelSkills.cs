@@ -10,7 +10,12 @@ namespace UnitySkills
     /// </summary>
     public static class ModelSkills
     {
-        [UnitySkill("model_get_settings", "Get model import settings for a 3D model asset (FBX, OBJ, etc)")]
+        [UnitySkill("model_get_settings", "Get model import settings for a 3D model asset (FBX, OBJ, etc)",
+            Category = SkillCategory.Model, Operation = SkillOperation.Query,
+            Tags = new[] { "model", "import", "settings", "fbx" },
+            Outputs = new[] { "globalScale", "meshCompression", "animationType", "materialImportMode" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ModelGetSettings(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -50,7 +55,11 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("model_set_settings", "Set model import settings. meshCompression: Off/Low/Medium/High. animationType: None/Legacy/Generic/Humanoid. materialImportMode: None/ImportViaMaterialDescription/ImportStandard")]
+        [UnitySkill("model_set_settings", "Set model import settings. meshCompression: Off/Low/Medium/High. animationType: None/Legacy/Generic/Humanoid. materialImportMode: None/ImportViaMaterialDescription/ImportStandard",
+            Category = SkillCategory.Model, Operation = SkillOperation.Modify,
+            Tags = new[] { "model", "import", "settings", "mesh" },
+            Outputs = new[] { "changesApplied", "changes" },
+            RequiresInput = new[] { "assetPath" })]
         public static object ModelSetSettings(
             string assetPath,
             float? globalScale = null,
@@ -233,7 +242,10 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("model_set_settings_batch", "Set model import settings for multiple 3D models. items: JSON array of {assetPath, meshCompression, animationType, ...}")]
+        [UnitySkill("model_set_settings_batch", "Set model import settings for multiple 3D models. items: JSON array of {assetPath, meshCompression, animationType, ...}",
+            Category = SkillCategory.Model, Operation = SkillOperation.Modify,
+            Tags = new[] { "model", "import", "batch", "settings" },
+            Outputs = new[] { "totalCount", "successCount", "results" })]
         public static object ModelSetSettingsBatch(string items)
         {
             return BatchExecutor.Execute<BatchModelItem>(items, item =>
@@ -287,7 +299,11 @@ namespace UnitySkills
             public string materialImportMode { get; set; }
         }
 
-        [UnitySkill("model_find_assets", "Search for model assets in the project")]
+        [UnitySkill("model_find_assets", "Search for model assets in the project",
+            Category = SkillCategory.Model, Operation = SkillOperation.Query,
+            Tags = new[] { "model", "search", "find", "asset" },
+            Outputs = new[] { "totalFound", "models" },
+            ReadOnly = true)]
         public static object ModelFindAssets(string filter = "", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Model " + filter);
@@ -299,7 +315,12 @@ namespace UnitySkills
             return new { success = true, totalFound = guids.Length, showing = models.Length, models };
         }
 
-        [UnitySkill("model_get_mesh_info", "Get detailed Mesh information (vertices, triangles, submeshes)")]
+        [UnitySkill("model_get_mesh_info", "Get detailed Mesh information (vertices, triangles, submeshes)",
+            Category = SkillCategory.Model, Operation = SkillOperation.Query,
+            Tags = new[] { "mesh", "vertices", "triangles", "geometry" },
+            Outputs = new[] { "vertexCount", "triangles", "subMeshCount", "bounds", "blendShapeCount" },
+            RequiresInput = new[] { "gameObject|assetPath" },
+            ReadOnly = true)]
         public static object ModelGetMeshInfo(string name = null, int instanceId = 0, string path = null, string assetPath = null)
         {
             Mesh mesh = null;
@@ -328,7 +349,12 @@ namespace UnitySkills
                 hasColors = mesh.colors.Length > 0, blendShapeCount = mesh.blendShapeCount, isReadable = mesh.isReadable };
         }
 
-        [UnitySkill("model_get_materials_info", "Get material mapping for a model asset")]
+        [UnitySkill("model_get_materials_info", "Get material mapping for a model asset",
+            Category = SkillCategory.Model, Operation = SkillOperation.Query,
+            Tags = new[] { "model", "material", "mapping", "inspect" },
+            Outputs = new[] { "materialCount", "materials", "meshCount", "meshes" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ModelGetMaterialsInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -342,7 +368,12 @@ namespace UnitySkills
             return new { success = true, path = assetPath, materialCount = materials.Length, materials, meshCount = meshes.Length, meshes };
         }
 
-        [UnitySkill("model_get_animations_info", "Get animation clip information from a model asset")]
+        [UnitySkill("model_get_animations_info", "Get animation clip information from a model asset",
+            Category = SkillCategory.Model, Operation = SkillOperation.Query,
+            Tags = new[] { "model", "animation", "clip", "inspect" },
+            Outputs = new[] { "importAnimation", "clipCount", "clips", "clipDefinitions" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ModelGetAnimationsInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -359,7 +390,12 @@ namespace UnitySkills
             return new { success = true, path = assetPath, importAnimation = importer.importAnimation, clipCount = clips.Length, clips, clipDefinitions = clipDefs };
         }
 
-        [UnitySkill("model_set_animation_clips", "Configure animation clip splitting. clips: JSON array of {name, firstFrame, lastFrame, loop}", TracksWorkflow = true)]
+        [UnitySkill("model_set_animation_clips", "Configure animation clip splitting. clips: JSON array of {name, firstFrame, lastFrame, loop}",
+            Category = SkillCategory.Model, Operation = SkillOperation.Modify,
+            Tags = new[] { "model", "animation", "clip", "splitting" },
+            Outputs = new[] { "clipCount" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object ModelSetAnimationClips(string assetPath, string clips)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -392,7 +428,12 @@ namespace UnitySkills
             public bool loop { get; set; }
         }
 
-        [UnitySkill("model_get_rig_info", "Get rig/skeleton binding information")]
+        [UnitySkill("model_get_rig_info", "Get rig/skeleton binding information",
+            Category = SkillCategory.Model, Operation = SkillOperation.Query,
+            Tags = new[] { "model", "rig", "skeleton", "avatar" },
+            Outputs = new[] { "animationType", "avatarSetup", "sourceAvatar", "isHuman" },
+            RequiresInput = new[] { "assetPath" },
+            ReadOnly = true)]
         public static object ModelGetRigInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -404,7 +445,12 @@ namespace UnitySkills
                 optimizeGameObjects = importer.optimizeGameObjects, isHuman = importer.animationType == ModelImporterAnimationType.Human };
         }
 
-        [UnitySkill("model_set_rig", "Set rig/skeleton binding type. animationType: None/Legacy/Generic/Humanoid", TracksWorkflow = true)]
+        [UnitySkill("model_set_rig", "Set rig/skeleton binding type. animationType: None/Legacy/Generic/Humanoid",
+            Category = SkillCategory.Model, Operation = SkillOperation.Modify,
+            Tags = new[] { "model", "rig", "skeleton", "animation" },
+            Outputs = new[] { "animationType" },
+            RequiresInput = new[] { "assetPath" },
+            TracksWorkflow = true)]
         public static object ModelSetRig(string assetPath, string animationType, string avatarSetup = null)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
