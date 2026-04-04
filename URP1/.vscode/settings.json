@@ -61,5 +61,6 @@
         "*.hlsl": "hlsl",
         "*.glsl": "glsl"
     },
-    "dotnet.defaultSolution": "URP1.sln"
+    "dotnet.defaultSolution": "URP1.sln",
+    "chatgpt.openOnStartup": false
 }
