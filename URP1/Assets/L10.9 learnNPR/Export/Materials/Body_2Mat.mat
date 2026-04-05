@@ -114,9 +114,10 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
+    - _CameraDistance: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _Cull: 2
+    - _Cull: 0
     - _CullBack: 0
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
@@ -132,7 +133,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 0.005
+    - _OutlineWidth: 0.01
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
