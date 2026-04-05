@@ -5,6 +5,9 @@ Shader "Toon/ToonShader"
         _MainTex ("Main Texture", 2D) = "white" {}
         _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
+        _OutlineWidth ("Outline Width", Float) = 0.005
+        _StencilRef ("Stencil Ref", int) = 1
+        _CameraDistance ("相机距离描边调节系数 0不调节 1调节",range(0,1)) = 0
     }
 
     SubShader
@@ -21,7 +24,12 @@ Shader "Toon/ToonShader"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
             Cull [_Cull]
-
+            Stencil
+            {
+                Ref [_StencilRef]
+                Comp Always
+                Pass Replace
+            }
             HLSLPROGRAM
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -32,10 +40,11 @@ Shader "Toon/ToonShader"
             #pragma multi_compile _ _SHADOWS_SOFT
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
-            float4 _MainTex_ST;
-
             CBUFFER_START(UnityPerMaterial)
+                float _OutlineWidth;
                 half4 _BaseColor;
+                float4 _MainTex_ST;
+                float _CameraDistance;
             CBUFFER_END
 
             struct Attributes
@@ -57,7 +66,6 @@ Shader "Toon/ToonShader"
                 Varyings output;
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS);
-
                 output.positionCS = vertexInput.positionCS;
                 output.positionWS = vertexInput.positionWS;
                 output.normalWS = normalInput.normalWS;
@@ -81,6 +89,68 @@ Shader "Toon/ToonShader"
             half4 frag (Varyings input) : SV_Target
             {
                 return ShadeToon(input);
+            }
+            ENDHLSL
+        }
+        Pass
+        {
+            Name "Outline"
+            Tags { "LightMode" = "Outline"}
+            Cull front
+            blend SrcAlpha OneMinusSrcAlpha
+            Stencil
+            {
+                Ref [_StencilRef]
+                Comp NotEqual
+                Pass Replace
+            }
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float _OutlineWidth;
+                half4 _BaseColor;
+                float4 _MainTex_ST;
+                float _CameraDistance;
+            CBUFFER_END
+            
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normalOS : NORMAL;
+            };
+            struct Varyings
+            {
+                float2 uv : TEXCOORD0;
+                float4 positionCS : SV_POSITION;
+                float3 normalWS : TEXCOORD1;
+                
+            };
+            Varyings vert (Attributes input)
+            {
+                Varyings output;
+
+                float3 positionWS = GetVertexPositionInputs(input.positionOS.xyz).positionWS;
+                float camDistance = length(positionWS - GetCameraPositionWS());
+                camDistance = lerp(1,camDistance,_CameraDistance);
+                float3 pos=input.positionOS.xyz+input.normalOS*camDistance*_OutlineWidth;
+
+                output.positionCS = GetVertexPositionInputs(pos).positionCS;
+                
+                output.normalWS = GetVertexNormalInputs(input.normalOS).normalWS;
+                output.uv = input.uv;
+                return output;
+            }
+
+            half4 frag (Varyings input) : SV_Target
+            {
+                return half4(0, 0, 0, 1);
             }
             ENDHLSL
         }

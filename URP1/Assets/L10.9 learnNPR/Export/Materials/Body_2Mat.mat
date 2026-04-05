@@ -132,7 +132,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 5
+    - _OutlineWidth: 0.005
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
@@ -153,7 +153,7 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _StencilRef: 1
+    - _StencilRef: 2
     - _Step: 0.348
     - _StepCount: 2
     - _StepMode: 3

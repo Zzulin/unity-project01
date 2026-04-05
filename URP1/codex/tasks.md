@@ -82,3 +82,8 @@
 ## 维护规则
 - 每次只记录“最新结论 + 未完成事项”，不要写长过程。
 - 完成一个待办就勾选，并删除过时信息。
+
+## 最新进展（2026-04-06）
+- 已重写 `Assets/L10.9 learnNPR/Script/SetStencilRef.cs`：支持 `stencilRef`、`includeInactive`、`applyOnStart`，并提供 `OnValidate` 实时刷新与 `Apply StencilRef To Children` 右键菜单。
+- 实现方式使用 `renderer.sharedMaterials`，仅对含 `_StencilRef` 的材质执行 `SetInt`，其他材质自动跳过。
+- 编译校验：`dotnet build Assembly-CSharp-Editor.csproj` 通过（0 error）。
