@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-public class SetNormalsInTangentSmoothNormal : MonoBehaviour
+public class SetNormalsInTangent : MonoBehaviour
 {
     public string NewMeshPath = "Assets/Toon/Export";
 
@@ -25,7 +25,7 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
             mesh = GetComponent<MeshFilter>().sharedMesh;
         }
         Debug.Log(mesh.name);
-        yield return null;//等待一帧，确保mesh加载完成
+        yield return null;
 
         //声明一个Vector3数组，长度与mesh.normals一样，用于存放
         //与mesh.vertices中顶点一一对应的光滑处理后的法线值
@@ -33,12 +33,12 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
         Vector3[] meshVerts = mesh.vertices; // 避免属性数组拷贝开销
         Vector3[] meshNormals = mesh.normals;
 
-        // 优化步骤：计算每个顶点到模型本地原点的长度
+        // 优化步骤：计算每个顶点距离游戏世界原点的长度
         SortedList<float, List<int>> sl = new SortedList<float, List<int>>(); // 距离-顶点序号对应表
         for (int i = 0; i < meshVerts.Length; i++)
         {
             Vector3 v = meshVerts[i]; // 取得顶点的第i个向量
-            float f = Vector3.Magnitude(v); // 计算该向量距离模型本地原点的长度
+            float f = Vector3.Magnitude(v); // 计算该向量距离游戏世界的长度
             if (sl.ContainsKey(f) == false)
                 sl[f] = new List<int>();
             sl[f].Add(i);
@@ -49,7 +49,7 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
         for (int i = 0; i < len; i++)
         {
             //定义一个零值法线
-            Vector3 normal = Vector3.zero;
+            Vector3 normal = meshVerts[i];
 
             var slIndices = sl[Vector3.Magnitude(meshVerts[i])];
             
@@ -57,10 +57,12 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
             int sharedCnt = 0;
             foreach (var j in slIndices)
             {
-                if (Vector3.Distance(meshVerts[j], meshVerts[i])<0.01f)
+                Vector3 vj = meshVerts[j];
+                
+                if (Vector3.Distance(vj, meshVerts[i])<0.01f)
                 {
                     normal += meshNormals[j]; // 把邻接的顶点的法线加到总法线向量
-                    sharedCnt++;//统计共享的顶点数量
+                    sharedCnt++;
                 }
             }
             //归一化Normal并将meshNormals数列对应位置赋值为Normal,到此序号为i的顶点的对应法线光滑处理完成
@@ -79,7 +81,7 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
         Mesh newMesh = new Mesh();
         newMesh.vertices = mesh.vertices;
         newMesh.triangles = mesh.triangles;
-        newMesh.normals = mesh.normals;    
+        newMesh.normals = mesh.normals;
         newMesh.tangents = mesh.tangents;//avgNormals;
         newMesh.uv = mesh.uv;
         newMesh.uv2 = mesh.uv2;

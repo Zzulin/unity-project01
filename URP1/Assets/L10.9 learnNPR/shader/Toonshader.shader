@@ -124,6 +124,7 @@ Shader "Toon/ToonShader"
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL;
+                float3 tangentOS : TANGENT;
             };
             struct Varyings
             {
