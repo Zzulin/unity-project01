@@ -11,8 +11,10 @@ Material:
   m_Shader: {fileID: 4800000, guid: 1c8fe743fee34f346abc81861e8a3b06, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_ValidKeywords:
+  - _USE_SMOOTH_NORMAL
+  m_InvalidKeywords:
+  - _UseSmoothNormal
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -114,7 +116,7 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _CameraDistance: 0
+    - _CameraDistance: 0.63
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 0
@@ -133,7 +135,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 0.01
+    - _OutlineWidth: 10.82
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
@@ -156,8 +158,10 @@ Material:
     - _SrcBlendAlpha: 1
     - _StencilRef: 2
     - _Step: 0.348
-    - _StepCount: 2
+    - _StepCount: 2.65
+    - _StepLevel: 0.538
     - _StepMode: 3
+    - _StepSmooth: 0.219
     - _Surface: 0
     - _UseAO: 0
     - _UseAOMap: 1
@@ -167,7 +171,9 @@ Material:
     - _UseOutlineColor: 0
     - _UseRampColorMap: 1
     - _UseRimLight: 0
+    - _UseSNormal: 1
     - _UseShadow: 1
+    - _UseSmoothNormal: 1
     - _UseSpecular: 0
     - _UseVertexColor: 0
     - _WorkflowMode: 1
@@ -177,7 +183,7 @@ Material:
     - _Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 999, g: 0, b: 0, a: 0}
-    - _OutlineColor: {r: 1, g: 1, b: 1, a: 1}
+    - _OutlineColor: {r: 0.10261798, g: 1, b: 0, a: 1}
     - _RimColor: {r: 0.745283, g: 0.6782722, b: 0, a: 1}
     - _SpecColor: {r: 1, g: 0.97351456, b: 0, a: 1}
   m_BuildTextureStacks: []

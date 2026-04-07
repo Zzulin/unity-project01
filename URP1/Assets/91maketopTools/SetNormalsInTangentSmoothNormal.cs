@@ -80,7 +80,7 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
         newMesh.vertices = mesh.vertices;
         newMesh.triangles = mesh.triangles;
         newMesh.normals = mesh.normals;    
-        newMesh.tangents = mesh.tangents;//avgNormals;
+        newMesh.tangents = mesh.tangents;
         newMesh.uv = mesh.uv;
         newMesh.uv2 = mesh.uv2;
         newMesh.uv3 = mesh.uv3;
@@ -89,7 +89,7 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
         newMesh.uv6 = mesh.uv6;
         newMesh.uv7 = mesh.uv7;
         newMesh.uv8 = mesh.uv8;
-        newMesh.SetUVs(7, avgNormals);
+        newMesh.SetUVs(7, avgNormals);//将uv7赋值为avgNormals
         //将新模型的颜色赋值为计算好的颜色
         //newMesh.colors = meshColors;
         newMesh.colors32 = mesh.colors32;
