@@ -22,7 +22,7 @@ public class GradientGenerator : MonoBehaviour
         //把颜色应用到纹理上
         tex.SetPixels(cols);
         tex.Apply();
-        //全局赋值
+        //全局赋值纹理
         Shader.SetGlobalTexture("_GradientTex", tex);
     }
 }

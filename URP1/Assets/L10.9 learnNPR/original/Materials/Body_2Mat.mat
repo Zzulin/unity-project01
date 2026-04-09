@@ -29,6 +29,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 4fa5d8200344ac54ea1af4086fb6dcce, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _AOmap:
+        m_Texture: {fileID: 2800000, guid: 4fa5d8200344ac54ea1af4086fb6dcce, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BaseMap:
         m_Texture: {fileID: 2800000, guid: a304c85ffb3533641a62f803f0f17356, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -70,6 +74,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampColorMap:
+        m_Texture: {fileID: 2800000, guid: 396bf79032f0eba4f984408e529ba0d8, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampColormap:
         m_Texture: {fileID: 2800000, guid: 396bf79032f0eba4f984408e529ba0d8, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -135,7 +143,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 10.82
+    - _OutlineWidth: 2.36
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
@@ -158,9 +166,9 @@ Material:
     - _SrcBlendAlpha: 1
     - _StencilRef: 2
     - _Step: 0.348
-    - _StepCount: 2.65
+    - _StepCount: 4
     - _StepLevel: 0.538
-    - _StepMode: 3
+    - _StepMode: 0
     - _StepSmooth: 0.219
     - _Surface: 0
     - _UseAO: 0
@@ -183,7 +191,7 @@ Material:
     - _Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 999, g: 0, b: 0, a: 0}
-    - _OutlineColor: {r: 0.10261798, g: 1, b: 0, a: 1}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.745283, g: 0.6782722, b: 0, a: 1}
     - _SpecColor: {r: 1, g: 0.97351456, b: 0, a: 1}
   m_BuildTextureStacks: []
