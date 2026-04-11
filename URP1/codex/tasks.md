@@ -87,3 +87,7 @@
 - 已重写 `Assets/L10.9 learnNPR/Script/SetStencilRef.cs`：支持 `stencilRef`、`includeInactive`、`applyOnStart`，并提供 `OnValidate` 实时刷新与 `Apply StencilRef To Children` 右键菜单。
 - 实现方式使用 `renderer.sharedMaterials`，仅对含 `_StencilRef` 的材质执行 `SetInt`，其他材质自动跳过。
 - 编译校验：`dotnet build Assembly-CSharp-Editor.csproj` 通过（0 error）。
+
+## 最新进展（2026-04-11）
+- `Assets/LX learn computeShader/LX.unity` 已补入一个最小 ComputeShader 教学示例：GPU 并行写入纹理，结果实时显示到场景内 Quad。
+- 新增 `Assets/LX learn computeShader/LXSimpleCompute.compute` 与 `Assets/LX learn computeShader/LXSimpleComputeDemo.cs`，用于演示“CPU 发参数，GPU 批量算像素”的基本分工。

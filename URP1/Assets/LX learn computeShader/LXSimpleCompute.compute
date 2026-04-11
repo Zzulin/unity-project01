@@ -1,0 +1,32 @@
+// 每个线程负责写纹理里的一个像素，这就是 ComputeShader 最直观的并行含义。
+#pragma kernel CSMain
+
+RWTexture2D<float4> Result;
+
+float _TimeValue;
+float _Resolution;
+float _WaveFrequency;
+float _WaveSpeed;
+
+[numthreads(8, 8, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _Resolution || id.y >= _Resolution)
+    {
+        return;
+    }
+
+    float2 uv = (id.xy + 0.5) / _Resolution;
+    float2 centeredUv = uv * 2.0 - 1.0;
+
+    float distanceToCenter = length(centeredUv);
+    float wave = 0.5 + 0.5 * sin(distanceToCenter * _WaveFrequency - _TimeValue * _WaveSpeed);
+    float stripes = 0.5 + 0.5 * sin((uv.x + uv.y + _TimeValue * 0.15) * 12.0);
+
+    float3 warmColor = float3(1.0, 0.55, 0.2);
+    float3 coolColor = float3(0.08, 0.45, 1.0);
+    float3 color = lerp(coolColor, warmColor, wave);
+    color *= lerp(0.6, 1.15, stripes);
+
+    Result[id.xy] = float4(color, 1.0);
+}
