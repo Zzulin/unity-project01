@@ -1,0 +1,26 @@
+// 这是 ComputeBuffer 版：CPU 传入数组，GPU 并行计算，再把结果写回输出 Buffer。
+#pragma kernel CSMain
+
+StructuredBuffer<float> InputData;
+RWStructuredBuffer<float> OutputData;
+
+int _Count;
+float _TimeValue;
+float _Amplitude;
+float _Frequency;
+
+[numthreads(64, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _Count)
+    {
+        return;
+    }
+
+    float t = InputData[index] * _Frequency + _TimeValue;
+    float wave = 0.5 + 0.5 * sin(t);
+    float ripple = 0.5 + 0.5 * sin(t * 0.7 + 1.2);
+
+    OutputData[index] = 0.2 + (wave * 0.7 + ripple * 0.3) * _Amplitude;
+}

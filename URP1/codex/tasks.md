@@ -91,3 +91,4 @@
 ## 最新进展（2026-04-11）
 - `Assets/LX learn computeShader/LX.unity` 已补入一个最小 ComputeShader 教学示例：GPU 并行写入纹理，结果实时显示到场景内 Quad。
 - 新增 `Assets/LX learn computeShader/LXSimpleCompute.compute` 与 `Assets/LX learn computeShader/LXSimpleComputeDemo.cs`，用于演示“CPU 发参数，GPU 批量算像素”的基本分工。
+- 已追加 `ComputeBuffer` 教学示例：`LXComputeBufferBars.compute` + `LXComputeBufferBarsDemo.cs`，流程覆盖 `SetData / SetBuffer / Dispatch / GetData`，运行时会生成一排可视化柱子。
