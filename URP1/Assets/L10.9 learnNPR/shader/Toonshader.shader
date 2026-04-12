@@ -28,6 +28,15 @@ Shader "Toon/ToonShader"
         _SpecColor("Spec Color",Color) = (1,1,1,1)
         _SpecPow("Spec Pow",Range(1,200)) = 10
         _SpecSmooth("Spec Smooth",Range(0,1)) = 0.5
+
+        [Toggle]_RimON("Rim ON",int) = 1 //是否使用菲涅尔
+        _RimColor("Rim Color",Color) = (1,1,1,1)
+        _RimPow("Rim Pow",Range(1,10)) = 1
+        _RimStep("Rim Step",Range(0,1)) = 0.5
+        _RimStepSmooth("Rim Step Smooth",Range(0,0.2)) = 0.1
+        _RimIntensity("Rim Intensity",Range(0,10)) =1
+
+        [Toggle]_UseShadow("Use Shadow",int) = 1 //是否使用阴影
     }
     SubShader
     {
@@ -56,7 +65,7 @@ Shader "Toon/ToonShader"
 
             #pragma vertex vert
             #pragma fragment frag
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _SHADOWS_SOFT
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
@@ -80,8 +89,14 @@ Shader "Toon/ToonShader"
                 half4 _SpecColor;//高光颜色
                 float _SpecPow;//高光强度
                 bool _SpecON;//是否使用高光
-                float _SpecSmooth;//高光平滑度
-                
+                float _SpecSmooth;//高光平滑度  
+                bool _RimON;//是否使用菲涅尔
+                half4 _RimColor;//Rim颜色
+                float _RimPow;//Rim强度
+                float _RimStep;//Rim步长
+                float _RimStepSmooth;//Rim步长平滑度
+                float _RimIntensity;//Rim强度
+                bool _UseShadow;//是否使用阴影
             CBUFFER_END
 
             struct Attributes
@@ -98,6 +113,9 @@ Shader "Toon/ToonShader"
                 float4 positionCS : SV_POSITION;
                 float3 normalWS : TEXCOORD1;
                 float3 positionWS : TEXCOORD2;
+                     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                        float4 shadowCoord : TEXCOORD3;
+                    #endif
             };
             Varyings vert (Attributes input)
             {
@@ -113,17 +131,39 @@ Shader "Toon/ToonShader"
                 output.positionWS = vertexInput.positionWS;
                 output.normalWS = normalInput.normalWS;
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                    output.shadowCoord = GetShadowCoord(vertexInput);
+                    //output.shadowCoord = TransformWorldToShadowCoord(vertexInput.positionWS);
+                #endif
                 return output;
             }
 
-            
+             
             half4 frag (Varyings input) : SV_Target
             {
-                half3 normalWS = normalize(input.normalWS);
-                half3 LightDir = normalize(GetMainLight().direction);
-                half NdotL = dot(normalWS, LightDir)*0.5+0.5;
-                half3 viewDirectionWS = -normalize(input.positionWS-_WorldSpaceCameraPos);
-                half3 H = normalize(viewDirectionWS+LightDir);
+                float4 shadowCoord=float4(0,0,0,0);//没有阴影坐标;
+                if(_UseShadow>0.5)
+                {
+                    #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                    shadowCoord=input.shadowCoord;//使用顶点着色器传来的逐顶点阴影坐标
+                #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
+                    shadowCoord=TransformWorldToShadowCoord(input.positionWS);//重新计算逐像素阴影坐标
+                #else
+                    shadowCoord=float4(0,0,0,0);//没有阴影坐标
+                #endif
+                }
+
+                float4 shadowMask= unity_ProbesOcclusion;
+                #ifdef LIGHTMAP_ON
+                    shadowMask=SAMPLE_SHADOWMASK(input.lightmapUV);
+                #endif
+                Light mainLight =GetMainLight(shadowCoord);
+                half3 N = normalize(input.normalWS);
+                half3 L = normalize(mainLight.direction);
+                half NdotL = dot(N, L)*0.5+0.5;
+                NdotL*=mainLight.shadowAttenuation;
+                half3 V = -normalize(input.positionWS-_WorldSpaceCameraPos);
+                half3 H = normalize(V+L);
                 //根据_stepMode判断使用step函数还是ramptex
                 half lvl;//色阶
                 if(_StepMode)
@@ -149,12 +189,17 @@ Shader "Toon/ToonShader"
 
                 if(_SpecON > 0.5)
                 {
-                    spec = pow(saturate(dot(normalWS, H)), _SpecPow) * _SpecColor.rgb;
+                    spec = pow(saturate(dot(N, H)), _SpecPow) * _SpecColor.rgb;
                     spec = Smootherstep(0.3,0.3+_SpecSmooth,spec)/5;
                 }
-                half3 color = diffuse+spec;
-                
-                return half4(color, 1);
+                half3 f=0;
+                if (_RimON > 0.5)
+                {
+                    f = pow(1-saturate(dot(N, V)),_RimPow)*_RimColor.rgb*_RimIntensity;
+                    f=Smootherstep(_RimStep,_RimStep+_RimStepSmooth,f);     
+                }
+                half3 color = (diffuse+spec+f)*_BaseColor.rgb;
+                return half4(diffuse, 1);
             }
             ENDHLSL
         }
@@ -195,7 +240,14 @@ Shader "Toon/ToonShader"
                 half4 _SpecColor;//高光颜色
                 float _SpecPow;//高光强度
                 bool _SpecON;//是否使用高光
-                float _SpecSmooth;//高光平滑度
+                float _SpecSmooth;//高光平滑度  
+                bool _RimON;//是否使用菲涅尔
+                half4 _RimColor;//Rim颜色
+                float _RimPow;//Rim强度
+                float _RimStep;//Rim步长
+                float _RimStepSmooth;//Rim步长平滑度
+                float _RimIntensity;//Rim强度
+                bool _UseShadow;//是否使用阴影
             CBUFFER_END
             
 
@@ -238,6 +290,51 @@ Shader "Toon/ToonShader"
             {
                 return float4(_OutlineColor.rgb, 1);
             }
+            ENDHLSL
+        }
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags
+            {
+                "LightMode" = "ShadowCaster"
+            }
+
+            // -------------------------------------
+            // Render State Commands
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma target 2.0
+
+            // -------------------------------------
+            // Shader Stages
+            #pragma vertex ShadowPassVertex
+            #pragma fragment ShadowPassFragment
+
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _GLOSSINESS_FROM_BASE_ALPHA
+
+            // -------------------------------------
+            // Unity defined keywords
+            #pragma multi_compile_fragment _ LOD_FADE_CROSSFADE
+
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+
+            // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
+            // -------------------------------------
+            // Includes
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/SimpleLitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
             ENDHLSL
         }
     }

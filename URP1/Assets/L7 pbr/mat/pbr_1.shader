@@ -98,7 +98,7 @@ Shader "Mypbr/pbr_1"
                //阴影坐标
                VertexPositionInputs vertexinput=GetVertexPositionInputs(v.positionOS);//获取顶点世界 相机 裁剪 NDC坐标
                 #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
-                o.shadowCoord=GetShadowCoord(vertexinput);
+                o.shadowCoord=GetShadowCoord(vertexinput);//逐顶点阴影坐标
                 #endif
                
                o.positionCS = vertexinput.positionCS;
@@ -185,25 +185,24 @@ Shader "Mypbr/pbr_1"
                float3 viewDirWS=normalize(i.viewDirWS);
                float smoothness= Albedo.a;
                float roughness=saturate(1-smoothness+_Roughness);
-               //getMainLight 传入阴影坐标实时阴影
-               //Light mainLight =GetMainLight(i.shadowCoord);
+    
                float4 shadowMask=1;
-                    #ifdef LIGHTMAP_ON
+               #ifdef LIGHTMAP_ON
                     //unity的自动LOD远的时候采样静态烘焙的全局光照贴图 进的时候动态阴影  
-                    shadowMask=SAMPLE_SHADOWMASK(i.lightmapUV);
-                    #else
-                    shadowMask=unity_ProbesOcclusion;
-                    #endif
+                   shadowMask=SAMPLE_SHADOWMASK(i.lightmapUV);
+               #else
+                   shadowMask=unity_ProbesOcclusion;
+               #endif
                //mainLight unity自动lod 摄像机近时实时阴影 远时采样烘焙阴影
-                float4 shadowCoord;
-                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
-                shadowCoord=i.shadowCoord;
-                #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
-                shadowCoord=TransformWorldToShadowCoord(i.positionWS);
-                #else
-                shadowCoord=float4(0,0,0,0);
-                #endif
-                Light mainLight =GetMainLight(shadowCoord,i.positionWS,shadowMask);
+               float4 shadowCoord;
+               #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                   shadowCoord=i.shadowCoord;//使用顶点着色器传来的逐顶点阴影坐标
+               #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
+                   shadowCoord=TransformWorldToShadowCoord(i.positionWS);//重新计算逐像素阴影坐标
+               #else
+                   shadowCoord=float4(0,0,0,0);//没有阴影坐标
+               #endif
+               Light mainLight =GetMainLight(shadowCoord,i.positionWS,shadowMask);
                float3 LightDir=mainLight.direction;
                float3 LightColor=mainLight.color;
                //float3 shadowAttenuation=float3(mainLight.shadowAttenuation,mainLight.shadowAttenuation,mainLight.shadowAttenuation);

@@ -28,6 +28,8 @@ Material:
   - _USE_SMOOTH_NORMAL
   m_InvalidKeywords:
   - _CULL_BACK
+  - _RIMON_ON
+  - _SPECON_ON
   - _USEFACEINFO_ON
   - _UseSmoothNormal
   m_LightmapFlags: 4
@@ -69,6 +71,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GradientTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -163,17 +169,25 @@ Material:
     - _PixelWidth: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimIntensity: 1.77
+    - _RimIntensity: 1.49
+    - _RimON: 1
     - _RimOpacity: 1
+    - _RimPow: 5.2
     - _RimPower: 1.47
+    - _RimSmooth: 0.276
     - _RimSmoothness: 1
+    - _RimStep: 0.139
+    - _RimStepSmooth: 0.2
     - _SampleGI: 0
     - _Shinness: 16
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecIntensity: 6.91
+    - _SpecON: 1
     - _SpecOpacity: 1
+    - _SpecPow: 10
     - _SpecPower: 80
+    - _SpecSmooth: 0.5
     - _SpecSmoothness: 0.42
     - _SpecTransparency: 1
     - _SpecularHighlights: 1
@@ -195,7 +209,7 @@ Material:
     - _UseRampColorMap: 1
     - _UseRimLight: 1
     - _UseSNormal: 1
-    - _UseShadow: 1
+    - _UseShadow: 0
     - _UseSmoothNormal: 1
     - _UseSpecular: 0
     - _UseVertexColor: 0
@@ -207,6 +221,6 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 0, g: 1.57, b: 0, a: 0}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
-    - _RimColor: {r: 0.745283, g: 0.6782722, b: 0, a: 1}
+    - _RimColor: {r: 0.72572184, g: 0.7735849, b: 0.18731451, a: 1}
     - _SpecColor: {r: 1, g: 0.97351456, b: 0, a: 1}
   m_BuildTextureStacks: []

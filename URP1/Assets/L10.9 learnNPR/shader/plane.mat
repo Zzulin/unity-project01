@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-3310306234917255652
+--- !u!114 &-1698059273684722481
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,37 +20,25 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Body_0Mat
-  m_Shader: {fileID: 4800000, guid: 1c8fe743fee34f346abc81861e8a3b06, type: 3}
+  m_Name: plane
+  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _USE_SMOOTH_NORMAL
-  m_InvalidKeywords:
-  - _CULL_BACK
-  - _RIMON_ON
-  - _SPECON_ON
-  - _UseSmoothNormal
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _AOMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _AOmap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 23e4d55f8f1a42b4794a0db8ef37824b, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -73,12 +61,8 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _GradientTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 23e4d55f8f1a42b4794a0db8ef37824b, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -93,35 +77,7 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _RampColorMap:
-        m_Texture: {fileID: 2800000, guid: 3c10a435569d7014ebe45573a876d33f, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _RampColormap:
-        m_Texture: {fileID: 2800000, guid: 3c10a435569d7014ebe45573a876d33f, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _RampStepMap:
-        m_Texture: {fileID: 2800000, guid: f47117f4b13bf2d429d5ff0bd3b2c65a, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _RampStepTex:
-        m_Texture: {fileID: 2800000, guid: f47117f4b13bf2d429d5ff0bd3b2c65a, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _RampTex:
-        m_Texture: {fileID: 2800000, guid: f47117f4b13bf2d429d5ff0bd3b2c65a, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _ShiftMap:
-        m_Texture: {fileID: 2800000, guid: 58c20d99df16a9341bef794a84813494, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _name:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -144,82 +100,34 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _CameraDistance: 0.63
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
-    - _CullBack: 1
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
-    - _FaceInfo: 0
-    - _FaceRootHeight: 0
-    - _FixedWidth: 0
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 2.36
     - _Parallax: 0.005
-    - _PixelWidth: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimIntensity: 0.82
-    - _RimON: 1
-    - _RimOpacity: 1
-    - _RimPow: 5.2
-    - _RimPower: 1.47
-    - _RimSmooth: 0.276
-    - _RimSmoothness: 1
-    - _RimStep: 0.139
-    - _RimStepSmooth: 0.2
-    - _SampleGI: 0
-    - _Shinness: 16
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SpecIntensity: 6.82
-    - _SpecON: 1
-    - _SpecOpacity: 0.304
-    - _SpecPow: 10
-    - _SpecPower: 206
-    - _SpecSmooth: 0.5
-    - _SpecSmoothness: 0.511
-    - _SpecTransparency: 1
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _StencilRef: 2
-    - _Step: 0.348
-    - _StepCount: 4
-    - _StepLevel: 0.538
-    - _StepMode: 0
-    - _StepSmooth: 0.219
     - _Surface: 0
-    - _UseAO: 0
-    - _UseAOMap: 0
-    - _UseAniso: 1
-    - _UseAvgNormal: 1
-    - _UseFaceInfo: 0
-    - _UseOutlineColor: 0
-    - _UseRampColorMap: 1
-    - _UseRimLight: 1
-    - _UseSNormal: 1
-    - _UseShadow: 0
-    - _UseSmoothNormal: 1
-    - _UseSpecular: 1
-    - _UseVertexColor: 0
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FaceInfo: {r: 999, g: 0, b: 0, a: 0}
-    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
-    - _RimColor: {r: 0.72572184, g: 0.7735849, b: 0.18731451, a: 1}
-    - _SpecColor: {r: 1, g: 0.97351456, b: 0, a: 1}
+    - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []

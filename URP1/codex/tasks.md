@@ -4,6 +4,7 @@
 - 围绕 `Assets/L11 NPR/L11.unity` 完成 StarRail NPR 角色渲染联调。
 
 ## 当前状态
+- `Assets/L10.9 learnNPR/shader/Toonshader.shader` 已调整主光受影链路：阴影改为先参与 `NdotL -> step/ramp`，并暂时移除 `_MAIN_LIGHT_SHADOWS_SCREEN` 变体以排查“只剩一条线”的显示问题。
 - 场景：`L11`（角色观察场景）
 - 管线：Graphics 默认 `NPR Render Pipeline.asset`；当前质量档 `High` 为 `UniversalRP-HighQuality.asset`
 - 材质：`0_mesh_mesh` 多数槽位为 URP Lit 内嵌实例，`hair` 使用 `CharHair`
