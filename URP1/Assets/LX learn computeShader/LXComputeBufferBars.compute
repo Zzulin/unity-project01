@@ -9,7 +9,7 @@ float _TimeValue;
 float _Amplitude;
 float _Frequency;
 
-[numthreads(64, 1, 1)]
+[numthreads(8, 1, 1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     uint index = id.x;

@@ -13,7 +13,7 @@ public class LXComputeBufferBarsDemo : MonoBehaviour
     [SerializeField] private float spacing = 0.42f;
     [SerializeField] private Vector3 baseBarSize = new Vector3(0.28f, 1f, 0.28f);
 
-    private const int ThreadGroupSize = 64;
+    private const int ThreadGroupSize = 8;
 
     private int kernelHandle = -1;
     private float[] inputData;
@@ -119,8 +119,10 @@ public class LXComputeBufferBarsDemo : MonoBehaviour
         {
             GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
             bar.name = $"Buffer Bar {i}";
+            //将创建的柱子设置为 当前脚本所在对象的子物体 。
             bar.transform.SetParent(transform, false);
 
+            // 移除默认的 Collider 组件（删除box的碰撞体）
             Collider barCollider = bar.GetComponent<Collider>();
             if (barCollider != null)
             {
@@ -141,7 +143,10 @@ public class LXComputeBufferBarsDemo : MonoBehaviour
         computeShader.SetFloat("_Amplitude", amplitude);
         computeShader.SetFloat("_Frequency", frequency);
 
+        // 计算线程组数量，使用了 MathF.CeilToInt 和浮点数除法来向上取整。
         int threadGroups = Mathf.CeilToInt(sampleCount / (float)ThreadGroupSize);
+       
+        //1D 
         computeShader.Dispatch(kernelHandle, threadGroups, 1, 1);
         outputBuffer.GetData(outputData);
 
