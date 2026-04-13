@@ -30,6 +30,7 @@ Material:
   - _CULL_BACK
   - _RIMON_ON
   - _SPECON_ON
+  - _USEANISOTROPIC_ON
   - _UseSmoothNormal
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -46,6 +47,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _AOmap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _AnisotropicMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -184,10 +189,12 @@ Material:
     - _SpecIntensity: 6.82
     - _SpecON: 1
     - _SpecOpacity: 0.304
-    - _SpecPow: 10
+    - _SpecPow: 171.9
     - _SpecPower: 206
-    - _SpecSmooth: 0.5
+    - _SpecShiftIntensity: 0.314
+    - _SpecSmooth: 0.194
     - _SpecSmoothness: 0.511
+    - _SpecStep: 0.415
     - _SpecTransparency: 1
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -202,6 +209,7 @@ Material:
     - _UseAO: 0
     - _UseAOMap: 0
     - _UseAniso: 1
+    - _UseAnisotropic: 1
     - _UseAvgNormal: 1
     - _UseFaceInfo: 0
     - _UseOutlineColor: 0
@@ -221,5 +229,5 @@ Material:
     - _FaceInfo: {r: 999, g: 0, b: 0, a: 0}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.72572184, g: 0.7735849, b: 0.18731451, a: 1}
-    - _SpecColor: {r: 1, g: 0.97351456, b: 0, a: 1}
+    - _SpecColor: {r: 0.24528301, g: 0.24528301, b: 0.24528301, a: 1}
   m_BuildTextureStacks: []

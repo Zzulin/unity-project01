@@ -26,7 +26,11 @@ Shader "Toon/ToonShader"
 
         [Toggle]_SpecON("Spec ON",int) = 1 //是否使用高光
         _SpecColor("Spec Color",Color) = (1,1,1,1)
+        [Toggle]_UseAnisotropic("Use Anisotropic",int) = 1 //是否使用各向异性高光
+        _ShiftMap("Shift Map",2D) = "white" {}//各向异性高光贴图
+        _SpecShiftIntensity("Spec Shift Intensity",Range(0,1)) = 1
         _SpecPow("Spec Pow",Range(1,200)) = 10
+        _SpecStep("Spec Step",Range(0,1)) = 0.5
         _SpecSmooth("Spec Smooth",Range(0,1)) = 0.5
 
         [Toggle]_RimON("Rim ON",int) = 1 //是否使用菲涅尔
@@ -72,6 +76,7 @@ Shader "Toon/ToonShader"
             TEXTURE2D(_GradientTex);SAMPLER(sampler_GradientTex);//全局纹理 渐变纹理
             TEXTURE2D(_RampColormap);SAMPLER(sampler_RampColormap);
             TEXTURE2D(_AOmap);SAMPLER(sampler_AOmap);//环境光遮挡贴图
+            TEXTURE2D(_ShiftMap);SAMPLER(sampler_ShiftMap);//各向异性高光贴图
             CBUFFER_START(UnityPerMaterial)
                 float _OutlineWidth;
                 half4 _BaseColor;
@@ -89,6 +94,9 @@ Shader "Toon/ToonShader"
                 half4 _SpecColor;//高光颜色
                 float _SpecPow;//高光强度
                 bool _SpecON;//是否使用高光
+                bool _UseAnisotropic;//是否使用各向异性高光
+                float _SpecShiftIntensity;//各向异性高光强度
+                float _SpecStep;//高光步长
                 float _SpecSmooth;//高光平滑度  
                 bool _RimON;//是否使用菲涅尔
                 half4 _RimColor;//Rim颜色
@@ -104,6 +112,7 @@ Shader "Toon/ToonShader"
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL;
+                float4 tangentOS : TANGENT;
                 //float4 Color : COLOR;
             };
 
@@ -113,9 +122,11 @@ Shader "Toon/ToonShader"
                 float4 positionCS : SV_POSITION;
                 float3 normalWS : TEXCOORD1;
                 float3 positionWS : TEXCOORD2;
-                     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
-                        float4 shadowCoord : TEXCOORD3;
-                    #endif
+                float3 tangentWS : TEXCOORD3;
+                float3 bitangentWS : TEXCOORD4;
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                    float4 shadowCoord : TEXCOORD5;
+                #endif
             };
             Varyings vert (Attributes input)
             {
@@ -124,12 +135,14 @@ Shader "Toon/ToonShader"
                 if(_UseFaceInfo)
                 {
                     half3 SphNormal = normalize(input.positionOS.xyz-_FaceInfo.xyz);
-                    input.normalOS = lerp(input.normalOS,SphNormal,_FaceInfo.w);
+                    input.normalOS = lerp(SphNormal,input.normalOS,_FaceInfo.w);
                 }
                 VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS);
                 output.positionCS = vertexInput.positionCS;
                 output.positionWS = vertexInput.positionWS;
                 output.normalWS = normalInput.normalWS;
+                output.tangentWS = TransformObjectToWorldDir(input.tangentOS.xyz);
+                output.bitangentWS=normalize(cross(output.normalWS,output.tangentWS)*input.tangentOS.w);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
                     output.shadowCoord = GetShadowCoord(vertexInput);
@@ -137,7 +150,14 @@ Shader "Toon/ToonShader"
                 #endif
                 return output;
             }
-
+            
+            float kajiyaKay(float3 H,float3 B,float _SpecPow)
+            {
+                float dotBH = dot(B,H);
+                float sinBH = sqrt(1-dotBH*dotBH);
+                float dirAtten = Smootherstep(-1,0,dotBH);
+                return dirAtten*pow(sinBH,_SpecPow);    
+            }
              
             half4 frag (Varyings input) : SV_Target
             {
@@ -153,7 +173,6 @@ Shader "Toon/ToonShader"
                 #endif
                 }
 
-                float4 shadowMask= unity_ProbesOcclusion;
                 #ifdef LIGHTMAP_ON
                     shadowMask=SAMPLE_SHADOWMASK(input.lightmapUV);
                 #endif
@@ -186,20 +205,26 @@ Shader "Toon/ToonShader"
                 half3 ramptex = SAMPLE_TEXTURE2D(_RampColormap, sampler_RampColormap, input.uv);
                 half3 diffuse = lerp(albedo*ramptex,albedo,lvl);
                 half3 spec=0;
-
                 if(_SpecON > 0.5)
                 {
-                    spec = pow(saturate(dot(N, H)), _SpecPow) * _SpecColor.rgb;
-                    spec = Smootherstep(0.3,0.3+_SpecSmooth,spec)/5;
+                    spec = pow(saturate(dot(N, H)), _SpecPow);
+                    
+                    if(_UseAnisotropic)
+                    {
+                        half shift = SAMPLE_TEXTURE2D(_ShiftMap, sampler_ShiftMap, input.uv).r*2-1.0;
+                        half3 B = normalize(input.bitangentWS)+shift*N*_SpecShiftIntensity;
+                        spec = kajiyaKay(H,B,_SpecPow);
+                    }
+                    spec = Smootherstep(_SpecStep,_SpecStep+_SpecSmooth,spec)*_SpecColor.rgb;
                 }
-                half3 f=0;
+                half3 fresnelColor=0;
                 if (_RimON > 0.5)
                 {
-                    f = pow(1-saturate(dot(N, V)),_RimPow)*_RimColor.rgb*_RimIntensity;
-                    f=Smootherstep(_RimStep,_RimStep+_RimStepSmooth,f);     
+                    fresnelColor = pow(1-saturate(dot(N, V)),_RimPow)*_RimColor.rgb*_RimIntensity;
+                    fresnelColor=Smootherstep(_RimStep,_RimStep+_RimStepSmooth,fresnelColor);     
                 }
-                half3 color = (diffuse+spec+f)*_BaseColor.rgb;
-                return half4(diffuse, 1);
+                half3 color = (diffuse+spec+fresnelColor)*_BaseColor.rgb;
+                return half4(color, 1);
             }
             ENDHLSL
         }
@@ -240,6 +265,9 @@ Shader "Toon/ToonShader"
                 half4 _SpecColor;//高光颜色
                 float _SpecPow;//高光强度
                 bool _SpecON;//是否使用高光
+                bool _UseAnisotropic;//是否使用各向异性高光
+                float _SpecShiftIntensity;//各向异性高光强度
+                float _SpecStep;//高光步长
                 float _SpecSmooth;//高光平滑度  
                 bool _RimON;//是否使用菲涅尔
                 half4 _RimColor;//Rim颜色
@@ -256,7 +284,6 @@ Shader "Toon/ToonShader"
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL;
-                float3 tangentOS : TANGENT;
                 float3 SmoothNormal : TEXCOORD7;
                 float4 Color : COLOR;
             };
