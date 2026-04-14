@@ -33,7 +33,7 @@ public class LXSimpleComputeDemo : MonoBehaviour
             return;
         }
 
-        kernelHandle = computeShader.FindKernel("CSMain");
+        kernelHandle = computeShader.FindKernel("CSMain");//获取 ComputeShader 中的 CSMain 函数的句柄
         CreateRuntimeTexture();
         CreateRuntimeMaterial();
         DispatchCompute();
@@ -56,7 +56,8 @@ public class LXSimpleComputeDemo : MonoBehaviour
 
         if (runtimeTexture != null)
         {
-            runtimeTexture.Release();
+            runtimeTexture.Release();//释放 RenderTexture 资源
+            //必须调用 Release() ，否则 GPU 资源会泄漏！
             Destroy(runtimeTexture);
         }
     }
@@ -79,15 +80,21 @@ public class LXSimpleComputeDemo : MonoBehaviour
             filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp
         };
+        //RenderTexture 在 CPU 端（内存）分配后，还需要调用 Create() 在 GPU 端真正创建它。
+        //可以在着色器中读写
         runtimeTexture.Create();
     }
 
     private void CreateRuntimeMaterial()
-    {
+    {   
+        // 1. 查找 URP Unlit Shader，如果找不到则使用内置 Unlit/Texture
         Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        //2. 三元运算符：如果 shader 存在用它，否则用备用 Shader
         runtimeMaterial = shader != null ? new Material(shader) : new Material(Shader.Find("Unlit/Texture"));
+        //3. 给材质起个名字，方便调试时识别
         runtimeMaterial.name = "LX Compute Runtime Material";
 
+        // 4. 兼容不同 Shader 的属性名称
         if (runtimeMaterial.HasProperty("_BaseMap"))
         {
             runtimeMaterial.SetTexture("_BaseMap", runtimeTexture);
@@ -108,7 +115,11 @@ public class LXSimpleComputeDemo : MonoBehaviour
         computeShader.SetFloat("_WaveSpeed", waveSpeed);
         computeShader.SetTexture(kernelHandle, "Result", runtimeTexture);
 
+        // 计算线程组数量，使用了 MathF.CeilToInt 和浮点数除法来向上取整。
         int threadGroups = Mathf.CeilToInt(textureSize / (float)ThreadGroupSize);
+        //启用 ComputeShader  并行处理
+        //每个线程处理一个像素，所以需要 threadGroups * threadGroups 个线程
+        //2D 并行，覆盖 512×512 像素
         computeShader.Dispatch(kernelHandle, threadGroups, threadGroups, 1);
     }
 }
