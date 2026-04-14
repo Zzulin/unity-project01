@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-2291042512521162785
+--- !u!114 &-3310306234917255652
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Face_0Mat
+  m_Name: Body_0Mat
   m_Shader: {fileID: 4800000, guid: 1c8fe743fee34f346abc81861e8a3b06, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -28,8 +28,9 @@ Material:
   - _USE_SMOOTH_NORMAL
   m_InvalidKeywords:
   - _CULL_BACK
+  - _RIMON_ON
   - _SPECON_ON
-  - _USEFACEINFO_ON
+  - _USEANISOTROPIC_ON
   - _UseSmoothNormal
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -54,7 +55,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 153fd3cc7f14c8f4982cfb5f353e13a7, type: 3}
+        m_Texture: {fileID: 2800000, guid: 23e4d55f8f1a42b4794a0db8ef37824b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -82,7 +83,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 153fd3cc7f14c8f4982cfb5f353e13a7, type: 3}
+        m_Texture: {fileID: 2800000, guid: 28161e786a2d072498e24177458c393f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -98,11 +99,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampColorMap:
-        m_Texture: {fileID: 2800000, guid: a4496576465f9cd4a8b063962f9ed2dc, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3c10a435569d7014ebe45573a876d33f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampColormap:
-        m_Texture: {fileID: 2800000, guid: a4496576465f9cd4a8b063962f9ed2dc, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3c10a435569d7014ebe45573a876d33f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampStepMap:
@@ -118,7 +119,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ShiftMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 58c20d99df16a9341bef794a84813494, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
@@ -167,13 +168,13 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 5.42
+    - _OutlineWidth: 2.36
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimIntensity: 1.49
-    - _RimON: 0
+    - _RimIntensity: 0.82
+    - _RimON: 1
     - _RimOpacity: 1
     - _RimPow: 5.2
     - _RimPower: 1.47
@@ -185,15 +186,15 @@ Material:
     - _Shinness: 16
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SpecIntensity: 6.91
+    - _SpecIntensity: 6.82
     - _SpecON: 1
-    - _SpecOpacity: 1
-    - _SpecPow: 10
-    - _SpecPower: 80
-    - _SpecShiftIntensity: 1
-    - _SpecSmooth: 0.5
-    - _SpecSmoothness: 0.42
-    - _SpecStep: 0.5
+    - _SpecOpacity: 0.304
+    - _SpecPow: 171.9
+    - _SpecPower: 206
+    - _SpecShiftIntensity: 0.314
+    - _SpecSmooth: 0.194
+    - _SpecSmoothness: 0.511
+    - _SpecStep: 0.415
     - _SpecTransparency: 1
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -207,17 +208,17 @@ Material:
     - _Surface: 0
     - _UseAO: 0
     - _UseAOMap: 0
-    - _UseAniso: 0
-    - _UseAnisotropic: 0
+    - _UseAniso: 1
+    - _UseAnisotropic: 1
     - _UseAvgNormal: 1
-    - _UseFaceInfo: 1
+    - _UseFaceInfo: 0
     - _UseOutlineColor: 0
     - _UseRampColorMap: 1
     - _UseRimLight: 1
     - _UseSNormal: 1
     - _UseShadow: 0
     - _UseSmoothNormal: 1
-    - _UseSpecular: 0
+    - _UseSpecular: 1
     - _UseVertexColor: 0
     - _WorkflowMode: 1
     - _ZWrite: 1
@@ -225,8 +226,8 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FaceInfo: {r: 0, g: 1.57, b: 0, a: 0.1}
+    - _FaceInfo: {r: 999, g: 0, b: 0, a: 0}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.72572184, g: 0.7735849, b: 0.18731451, a: 1}
-    - _SpecColor: {r: 0.55345905, g: 0.55345905, b: 0.55345905, a: 1}
+    - _SpecColor: {r: 0.24528301, g: 0.24528301, b: 0.24528301, a: 1}
   m_BuildTextureStacks: []

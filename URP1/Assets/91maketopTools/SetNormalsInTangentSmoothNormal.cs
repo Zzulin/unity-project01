@@ -7,7 +7,7 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
 {
     public string NewMeshPath = "Assets/Toon/Export";
 
-    [ContextMenu("导出共享法线模型（到切线分量）")]//右键inspector中的挂载脚本菜单执行ExportSharedNormalsToTangent方法
+    [ContextMenu("导出共享法线模型（到NV7）")]//右键inspector中的挂载脚本菜单执行ExportSharedNormalsToTangent方法
     void ExportSharedNormalsToTangent()
     {
         EditorCoroutineLooper.StartLoop(this, ExportSharedNormalsToTangentCo());
@@ -75,28 +75,10 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
             yield return null;
         }
 
-        //新建一个mesh，将之前mesh的所有信息copy过去
-        Mesh newMesh = new Mesh();
-        newMesh.vertices = mesh.vertices;
-        newMesh.triangles = mesh.triangles;
-        newMesh.normals = mesh.normals;    
-        newMesh.tangents = mesh.tangents;
-        newMesh.uv = mesh.uv;
-        newMesh.uv2 = mesh.uv2;
-        newMesh.uv3 = mesh.uv3;
-        newMesh.uv4 = mesh.uv4;
-        newMesh.uv5 = mesh.uv5;
-        newMesh.uv6 = mesh.uv6;
-        newMesh.uv7 = mesh.uv7;
-        newMesh.uv8 = mesh.uv8;
-        newMesh.SetUVs(7, avgNormals);//将uv7赋值为avgNormals
-        //将新模型的颜色赋值为计算好的颜色
-        //newMesh.colors = meshColors;
-        newMesh.colors32 = mesh.colors32;
-        newMesh.bounds = mesh.bounds;
-        newMesh.indexFormat = mesh.indexFormat;
-        newMesh.bindposes = mesh.bindposes;
-        newMesh.boneWeights = mesh.boneWeights;
+        // 直接克隆原 mesh，完整保留 submeshes、blendshapes、skin/bone 等数据
+        Mesh newMesh = Instantiate(mesh);
+        newMesh.name = mesh.name;
+        newMesh.SetUVs(7, avgNormals);// channel 7 对应 UV8
         //将新mesh保存为.asset文件，路径可以是"Assets/Character/Shader/VertexColorTest/TestMesh2.asset"                          
         AssetDatabase.CreateAsset( newMesh, $"{NewMeshPath}/{mesh.name}.asset");
         AssetDatabase.SaveAssets();

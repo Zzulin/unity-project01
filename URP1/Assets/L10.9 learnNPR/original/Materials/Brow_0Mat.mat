@@ -15,7 +15,6 @@ Material:
   - _USE_SMOOTH_NORMAL
   m_InvalidKeywords:
   - _CULL_BACK
-  - _RIMON_ON
   - _SPECON_ON
   - _UseSmoothNormal
   m_LightmapFlags: 4
@@ -154,13 +153,13 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 2.36
+    - _OutlineWidth: 5.42
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RimIntensity: 1.49
-    - _RimON: 1
+    - _RimON: 0
     - _RimOpacity: 1
     - _RimPow: 5.2
     - _RimPower: 1.47

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-2291042512521162785
+--- !u!114 &-2246237312845525745
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Face_0Mat
+  m_Name: Face_Eye_0Mat
   m_Shader: {fileID: 4800000, guid: 1c8fe743fee34f346abc81861e8a3b06, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -28,6 +28,7 @@ Material:
   - _USE_SMOOTH_NORMAL
   m_InvalidKeywords:
   - _CULL_BACK
+  - _RIMON_ON
   - _SPECON_ON
   - _USEFACEINFO_ON
   - _UseSmoothNormal
@@ -167,13 +168,13 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 5.42
+    - _OutlineWidth: 2.36
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RimIntensity: 1.49
-    - _RimON: 0
+    - _RimON: 1
     - _RimOpacity: 1
     - _RimPow: 5.2
     - _RimPower: 1.47
@@ -225,7 +226,7 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FaceInfo: {r: 0, g: 1.57, b: 0, a: 0.1}
+    - _FaceInfo: {r: 0, g: 1.57, b: 0, a: 0.27}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.72572184, g: 0.7735849, b: 0.18731451, a: 1}
     - _SpecColor: {r: 0.55345905, g: 0.55345905, b: 0.55345905, a: 1}

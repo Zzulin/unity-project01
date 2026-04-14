@@ -21,12 +21,13 @@ Shader "Toon/ToonShader"
         _RampColormap ("Ramp Colormap", 2D) = "white" {}//ramp暗部乘上MainTex当作暗部颜色 
         [Toggle]_UseAO("Use AO",int) = 1 //是否使用环境光遮挡
         _AOmap ("AO Map", 2D) = "white" {}//环境光遮挡贴图
-        [Toggle]_UseFaceInfo("Use Face Info",int) = 1 
+        //是否使用球型法线
+        [Toggle]_UseFaceInfo("Use Face Info",int) = 0 
         _FaceInfo("xyz面部中心坐标 w插值球面法线与原始法线",Vector) = (0,0,0,0)
 
         [Toggle]_SpecON("Spec ON",int) = 1 //是否使用高光
         _SpecColor("Spec Color",Color) = (1,1,1,1)
-        [Toggle]_UseAnisotropic("Use Anisotropic",int) = 1 //是否使用各向异性高光
+        [Toggle]_UseAnisotropic("Use Anisotropic",int) = 0 //是否使用各向异性高光
         _ShiftMap("Shift Map",2D) = "white" {}//各向异性高光贴图
         _SpecShiftIntensity("Spec Shift Intensity",Range(0,1)) = 1
         _SpecPow("Spec Pow",Range(1,200)) = 10
@@ -36,7 +37,7 @@ Shader "Toon/ToonShader"
         [Toggle]_RimON("Rim ON",int) = 1 //是否使用菲涅尔
         _RimColor("Rim Color",Color) = (1,1,1,1)
         _RimPow("Rim Pow",Range(1,10)) = 1
-        _RimStep("Rim Step",Range(0,1)) = 0.5
+        _RimStep("Rim Step",Range(0,1)) = 0.369
         _RimStepSmooth("Rim Step Smooth",Range(0,0.2)) = 0.1
         _RimIntensity("Rim Intensity",Range(0,10)) =1
 
