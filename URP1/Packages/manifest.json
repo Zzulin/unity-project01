@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.besty.unity-skills": "file:../Plugins/Unity-Skills-main/SkillsForUnity",
+    "com.jasonma.lwgui": "https://github.com/JasonMa0012/LWGUI.git",
     "com.stalomeow.star-rail-npr-shader": "file:../Plugins/StarRailNPRShader-main/",
     "com.unity.ai.navigation": "1.1.7",
     "com.unity.burst": "1.8.28",

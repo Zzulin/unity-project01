@@ -148,7 +148,7 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _CameraDistance: 0.63
+    - _CameraDistance: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
@@ -167,7 +167,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 5.42
+    - _OutlineWidth: 2.97
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
@@ -198,7 +198,7 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _StencilRef: 2
+    - _StencilRef: 3
     - _Step: 0.348
     - _StepCount: 4
     - _StepLevel: 0.538
@@ -226,7 +226,7 @@ Material:
     - _Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 0, g: 1.57, b: 0, a: 0.1}
-    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
+    - _OutlineColor: {r: 0.23270428, g: 0.10025309, b: 0.1881247, a: 1}
     - _RimColor: {r: 0.72572184, g: 0.7735849, b: 0.18731451, a: 1}
     - _SpecColor: {r: 0.55345905, g: 0.55345905, b: 0.55345905, a: 1}
   m_BuildTextureStacks: []

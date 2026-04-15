@@ -17,7 +17,7 @@ Shader "Toon/ToonShader"
         [IntRange] _StepCount ("Step Count", Range(1,4)) = 2
         _StepLevel ("Step Level", Range(0,1)) = 0.5
         _StepSmooth ("Step Smooth", Range(0,1)) = 0.2
-        [Toggle]_StepMode("StepMode",int) = 0 //0 step函数 1 ramptex
+        [Toggle]_StepMode("StepMode",int) = 0 
         _RampColormap ("Ramp Colormap", 2D) = "white" {}//ramp暗部乘上MainTex当作暗部颜色 
         [Toggle]_UseAO("Use AO",int) = 1 //是否使用环境光遮挡
         _AOmap ("AO Map", 2D) = "white" {}//环境光遮挡贴图
@@ -40,7 +40,7 @@ Shader "Toon/ToonShader"
         _RimStep("Rim Step",Range(0,1)) = 0.369
         _RimStepSmooth("Rim Step Smooth",Range(0,0.2)) = 0.1
         _RimIntensity("Rim Intensity",Range(0,10)) =1
-
+        
         [Toggle]_UseShadow("Use Shadow",int) = 1 //是否使用阴影
     }
     SubShader
@@ -88,7 +88,7 @@ Shader "Toon/ToonShader"
                 int _StepCount;
                 float _StepLevel;
                 float _StepSmooth;
-                bool _StepMode;//0 step函数 1 ramptex
+                bool _StepMode;
                 bool _UseAO;//是否使用环境光遮挡
                 bool _UseFaceInfo;//是否使用面部中心坐标
                 float4 _FaceInfo;//面部中心坐标 0,0,0,0
@@ -165,7 +165,7 @@ Shader "Toon/ToonShader"
                 float4 shadowCoord=float4(0,0,0,0);//没有阴影坐标;
                 if(_UseShadow>0.5)
                 {
-                    #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
                     shadowCoord=input.shadowCoord;//使用顶点着色器传来的逐顶点阴影坐标
                 #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
                     shadowCoord=TransformWorldToShadowCoord(input.positionWS);//重新计算逐像素阴影坐标

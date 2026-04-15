@@ -9,6 +9,13 @@
         "com.unity.timeline": "1.7.7"
       }
     },
+    "com.jasonma.lwgui": {
+      "version": "https://github.com/JasonMa0012/LWGUI.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "cba058fc8c29d3062c758e0ba2ede8cff240298a"
+    },
     "com.stalomeow.star-rail-npr-shader": {
       "version": "file:../Plugins/StarRailNPRShader-main/",
       "depth": 0,
