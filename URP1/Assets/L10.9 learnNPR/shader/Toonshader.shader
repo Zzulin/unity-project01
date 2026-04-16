@@ -18,7 +18,7 @@ Shader "Toon/ToonShader"
         _StepLevel ("Step Level", Range(0,1)) = 0.5
         _StepSmooth ("Step Smooth", Range(0,1)) = 0.2
         [Toggle]_StepMode("StepMode",int) = 0 
-        _RampColormap ("Ramp Colormap", 2D) = "white" {}//ramp暗部乘上MainTex当作暗部颜色 
+        _RampColormap ("Ramp Colormap", 2D) = "gray" {}//ramp暗部乘上MainTex当作暗部颜色 
         [Toggle]_UseAO("Use AO",int) = 1 //是否使用环境光遮挡
         _AOmap ("AO Map", 2D) = "white" {}//环境光遮挡贴图
         //是否使用球型法线

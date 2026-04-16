@@ -8,17 +8,25 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: "\u661F\u76EE\uFF08\u9762\u90E8\uFF09"
-  m_Shader: {fileID: 4800000, guid: 0d632cbbc530e16458ceb70436b11170, type: 3}
+  m_Shader: {fileID: 4800000, guid: e5f490bbddbdb7a4288be18227d2953f, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _ALBEDO_ON
   - _AVG_NORMAL_ON
-  - _SHADOW_ALGO_MUL
+  - _FACE_ON
+  - _HAIR_ON
+  - _OUTLINE_ON
   - _SHADOW_OPT_ON
   - _VERTEX_COLOR_MAP_ON
   - _VERTEX_COLOR_ON
   m_InvalidKeywords:
   - _AO_ON
+  - _ISCONVERTFACECOORD_ON
   - _OUTLINEWIDTH_ON
   - _PIXELWIDTH_ON
+  - _SHADOW_ALGO_MUL
+  - _SHADOW_ON
   - _USEANISO_ON
   - _USEAOMAP_ON
   - _USEFACEINFO_ON
@@ -34,6 +42,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -141,7 +150,7 @@ Material:
     m_Floats:
     - _AO: 0
     - _AVG_NORMAL: 1
-    - _Albedo: 0
+    - _Albedo: 1
     - _AlphaClip: 0
     - _AnisoPower: 1
     - _Base: 0
@@ -157,11 +166,13 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
+    - _DiffuseCutLocation: 0.5
+    - _DiffuseCutSmoothness: 0.1
     - _DstBlend: 0
     - _Emission: 0
     - _EmissionIntensity: 0.5
     - _EnvironmentReflections: 1
-    - _Face: 0
+    - _Face: 1
     - _FaceLightMapPow: 1
     - _FaceShadowMapPow: 0.223
     - _GlossBlinnMargin: 0.75
@@ -170,7 +181,7 @@ Material:
     - _GlossStep: 0.75
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Hair: 0
+    - _Hair: 1
     - _Hardness: 1
     - _IsConvertFaceCoord: 0
     - _IsNight: 0
@@ -179,7 +190,7 @@ Material:
     - _Metallic: 0
     - _NORMALMAP: 0
     - _OcclusionStrength: 1
-    - _Outline: 0
+    - _Outline: 1
     - _OutlineWidth: 0.81
     - _Parallax: 0.005
     - _PixelWidth: 1
@@ -194,7 +205,7 @@ Material:
     - _RimSmoothness: 1
     - _SHADOW_ALGO: 0
     - _SHADOW_OPT: 1
-    - _Shadow: 0
+    - _Shadow: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecIntensity: 1

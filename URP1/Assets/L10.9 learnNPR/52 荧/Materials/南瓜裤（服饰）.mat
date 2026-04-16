@@ -21,10 +21,11 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: "\u5357\u74DC\u88E4\uFF08\u670D\u9970\uFF09"
-  m_Shader: {fileID: 4800000, guid: 0d632cbbc530e16458ceb70436b11170, type: 3}
+  m_Shader: {fileID: 4800000, guid: e5f490bbddbdb7a4288be18227d2953f, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _AVG_NORMAL_ON
-  - _SHADOW_ALGO_MUL
   - _SHADOW_OPT_ON
   - _VERTEX_COLOR_MAP_ON
   - _VERTEX_COLOR_ON
@@ -32,6 +33,7 @@ Material:
   - _ISNIGHT_ON
   - _OUTLINEWIDTH_ON
   - _PIXELWIDTH_ON
+  - _SHADOW_ALGO_MUL
   - _USEEMISSION_ON
   - _USERAMPCOLORMAP_ON
   - _USERIMLIGHT_ON
@@ -46,6 +48,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -169,6 +172,8 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
+    - _DiffuseCutLocation: 0.5
+    - _DiffuseCutSmoothness: 0.1
     - _DstBlend: 0
     - _Emission: 0
     - _EmissionIntensity: 0.21
