@@ -18,7 +18,6 @@ Material:
   - _NORMALMAP_ON
   - _OUTLINE_ON
   - _RIM_ON
-  - _SHADOW_ON
   - _SHADOW_OPT_ON
   m_InvalidKeywords:
   - AVG_NORMAL_ON
@@ -309,7 +308,7 @@ Material:
     - _SHADOW_ALGO: 0
     - _SHADOW_OPT: 1
     - _ShaderEnum: 2
-    - _Shadow: 1
+    - _Shadow: 0
     - _ShadowArea: 0.5
     - _ShadowRampLerp: 0.5
     - _Smoothness: 0.31622776
