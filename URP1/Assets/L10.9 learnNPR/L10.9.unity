@@ -596,6 +596,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: "\u8367"
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 749e5d6941046054a91a7f9d21793a22, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1630794972795428178, guid: 749e5d6941046054a91a7f9d21793a22, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -1499,7 +1503,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: bef049d18aa3bc64aa3a1213f18b9b57, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.758
+      value: 1.259
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bef049d18aa3bc64aa3a1213f18b9b57, type: 3}
       propertyPath: m_LocalPosition.y

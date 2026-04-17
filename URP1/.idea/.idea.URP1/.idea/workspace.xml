@@ -11,52 +11,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5c5d9305-38f2-4ef7-8abc-0a647624ddb3" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/MarsCodeWorkspaceAppSettings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/indexLayout.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/migrateChatHistory.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/extensions.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/91maketopTools/SetNormalsInTangentSmoothNormal.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/91maketopTools/SetNormalsInTangentSmoothNormal.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/元素+（元素装饰）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/元素+（元素装饰）.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/南瓜裤（服饰）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/南瓜裤（服饰）.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/星目（面部）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/星目（面部）.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/目（头发）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/目（头发）.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/肌（皮肤）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/肌（皮肤）.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/髪+（头发高光叠加）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/髪+（头发高光叠加）.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/L10.9.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/L10.9.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_0.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_0.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_1.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_1.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_2.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_2.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Face_0.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Face_0.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_0Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_1Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_1Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_2Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_2Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Brow_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Brow_0Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_0Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_Eye_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_Eye_0Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader advance/ToonShading.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader advance/ToonShading.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader advanced.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader advanced.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader.shader" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/plane.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/plane.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Brow_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Brow_0Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_0Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_Eye_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_Eye_0Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Untitled.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Untitled.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/fa.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/fa.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/发.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/发.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/服.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/服.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/目.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/目.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌+.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌+.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.polybrush/Settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.polybrush/Settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -256,7 +212,7 @@
       <workItem from="1776315053148" duration="1997000" />
       <workItem from="1776342740355" duration="897000" />
       <workItem from="1776347410814" duration="2044000" />
-      <workItem from="1776365960646" duration="23163000" />
+      <workItem from="1776365960646" duration="23894000" />
     </task>
     <servers />
   </component>
