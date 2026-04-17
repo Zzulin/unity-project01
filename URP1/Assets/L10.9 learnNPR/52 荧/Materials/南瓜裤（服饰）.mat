@@ -21,12 +21,17 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: "\u5357\u74DC\u88E4\uFF08\u670D\u9970\uFF09"
-  m_Shader: {fileID: 4800000, guid: e5f490bbddbdb7a4288be18227d2953f, type: 3}
+  m_Shader: {fileID: 4800000, guid: 48a00ddbcb661d041b6749e8ed997b68, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _ALBEDO_ON
   - _AVG_NORMAL_ON
+  - _OUTLINE_ON
+  - _RIM_ON
+  - _SHADOW_ON
   - _SHADOW_OPT_ON
+  - _SPECULAR_ON
   - _VERTEX_COLOR_MAP_ON
   - _VERTEX_COLOR_ON
   m_InvalidKeywords:
@@ -97,7 +102,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetalMap:
-        m_Texture: {fileID: 2800000, guid: c2962a580eb7f814cbbebd6016f4c4a3, type: 3}
+        m_Texture: {fileID: 2800000, guid: d67c7d66cc79b55459ea4723d16739dc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -117,7 +122,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampColorMap:
-        m_Texture: {fileID: 2800000, guid: 8e0ae123ece3d8441b68e16c772b5949, type: 3}
+        m_Texture: {fileID: 2800000, guid: b0193cae341b9a04e930e1415a69ea7f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampRangeMap:
@@ -156,7 +161,7 @@ Material:
     m_Floats:
     - _AO: 0
     - _AVG_NORMAL: 1
-    - _Albedo: 0
+    - _Albedo: 1
     - _AlphaClip: 0
     - _AnisoPower: 1
     - _Base: 0
@@ -190,13 +195,13 @@ Material:
     - _Hair: 0
     - _Hardness: 1
     - _IsConvertFaceCoord: 0
-    - _IsNight: 1
+    - _IsNight: 0
     - _Metal: 0
     - _MetalIntensity: 1
     - _Metallic: 0
     - _NORMALMAP: 0
     - _OcclusionStrength: 1
-    - _Outline: 0
+    - _Outline: 1
     - _OutlineWidth: 0.81
     - _Parallax: 0.005
     - _PixelWidth: 1
@@ -204,21 +209,21 @@ Material:
     - _Ramp: 0
     - _RampIntensity: 1
     - _ReceiveShadows: 1
-    - _Rim: 0
+    - _Rim: 1
     - _RimIntensity: 0.97
     - _RimPower: 1
     - _RimRadius: 0.535
     - _RimSmoothness: 1
     - _SHADOW_ALGO: 0
     - _SHADOW_OPT: 1
-    - _Shadow: 0
+    - _Shadow: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecIntensity: 1
     - _SpecOpacity: 1
     - _SpecPower: 1
     - _SpecSmoothness: 1
-    - _Specular: 0
+    - _Specular: 1
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _StencilRef: 1

@@ -76,8 +76,36 @@ public class SetNormalsInTangentSmoothNormal : MonoBehaviour
         }
 
         // 直接克隆原 mesh，完整保留 submeshes、blendshapes、skin/bone 等数据
-        Mesh newMesh = Instantiate(mesh);
+        //Mesh newMesh = Instantiate(mesh);
+        
+        // 创建一个新Mesh，并赋值给newMesh
+        Mesh newMesh = new Mesh();
         newMesh.name = mesh.name;
+        newMesh.indexFormat = mesh.indexFormat;
+        newMesh.vertices = mesh.vertices;
+        newMesh.normals = mesh.normals;
+        newMesh.tangents = mesh.tangents;
+        newMesh.colors = mesh.colors;
+        newMesh.colors32 = mesh.colors32;
+        newMesh.uv = mesh.uv;
+        newMesh.uv2 = mesh.uv2;
+        newMesh.uv3 = mesh.uv3;
+        newMesh.uv4 = mesh.uv4;
+        newMesh.uv5 = mesh.uv5;
+        newMesh.uv6 = mesh.uv6;
+        newMesh.bindposes = mesh.bindposes;
+        newMesh.boneWeights = mesh.boneWeights;
+        newMesh.bounds = mesh.bounds;
+        newMesh.subMeshCount = mesh.subMeshCount;
+        for (int i = 0; i < mesh.subMeshCount; i++)
+        {
+            newMesh.SetIndices(
+                mesh.GetIndices(i),
+                mesh.GetTopology(i),
+                i,
+                calculateBounds: false);
+        }
+        
         newMesh.SetUVs(7, avgNormals);// channel 7 对应 UV8
         //将新mesh保存为.asset文件，路径可以是"Assets/Character/Shader/VertexColorTest/TestMesh2.asset"                          
         AssetDatabase.CreateAsset( newMesh, $"{NewMeshPath}/{mesh.name}.asset");

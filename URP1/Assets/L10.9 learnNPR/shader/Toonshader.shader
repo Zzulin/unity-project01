@@ -114,7 +114,7 @@ Shader "Toon/ToonShader"
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL;
                 float4 tangentOS : TANGENT;
-                //float4 Color : COLOR;
+                float4 Color : COLOR;
             };
 
             struct Varyings
@@ -128,6 +128,7 @@ Shader "Toon/ToonShader"
                 #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
                     float4 shadowCoord : TEXCOORD5;
                 #endif
+                float4 Color : COLOR;
             };
             Varyings vert (Attributes input)
             {
@@ -149,6 +150,7 @@ Shader "Toon/ToonShader"
                     output.shadowCoord = GetShadowCoord(vertexInput);
                     //output.shadowCoord = TransformWorldToShadowCoord(vertexInput.positionWS);
                 #endif
+                output.Color = input.Color;
                 return output;
             }
             
@@ -305,7 +307,7 @@ Shader "Toon/ToonShader"
                 float3 pos;   
                 pos=input.positionOS.xyz+input.normalOS*camFactor*_OutlineWidth;   
                     #ifdef _USE_SMOOTH_NORMAL
-                    pos=input.positionOS.xyz+input.SmoothNormal*camFactor*_OutlineWidth;
+                    pos=input.positionOS.xyz+input.SmoothNormal*camFactor*_OutlineWidth*input.Color.xyz;
                     #endif
                 output.positionCS = GetVertexPositionInputs(pos).positionCS;                
                 output.normalWS = GetVertexNormalInputs(input.normalOS).normalWS;

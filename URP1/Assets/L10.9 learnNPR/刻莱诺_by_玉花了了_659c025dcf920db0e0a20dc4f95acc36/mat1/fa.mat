@@ -24,8 +24,7 @@ Material:
   m_Shader: {fileID: 4800000, guid: 1c8fe743fee34f346abc81861e8a3b06, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _USE_SMOOTH_NORMAL
+  m_ValidKeywords: []
   m_InvalidKeywords:
   - _CULL_BACK
   - _USESHADOW_ON
@@ -166,7 +165,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 3.57
+    - _OutlineWidth: 0.2
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
@@ -213,7 +212,7 @@ Material:
     - _UseOutlineColor: 0
     - _UseRampColorMap: 1
     - _UseRimLight: 1
-    - _UseSNormal: 1
+    - _UseSNormal: 0
     - _UseShadow: 1
     - _UseSmoothNormal: 1
     - _UseSpecular: 1
@@ -225,7 +224,7 @@ Material:
     - _Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 999, g: 0, b: 0, a: 0}
-    - _OutlineColor: {r: 0.18867922, g: 0.16529724, b: 0.14892603, a: 1}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.72572184, g: 0.7735849, b: 0.18731451, a: 1}
     - _SpecColor: {r: 0.24528301, g: 0.24528301, b: 0.24528301, a: 1}
   m_BuildTextureStacks: []

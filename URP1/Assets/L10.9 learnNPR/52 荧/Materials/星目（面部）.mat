@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: "\u661F\u76EE\uFF08\u9762\u90E8\uFF09"
-  m_Shader: {fileID: 4800000, guid: e5f490bbddbdb7a4288be18227d2953f, type: 3}
+  m_Shader: {fileID: 4800000, guid: 48a00ddbcb661d041b6749e8ed997b68, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -17,6 +17,7 @@ Material:
   - _FACE_ON
   - _HAIR_ON
   - _OUTLINE_ON
+  - _SHADOW_ON
   - _SHADOW_OPT_ON
   - _VERTEX_COLOR_MAP_ON
   - _VERTEX_COLOR_ON
@@ -26,7 +27,6 @@ Material:
   - _OUTLINEWIDTH_ON
   - _PIXELWIDTH_ON
   - _SHADOW_ALGO_MUL
-  - _SHADOW_ON
   - _USEANISO_ON
   - _USEAOMAP_ON
   - _USEFACEINFO_ON
@@ -91,7 +91,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetalMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: d67c7d66cc79b55459ea4723d16739dc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -111,7 +111,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampColorMap:
-        m_Texture: {fileID: 2800000, guid: c3542827a000b1c46ae27610d848d2a7, type: 3}
+        m_Texture: {fileID: 2800000, guid: b0193cae341b9a04e930e1415a69ea7f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampRangeMap:

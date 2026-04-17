@@ -166,7 +166,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 2.97
+    - _OutlineWidth: 8.81
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0

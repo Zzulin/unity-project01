@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeSettings">
+    <configurations />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="5c5d9305-38f2-4ef7-8abc-0a647624ddb3" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/MarsCodeWorkspaceAppSettings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/indexLayout.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/migrateChatHistory.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.URP1/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/extensions.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/91maketopTools/SetNormalsInTangentSmoothNormal.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/91maketopTools/SetNormalsInTangentSmoothNormal.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/元素+（元素装饰）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/元素+（元素装饰）.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/南瓜裤（服饰）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/南瓜裤（服饰）.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/星目（面部）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/星目（面部）.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/目（头发）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/目（头发）.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/肌（皮肤）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/肌（皮肤）.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/髪+（头发高光叠加）.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/52 荧/Materials/髪+（头发高光叠加）.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/L10.9.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/L10.9.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_0.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_0.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_1.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_1.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_2.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Body_2.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Face_0.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/export2/Face_0.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_0Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_1Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_1Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_2Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Body_2Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Brow_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Brow_0Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_0Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_Eye_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/original/Materials/Face_Eye_0Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader advance/ToonShading.shader" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader advance/ToonShading.shader.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader advanced.shader" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader advanced.shader.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader.shader" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/plane.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/plane.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Brow_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Brow_0Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_0Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_Eye_0Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Face_Eye_0Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Untitled.fbx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/Untitled.fbx.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/fa.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/fa.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/发.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/发.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/服.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/服.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/目.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/目.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌+.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌+.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/L10.9 learnNPR/刻莱诺_by_玉花了了_659c025dcf920db0e0a20dc4f95acc36/mat1/肌.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.polybrush/Settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.polybrush/Settings.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://C:/Program Files/Unity/Hub/Editor/2022.3.62f3c1/Editor/Data/CGIncludes/UnityShaderVariables.cginc" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../obsidian-note/untiy render/源码转写/Poisson.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../obsidian-note/untiy render/源码转写/ToonShading.shader" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/L10.9 learnNPR/shader/Toonshader advanced.shader" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/L7 pbr/mat/pbr_1.shader" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core@14.0.12/ShaderLibrary/Common.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core@14.0.12/ShaderLibrary/CommonMaterial.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core@14.0.12/ShaderLibrary/EntityLighting.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core@14.0.12/ShaderLibrary/Packing.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core@14.0.12/ShaderLibrary/SpaceTransforms.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/Core.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/GlobalIllumination.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/Input.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/Lighting.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/MetaInput.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/RealtimeLights.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/ShaderVariablesFunctions.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/Shadows.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/ShaderLibrary/UnityInput.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/Shaders/Lit.shader" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.shadergraph@14.0.12/Editor/Generation/Targets/BuiltIn/ShaderLibrary/UnityInput.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.shadergraph@14.0.12/ShaderGraphLibrary/ShaderVariables.hlsl" root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="39h3Z9WkyQqkotKsqhQxiGCvmgx" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Device#class com.jetbrains.rider.plugins.unity.run.devices.UnityEditorDeviceKind#com.jetbrains.rider.plugins.unity.run.devices.UnityDevicesProvider#Unity 附加到: 附加到&quot;: &quot;Unity 编辑器&quot;,
+    &quot;DeviceKind#com.jetbrains.rider.plugins.unity.run.devices.UnityDevicesProvider&quot;: &quot;Unity 编辑器&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;default&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
+    <configuration name="启动 Unity" type="RunUnityExe" factoryName="Unity Executable">
+      <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\2022.3.62f3c1\Editor\Unity.exe" />
+      <option name="PROGRAM_PARAMETERS" value="-projectPath D:\GitHub\unity-project01\URP1 -debugCodeOptimization" />
+      <option name="WORKING_DIRECTORY" value="D:\GitHub\unity-project01\URP1" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="ENV_FILE_PATHS" value="" />
+      <option name="REDIRECT_INPUT_PATH" value="" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
+      <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\2022.3.62f3c1\Editor\Unity.exe" />
+      <option name="PROGRAM_PARAMETERS" value="-projectPath D:\GitHub\unity-project01\URP1 -debugCodeOptimization" />
+      <option name="WORKING_DIRECTORY" value="D:\GitHub\unity-project01\URP1" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="ENV_FILE_PATHS" value="" />
+      <option name="REDIRECT_INPUT_PATH" value="" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unit Tests (batch mode)" type="RunUnityExe" factoryName="Unity Executable">
+      <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\2022.3.62f3c1\Editor\Unity.exe" />
+      <option name="PROGRAM_PARAMETERS" value="-runTests -batchmode -projectPath D:\GitHub\unity-project01\URP1 -testResults Logs/results.xml -logFile Logs/Editor.log -testPlatform EditMode -debugCodeOptimization" />
+      <option name="WORKING_DIRECTORY" value="D:\GitHub\unity-project01\URP1" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="ENV_FILE_PATHS" value="" />
+      <option name="REDIRECT_INPUT_PATH" value="" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
+      <method v="2" />
+    </configuration>
+    <configuration name="单元测试(批处理模式)" type="RunUnityExe" factoryName="Unity Executable">
+      <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\2022.3.62f3c1\Editor\Unity.exe" />
+      <option name="PROGRAM_PARAMETERS" value="-runTests -batchmode -projectPath D:\GitHub\unity-project01\URP1 -testResults Logs/results.xml -logFile Logs/Editor.log -testPlatform EditMode -debugCodeOptimization" />
+      <option name="WORKING_DIRECTORY" value="D:\GitHub\unity-project01\URP1" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="ENV_FILE_PATHS" value="" />
+      <option name="REDIRECT_INPUT_PATH" value="" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Attach to Unity Editor &amp; Play" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="UNITY_ATTACH_AND_PLAY" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" useMixedMode="false">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="pid" />
+      <option name="projectPathOnTarget" />
+      <option name="runtimes">
+        <list />
+      </option>
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <method v="2" />
+    </configuration>
+    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" useMixedMode="false">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="pid" />
+      <option name="projectPathOnTarget" />
+      <option name="runtimes">
+        <list />
+      </option>
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <method v="2" />
+    </configuration>
+    <configuration name="附加到" type="UnityDevicePlayer" factoryName="UnityAttachToDevicePlayer">
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="5c5d9305-38f2-4ef7-8abc-0a647624ddb3" name="更改" comment="" />
+      <created>1771134529671</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1771134529671</updated>
+      <workItem from="1771134532896" duration="925000" />
+      <workItem from="1771139630580" duration="418000" />
+      <workItem from="1771154670574" duration="16245000" />
+      <workItem from="1771226140142" duration="18536000" />
+      <workItem from="1771393718724" duration="23617000" />
+      <workItem from="1771587914767" duration="21044000" />
+      <workItem from="1771835397620" duration="8067000" />
+      <workItem from="1771847825136" duration="8096000" />
+      <workItem from="1771938902394" duration="2727000" />
+      <workItem from="1772087236406" duration="12969000" />
+      <workItem from="1772177779606" duration="850000" />
+      <workItem from="1772768371769" duration="571000" />
+      <workItem from="1772768963553" duration="206000" />
+      <workItem from="1772769276131" duration="375000" />
+      <workItem from="1772769666608" duration="9245000" />
+      <workItem from="1772820901599" duration="176000" />
+      <workItem from="1772823658760" duration="197000" />
+      <workItem from="1772823889929" duration="63000" />
+      <workItem from="1772823985735" duration="29000" />
+      <workItem from="1773046801850" duration="1175000" />
+      <workItem from="1773495468366" duration="22158000" />
+      <workItem from="1773652379303" duration="5627000" />
+      <workItem from="1773755237428" duration="13248000" />
+      <workItem from="1773841177325" duration="1005000" />
+      <workItem from="1775209065519" duration="261000" />
+      <workItem from="1775209349497" duration="820000" />
+      <workItem from="1775211578052" duration="699000" />
+      <workItem from="1775212313170" duration="270000" />
+      <workItem from="1775229860735" duration="947000" />
+      <workItem from="1775297871930" duration="498000" />
+      <workItem from="1775299254206" duration="15000" />
+      <workItem from="1775299279687" duration="61000" />
+      <workItem from="1775299423106" duration="2919000" />
+      <workItem from="1775302387565" duration="666000" />
+      <workItem from="1775304988607" duration="77000" />
+      <workItem from="1775305089443" duration="142000" />
+      <workItem from="1775305247888" duration="165000" />
+      <workItem from="1775306486314" duration="1863000" />
+      <workItem from="1775310845764" duration="970000" />
+      <workItem from="1775568335247" duration="4189000" />
+      <workItem from="1776234251219" duration="101000" />
+      <workItem from="1776235348622" duration="645000" />
+      <workItem from="1776236056355" duration="330000" />
+      <workItem from="1776236447706" duration="366000" />
+      <workItem from="1776236840630" duration="6428000" />
+      <workItem from="1776257533997" duration="8301000" />
+      <workItem from="1776315053148" duration="1997000" />
+      <workItem from="1776342740355" duration="897000" />
+      <workItem from="1776347410814" duration="2044000" />
+      <workItem from="1776365960646" duration="23163000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
+  <component name="UnityProjectConfiguration" hasMinimizedUI="true" />
+  <component name="UnityProjectDiscoverer">
+    <option name="hasUnityReference" value="true" />
+    <option name="unityProject" value="true" />
+    <option name="unityProjectFolder" value="true" />
+  </component>
+  <component name="UnityUnitTestConfiguration" currentTestLauncher="Both" />
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

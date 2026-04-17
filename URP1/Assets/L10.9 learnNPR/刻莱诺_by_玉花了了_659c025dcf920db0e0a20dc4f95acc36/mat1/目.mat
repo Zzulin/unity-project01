@@ -11,8 +11,7 @@ Material:
   m_Shader: {fileID: 4800000, guid: 1c8fe743fee34f346abc81861e8a3b06, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _USE_SMOOTH_NORMAL
+  m_ValidKeywords: []
   m_InvalidKeywords:
   - _SPECON_ON
   - _USESHADOW_ON
@@ -153,7 +152,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 3.57
+    - _OutlineWidth: 0.2
     - _Parallax: 0.005
     - _PixelWidth: 0
     - _QueueOffset: 0
@@ -200,7 +199,7 @@ Material:
     - _UseOutlineColor: 0
     - _UseRampColorMap: 1
     - _UseRimLight: 0
-    - _UseSNormal: 1
+    - _UseSNormal: 0
     - _UseShadow: 1
     - _UseSmoothNormal: 1
     - _UseSpecular: 0

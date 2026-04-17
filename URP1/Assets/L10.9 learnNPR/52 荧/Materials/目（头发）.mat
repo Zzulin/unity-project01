@@ -8,11 +8,13 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: "\u76EE\uFF08\u5934\u53D1\uFF09"
-  m_Shader: {fileID: 4800000, guid: e5f490bbddbdb7a4288be18227d2953f, type: 3}
+  m_Shader: {fileID: 4800000, guid: 48a00ddbcb661d041b6749e8ed997b68, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _AVG_NORMAL_ON
+  - _HAIR_ON
+  - _SHADOW_ON
   - _SHADOW_OPT_ON
   - _VERTEX_COLOR_MAP_ON
   - _VERTEX_COLOR_ON
@@ -80,7 +82,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetalMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: d67c7d66cc79b55459ea4723d16739dc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -100,7 +102,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampColorMap:
-        m_Texture: {fileID: 2800000, guid: e3293c06634730042af2d15282d0820d, type: 3}
+        m_Texture: {fileID: 2800000, guid: b0193cae341b9a04e930e1415a69ea7f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampRangeMap:
@@ -170,7 +172,7 @@ Material:
     - _GlossStep: 0.75
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Hair: 0
+    - _Hair: 1
     - _Hardness: 1
     - _IsConvertFaceCoord: 0
     - _IsNight: 0
@@ -193,7 +195,7 @@ Material:
     - _RimSmoothness: 1
     - _SHADOW_ALGO: 0
     - _SHADOW_OPT: 1
-    - _Shadow: 0
+    - _Shadow: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecIntensity: 1
