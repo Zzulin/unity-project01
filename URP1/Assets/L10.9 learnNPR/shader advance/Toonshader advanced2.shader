@@ -180,8 +180,8 @@ Shader "Toon/Toonshader advanced2"
                 float3 viewWS : TEXCOORD2;
                 float4 shadowCoord : TEXCOORD3;
                 float3 posWS : TEXCOORD4;
-                float3 tangentWS : TANGENT;
-                float3 binormalWS : BTANGEN;
+                float3 tangentWS : TEXCOORD5;
+                float3 binormalWS : TEXCOORD6;
             };
 
             
