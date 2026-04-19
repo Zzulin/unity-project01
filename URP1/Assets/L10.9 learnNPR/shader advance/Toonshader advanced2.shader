@@ -4,10 +4,10 @@ Shader "Toon/Toonshader advanced2"
     {
         [Main(Base, _, on, off)] _Base ("基础", Float) = 0
         [Tex(Base)] _MainTex ("主纹理", 2D) = "" { }
-        [Tex(Base)] _IlmMap ("IlmMap", 2D) = "" { }
+        [Tex(Base)] _IlmMap ("Lightmap", 2D) = "" { }
         [Tex(Base)] _NormalMap ("NormalMap", 2D) = "bump" { }
 
-        [Main(Outline)] _Outline ("描边", Float) = 0
+        [Main(Outline,_OUTLINE_ON,on)] _Outline ("描边", Float) = 0
         [SubIntRange(Outline)] _OutlineWidth ("轮廓宽度", Range(1, 10)) = 1
         [SubToggle(Outline)] _PixelWidth ("使用屏幕像素宽度(Game视图)", Float) = 1
         [Sub(Outline)] _OutlineColor ("轮廓颜色", Color) = (0, 0, 0, 1)
@@ -17,13 +17,13 @@ Shader "Toon/Toonshader advanced2"
         [SubToggle(Outline)] _VERTEX_COLOR_MAP ("使用顶点色贴图", Float) = 1
         [ShowIf(_VERTEX_COLOR_MAP, Equal, 1)][Tex(Outline)] _VertexColorMap ("顶点色贴图", 2D) = "white" { }
 
-        [Main(Albedo)] _Albedo ("基础色", Float) = 0
+        [Main(Albedo,_ALBEDO_ON,on)] _Albedo ("基础色", Float) = 0
         [Tex(Albedo)] _RampColorMap ("色条图", 2D) = "white" { }
         [SubToggle(Albedo)] _IsNight ("是否夜晚", Float) = 0
-        [Sub(Albedo)] _Threshold ("明暗分界阈值", Range(0, 1)) = 0
-        [Sub(Albedo)] _Hardness ("硬度", Range(1, 50)) = 1
+        [Sub(Albedo)] _Threshold ("NdotL Step", Range(0, 1)) = 0
+        [Sub(Albedo)] _Hardness ("NdotL Smooth", Range(1, 50)) = 1
 
-        [Main(Specular)] _Specular ("高光", Float) = 0
+        [Main(Specular,_SPECULAR_ON,on)] _Specular ("高光", Float) = 0
         [Sub(Specular)] _GlossBlinnMargin ("GlossBlinnMargin", Range(0, 1)) = 0.2
         [Sub(Specular)] _GlossStep ("GlossStep", Range(0, 1)) = 0.5
         [Sub(Specular)] _GlossIntensity ("GlossIntensity", Range(0, 8)) = 1
@@ -32,22 +32,23 @@ Shader "Toon/Toonshader advanced2"
         [Sub(Specular)] _MetalIntensity ("MetalIntensity", Range(0, 8)) = 1
         [Tex(Specular)] _MetalMap ("MetalMap", 2D) = "gray" { }
         
-        [Main(Emission)] _Emission ("自发光", Float) = 0
+        [Main(Emission,_EMISSION_ON,on)] _Emission ("自发光", Float) = 0
         [Sub(Emission)] _EmissionIntensity ("EmissionIntensity", Range(0, 2)) = 0.5
 
-        [Main(Rim)] _Rim ("外发光", Float) = 0
+        [Main(Rim,_RIM_ON,on)] _Rim ("外发光", Float) = 0
         [Sub(Rim)] _RimIntensity ("外发光强度", Range(0, 2)) = 1
         [Sub(Rim)] _RimRadius ("外发光半径", Range(0, 1)) = 1
 
-        [Main(Face)] _Face ("面部", Float) = 0
+        [Main(Face,_FACE_ON,on)] _Face ("面部", Float) = 0
+        [SubRange(Face)]_FaceDarkIntensity ("暗部暗度", Range(0, 1)) = 0.7
         [SubToggle(Face)] _IsConvertFaceCoord ("是否转换坐标", Float) = 0
         [Tex(Face)] _FaceLightMap ("面部SDF图", 2D) = "gray" { }
 
-        [Main(Hair)] _Hair ("头发", Float) = 0
+        [Main(Hair,_HAIR_ON,on)] _Hair ("头发", Float) = 0
         [Sub(Hair)] _AnisoPower ("头发高光集中度", Range(1, 4)) = 1
         [Tex(Hair)] _ShiftMap ("发丝贴图", 2D) = "" { }
 
-        [Main(Shadow)] _Shadow ("阴影", Float) = 0
+        [Main(Shadow,_SHADOW_ON,on)] _Shadow ("阴影", Float) = 0
         [SubToggle(Shadow)] _SHADOW_OPT ("阴影优化", Float) = 1
     }
 
@@ -115,6 +116,7 @@ Shader "Toon/Toonshader advanced2"
             float _RimIntensity;
             float _RimRadius;
 
+            float _FaceDarkIntensity;
             float _IsConvertFaceCoord;
             float _UseSdfShadow;
         
@@ -297,26 +299,7 @@ Shader "Toon/Toonshader advanced2"
                 float2 matcapUV = normalizeVS.xy * 0.5 + 0.5; // 金属镜面采样 UV
                 return SAMPLE_TEXTURE2D(_MetalMap, sampler_MetalMap, matcapUV).r;
             }
-
-            /*float3 NPR_Base_Specular(
-                float NdotH,
-                float3 normalWS,
-                float3 baseColor,
-                float specLayerMask, // ilm.r
-                float specIntensity, // ilm.b
-                float aoMask // ilm.g (aoMask)
-            )
-            {
-                float3 blinnPhongSpec = baseColor * specLayerMask * saturate(pow(NdotH, specIntensity));
-                // Blinn-Phong 高光
-
-                float isMetal = step(0.95, specLayerMask); // 镜面金属区域
-                float metalFactor = lerp(0, NPR_Base_Metallic(specLayerMask, normalWS) * 5, isMetal);
-                float3 stepSpec = baseColor * metalFactor * step(0.95, specLayerMask); // 截断高光
-
-                return (blinnPhongSpec + stepSpec) * aoMask;
-            }*/
-
+            
             float3 NPR_Base_Specular2(
                 float NdotH,
                 float NdotV,
@@ -361,10 +344,12 @@ Shader "Toon/Toonshader advanced2"
             float4 frag(v2f i) : SV_Target
             {
                 Light mainLight;
+                float4 shadowCoord=TransformWorldToShadowCoord(i.posWS);//必须在fs中计算shadowcoord
+                //shadowCoord = i.shadowCoord;
                 #if _SHADOW_OPT_ON
-                    mainLight = get_main_light_poisson(i.shadowCoord, i.posWS);
+                    mainLight = get_main_light_poisson(shadowCoord, i.posWS);
                 #else
-                    mainLight = GetMainLight(i.shadowCoord);
+                    mainLight = GetMainLight(shadowCoord);
                 #endif
 
                 float3 n;
@@ -379,10 +364,10 @@ Shader "Toon/Toonshader advanced2"
                 float3 l = mainLight.direction;
                 float3 h = SafeNormalize(l + v);
 
-                // 用于二次元的 blinn。
-                float nl = dot(n, l) * 0.5 + 0.5; // 背面 [0,0.5]，正面 [0.5,1]
-                float nh = dot(n, h); // BlinnPhong 高光定义相关
-                float nv = dot(n, v); // 视线相关
+                // blinn
+                float nl = dot(n, l) * 0.5 + 0.5; 
+                float nh = dot(n, h); 
+                float nv = dot(n, v); // 外发光相关菲涅尔
                 
                 float selfShadow = saturate(0.3+mainLight.shadowAttenuation*mainLight.distanceAttenuation);
                 float darkArea = saturate((nl-_Threshold)*_Hardness);//[0,2]->[-0.5,1.5]
@@ -390,13 +375,13 @@ Shader "Toon/Toonshader advanced2"
 
                 float shadowAtt = 1;
                 #if _SHADOW_ON
-                    shadowAtt = darkArea * selfShadow;
+                    shadowAtt = selfShadow*darkArea;
                 #else
-                shadowAtt = 1;
+                    shadowAtt = 1;
                 #endif
-
+                //return float4(shadowAtt,shadowAtt,shadowAtt, 1);
                 float4 ilm = SAMPLE_TEXTURE2D(_IlmMap, sampler_IlmMap, i.uv);
-                float rampRange = 1 - ilm.a;
+                float rampRange = 1-ilm.a;
                 float aoMask = ilm.g; // 角色的遮蔽范围(AO)
                 float specLayerMask = ilm.r;
                 float specIntensity = ilm.b;
@@ -409,17 +394,17 @@ Shader "Toon/Toonshader advanced2"
                     float3 rampColor;
                     #if _FACE_ON
                         rampColor = NPR_Base_Ramp(nl, _IsNight, rampRange);
-                        albedoFinal = baseColor.rgb * rampColor * lerp(0.7, 1,
+                        albedoFinal = baseColor.rgb * rampColor * lerp(_FaceDarkIntensity, 1,
                             FaceShadowAttenuation(l, i.uv, _IsConvertFaceCoord));
                         // 面部阴影不接受实时光。
                     #else
                         rampColor = NPR_Base_Ramp(nl, _IsNight, rampRange);
                         albedoFinal = baseColor.rgb * rampColor * shadowAtt;
+                    //return float4 (rampColor ,1);
                     #endif
-
-                    // 截图第 366 行有一条调试返回：return float4(rampColor, 1);
-                #else
-                    albedoFinal = baseColor.rgb;
+                
+                /*#else
+                    albedoFinal = baseColor.rgb;*/
                 #endif
 
                 float3 specFinal = 0;
@@ -432,7 +417,7 @@ Shader "Toon/Toonshader advanced2"
                         specFinal = StrandSpecular(t, h, _AnisoPower); // 天使环高光衰减系数
                     #else
                         specFinal = NPR_Base_Specular2(nh, nv, n, baseColor.rgb,
-                            specLayerMask, specIntensity, aoMask);
+                            specLayerMask, specIntensity, aoMask)* shadowAtt;
                     #endif
                 #endif
 

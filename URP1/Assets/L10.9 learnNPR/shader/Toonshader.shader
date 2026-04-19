@@ -72,7 +72,7 @@ Shader "Toon/ToonShader"
             #pragma fragment frag
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _SHADOWS_SOFT
-
+            
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
             TEXTURE2D(_GradientTex);SAMPLER(sampler_GradientTex);//全局纹理 渐变纹理
             TEXTURE2D(_RampColormap);SAMPLER(sampler_RampColormap);
