@@ -55,7 +55,7 @@ Material:
     - _SpecShiftIntensity: 1
     - _SpecSmooth: 0.5
     - _SpecStep: 0.5
-    - _StencilRef: 1
+    - _StencilRef: 9
     - _StepCount: 2
     - _StepLevel: 0.5
     - _StepMode: 0

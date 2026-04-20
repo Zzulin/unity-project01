@@ -8,15 +8,11 @@ Shader "Toon/Toonshader advanced2"
         [Tex(Base)] _NormalMap ("NormalMap", 2D) = "bump" { }
 
         [Main(Outline,_OUTLINE_ON,on)] _Outline ("描边", Float) = 0
-        [SubIntRange(Outline)] _OutlineWidth ("轮廓宽度", Range(1, 10)) = 1
-        [SubToggle(Outline)] _PixelWidth ("使用屏幕像素宽度(Game视图)", Float) = 1
+        [SubRange(Outline)] _OutlineWidth ("轮廓宽度", Range(0,2)) = 1
         [Sub(Outline)] _OutlineColor ("轮廓颜色", Color) = (0, 0, 0, 1)
         [SubIntRange(Outline)] _StencilRef ("描边ID", Range(1, 8)) = 1
-        [SubToggle(Outline)] _AVG_NORMAL ("启用平均化法线", Float) = 1
-        [SubToggle(Outline)] _VERTEX_COLOR ("使用顶点色", Float) = 1
-        [SubToggle(Outline)] _VERTEX_COLOR_MAP ("使用顶点色贴图", Float) = 1
-        [ShowIf(_VERTEX_COLOR_MAP, Equal, 1)][Tex(Outline)] _VertexColorMap ("顶点色贴图", 2D) = "white" { }
-
+        [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
+        
         [Main(Albedo,_ALBEDO_ON,on)] _Albedo ("基础色", Float) = 0
         [Tex(Albedo)] _RampColorMap ("色条图", 2D) = "white" { }
         [SubToggle(Albedo)] _IsNight ("是否夜晚", Float) = 0
@@ -42,14 +38,10 @@ Shader "Toon/Toonshader advanced2"
         [Main(Face,_FACE_ON,on)] _Face ("面部", Float) = 0
         [SubRange(Face)]_FaceDarkIntensity ("暗部暗度", Range(0, 1)) = 0.7
         [SubToggle(Face)] _IsConvertFaceCoord ("是否转换坐标", Float) = 0
+        [SubRange(Face)]_FaceSmoothRange ("面部阴影Smooth", Range(0, 0.05)) = 0.03
         [Tex(Face)] _FaceLightMap ("面部SDF图", 2D) = "gray" { }
-
-        [Main(Hair,_HAIR_ON,on)] _Hair ("头发", Float) = 0
-        [Sub(Hair)] _AnisoPower ("头发高光集中度", Range(1, 4)) = 1
-        [Tex(Hair)] _ShiftMap ("发丝贴图", 2D) = "" { }
-
+        
         [Main(Shadow,_SHADOW_ON,on)] _Shadow ("阴影", Float) = 0
-        [SubToggle(Shadow)] _SHADOW_OPT ("阴影优化", Float) = 1
     }
 
     SubShader
@@ -64,53 +56,72 @@ Shader "Toon/Toonshader advanced2"
             // "PreviewType" = "Plane/Skybox"
             "RenderPipeline" = "UniversalPipeline"
         }
+        Pass
+        {
+            
+            Name "ToonShading"
+            Tags
+            {
+                "LightMode" = "UniversalForward"
+                // "PassFlags" = "OnlyDirectional"
+                // "RequireOptions" = "SoftVegetation"
+            }
 
-        HLSLINCLUDE
-        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        
-        #pragma shader_feature _ALBEDO_ON
-        #pragma shader_feature _SPECULAR_ON
-        #pragma shader_feature _EMISSION_ON
-        #pragma shader_feature _FACE_ON
-        #pragma shader_feature _HAIR_ON
-        #pragma shader_feature _RIM_ON
-        #pragma shader_feature _OUTLINE_ON
-        #pragma shader_feature _AVG_NORMAL_ON
-        #pragma shader_feature _VERTEX_COLOR_ON
-        #pragma shader_feature _SHADOW_ON
-        #pragma shader_feature _SHADOW_OPT_ON
-        #pragma shader_feature _VERTEX_COLOR_MAP_ON
-        #pragma shader_feature _NORMALMAP_ON
+             Stencil // (Ref & ReadMask) Comp (StencilBufferValue & ReadMask)
+             {
+                 Ref [_StencilRef]
+                 Comp Always
+                 Pass Replace
+             }
 
-        TEXTURE2D(_MainTex);
-        SAMPLER(sampler_MainTex);
-        TEXTURE2D(_IlmMap);
-        SAMPLER(sampler_IlmMap);
-        TEXTURE2D(_NormalMap);
-        SAMPLER(sampler_NormalMap);
-        TEXTURE2D(_VertexColorMap);
-        SAMPLER(sampler_VertexColorMap);// 区块暗部颜色贴图
-        TEXTURE2D(_RampColorMap);
-        SAMPLER(sampler_RampColorMap);
-        TEXTURE2D(_ShiftMap);
-        SAMPLER(sampler_ShiftMap);
-        TEXTURE2D(_FaceLightMap);
-        SAMPLER(sampler_FaceLightMap);
-        TEXTURE2D(_MetalMap);
-        SAMPLER(sampler_MetalMap);
-        TEXTURE2D(_SpecMap);
-        SAMPLER(sampler_SpecMap);
+            Cull Off
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ _SHADOWS_SOFT
+            
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #pragma shader_feature _ALBEDO_ON
+            #pragma shader_feature _SPECULAR_ON
+            #pragma shader_feature _EMISSION_ON
+            #pragma shader_feature _FACE_ON
+            
+            #pragma shader_feature _RIM_ON
+            #pragma shader_feature _OUTLINE_ON
+            #pragma shader_feature _AVG_NORMAL_ON
+            #pragma shader_feature _SHADOW_ON
+            
+          
+            #pragma shader_feature _NORMALMAP_ON
 
-        CBUFFER_START(UnityPerMaterial)
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_IlmMap);
+            SAMPLER(sampler_IlmMap);
+            TEXTURE2D(_NormalMap);
+            SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_RampColorMap);
+            SAMPLER(sampler_RampColorMap);
+            
+            TEXTURE2D(_FaceLightMap);
+            SAMPLER(sampler_FaceLightMap);
+            TEXTURE2D(_MetalMap);
+            SAMPLER(sampler_MetalMap);
+            TEXTURE2D(_SpecMap);
+            SAMPLER(sampler_SpecMap);
+
+            CBUFFER_START(UnityPerMaterial)
             float4 _MainTex_ST;
             float _OutlineWidth;
             float3 _OutlineColor;
-            float _PixelWidth;
+            
 
             float _DiffuseCutLocation;
             float _DiffuseCutSmoothness;
             float _IsNight;
-            float _AnisoPower;
 
             float _UseRimLight;
             float _RimIntensity;
@@ -119,7 +130,7 @@ Shader "Toon/Toonshader advanced2"
             float _FaceDarkIntensity;
             float _IsConvertFaceCoord;
             float _UseSdfShadow;
-        
+            float _FaceSmoothRange;
             float _EmissionIntensity;
 
             float _UseVertexColor;
@@ -133,38 +144,7 @@ Shader "Toon/Toonshader advanced2"
             float _BlinnStep;
             float _GlossStep;
             float _GlossBlinnMargin;
-        
-        CBUFFER_END
-        ENDHLSL
-        Pass
-        {
-            Name "ToonShading"
-            Tags
-            {
-                "LightMode" = "UniversalForward"
-                // "PassFlags" = "OnlyDirectional"
-                // "RequireOptions" = "SoftVegetation"
-            }
-
-            // Stencil // (Ref & ReadMask) Comp (StencilBufferValue & ReadMask)
-            // {
-            //     Ref [_StencilRef]
-            //     Comp Always
-            //     Pass Replace
-            // }
-
-            Cull Off
-            HLSLPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
-            #pragma multi_compile _ _SHADOWS_SOFT
-            
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            
-            #include "Poisson.hlsl"
+            CBUFFER_END
             
             struct appdata
             {
@@ -172,6 +152,7 @@ Shader "Toon/Toonshader advanced2"
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL; 
                 float4 tangentOS : TANGENT;
+                float4 color : COLOR;
             };
 
             struct v2f
@@ -184,6 +165,7 @@ Shader "Toon/Toonshader advanced2"
                 float3 posWS : TEXCOORD4;
                 float3 tangentWS : TEXCOORD5;
                 float3 binormalWS : TEXCOORD6;
+                float4 color : TEXCOORD7;
             };
 
             
@@ -200,8 +182,8 @@ Shader "Toon/Toonshader advanced2"
                 o.normalWS = vm.normalWS;
                 o.tangentWS = vm.tangentWS;
                 o.binormalWS = vm.bitangentWS; // 左手规则
-
                 o.shadowCoord = TransformWorldToShadowCoord(o.posWS);
+                o.color = v.color;
                 return o;
             }
 
@@ -222,17 +204,20 @@ Shader "Toon/Toonshader advanced2"
             float FaceShadowAttenuation(float3 L, float2 uv, float _isConvertFaceCoord)
             {
                 // ref: https://zhuanlan.zhihu.com/p/279334552
+                //计算“角色脸部正前方”的世界空间方向 frontWS
+                //_isConvertFaceCoord float3(0, 1, 0)表示模型的 Y坐标 当做 Z坐标
                 float3 frontWS = mul((float3x3)unity_ObjectToWorld,
                     lerp(float3(0, 0, 1), float3(0, 1, 0), _isConvertFaceCoord));
 
                 // 原神角色模型局部空间和 Unity 世界空间不是对齐的，这里做坐标转换。
+                //_isConvertFaceCoord float3(0, 0, -1)表示模型的 Z坐标的反方向 当做 X坐标
                 float3 rightWS = mul((float3x3)unity_ObjectToWorld,
                     lerp(float3(1, 0, 0), float3(0, 0, -1), _isConvertFaceCoord));
 
                 float FdotL = dot(normalize(frontWS.xz), normalize(L.xz));
                 float RdotL = dot(normalize(rightWS.xz), normalize(L.xz));
 
-                // 左右各采样一次 FaceLightMap 的明暗数据存于 FaceLight。
+                // 判断灯光方向是否在面部前方
                 if (FdotL < 0)
                 {
                     return 0;
@@ -248,9 +233,9 @@ Shader "Toon/Toonshader advanced2"
                     faceLight = SAMPLE_TEXTURE2D(_FaceLightMap, sampler_FaceLightMap, float2(1 - uv.x, uv.y)).r;
                 }
 
-                // return step(faceLight, FdotL);
+                 //return step(faceLight, FdotL);
                 float smoothRange = 0.03;
-                return 1 - smoothstep(FdotL - smoothRange, FdotL + smoothRange, faceLight);
+                return 1 - smoothstep(FdotL - _FaceSmoothRange, FdotL + _FaceSmoothRange, faceLight);
             }
 
             float NPR_Toon_Shading(float NdotL)
@@ -295,12 +280,14 @@ Shader "Toon/Toonshader advanced2"
 
             float NPR_Base_Metallic(float3 normalWS)
             {
+                // 把世界空间法线 normalWS 转到视图空间
                 float3 normalizeVS = normalize(mul((float3x3)UNITY_MATRIX_V, normalWS));
+                //用视图空间法线的 xy 生成MatCap UV
                 float2 matcapUV = normalizeVS.xy * 0.5 + 0.5; // 金属镜面采样 UV
                 return SAMPLE_TEXTURE2D(_MetalMap, sampler_MetalMap, matcapUV).r;
             }
             
-            float3 NPR_Base_Specular2(
+            float3 NPR_Base_Specular(
                 float NdotH,
                 float NdotV,
                 float3 normalWS,
@@ -310,7 +297,8 @@ Shader "Toon/Toonshader advanced2"
                 float aoMask // ilm.g (aoMask)
             )
             {
-                float GlossLayerMask = step(specLayerMask, _GlossBlinnMargin);
+                float GlossLayerMask = step(specLayerMask, _GlossBlinnMargin);// specLayerMask<= _GlossBlinnMargin 时为1
+
                 float BlinnLayerMask = step(_GlossBlinnMargin, specLayerMask);
 
                 // 模拟视角高光
@@ -320,25 +308,18 @@ Shader "Toon/Toonshader advanced2"
                 float BlinnStep = step(_BlinnStep, pow(NdotH, specIntensity)) * BlinnLayerMask * _BlinnIntensity;
 
                 float MetalFactor = NPR_Base_Metallic(normalWS) * _MetalIntensity; // 截断高光
-
+                //return float3(MetalFactor,MetalFactor,MetalFactor);
                 return (BlinnStep + GlossStep + MetalFactor) * aoMask * baseColor;
             }
-
-            float3 NPR_Base_RimLight(float NdotV, float NdotL, float3 baseColor)
+            
+            float3 NPR_Base_RimLight(float NdotV, float3 baseColor)
             {
-                // 截边外发光
-                return (1 - smoothstep(_RimRadius, _RimRadius + 0.03, NdotV)) * _RimIntensity * (1 - NdotL) * baseColor;
-            }
-
-            float3 NPR_Base_RimLight2(float NdotV, float3 baseColor)
-            {
-                // 截边外发光：canvas 中 rimlight2 注释指向的替代版本。
                 return step(1 - _RimRadius, 1 - saturate(NdotV)) * _RimIntensity * baseColor;
             }
 
             float3 NPR_Emission(float4 baseColor)
             {
-                return baseColor.a * baseColor.rgb * _EmissionIntensity * (sin(_Time.z * 0.5) + 0.5);
+                return max(0,baseColor.a * baseColor.rgb * _EmissionIntensity * (sin(_Time.z * 0.5) + 0.5));
             }
 
             float4 frag(v2f i) : SV_Target
@@ -346,12 +327,8 @@ Shader "Toon/Toonshader advanced2"
                 Light mainLight;
                 float4 shadowCoord=TransformWorldToShadowCoord(i.posWS);//必须在fs中计算shadowcoord
                 //shadowCoord = i.shadowCoord;
-                #if _SHADOW_OPT_ON
-                    mainLight = get_main_light_poisson(shadowCoord, i.posWS);
-                #else
-                    mainLight = GetMainLight(shadowCoord);
-                #endif
-
+                mainLight = GetMainLight(shadowCoord);
+                
                 float3 n;
                 #if _NORMALMAP_ON
                     float3 normalTS = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, i.uv));
@@ -359,8 +336,10 @@ Shader "Toon/Toonshader advanced2"
                 #else
                     n = normalize(i.normalWS);
                 #endif
-
-                float3 v = normalize(i.viewWS);
+                
+                
+                float3 v = normalize(i.viewWS);//顶点计算View方向
+                 //v = SafeNormalize(_WorldSpaceCameraPos.xyz - i.posWS);像素计算View方向
                 float3 l = mainLight.direction;
                 float3 h = SafeNormalize(l + v);
 
@@ -381,7 +360,7 @@ Shader "Toon/Toonshader advanced2"
                 #endif
                 //return float4(shadowAtt,shadowAtt,shadowAtt, 1);
                 float4 ilm = SAMPLE_TEXTURE2D(_IlmMap, sampler_IlmMap, i.uv);
-                float rampRange = 1-ilm.a;
+                float rampRange = ilm.a;
                 float aoMask = ilm.g; // 角色的遮蔽范围(AO)
                 float specLayerMask = ilm.r;
                 float specIntensity = ilm.b;
@@ -395,117 +374,146 @@ Shader "Toon/Toonshader advanced2"
                     #if _FACE_ON
                         rampColor = NPR_Base_Ramp(nl, _IsNight, rampRange);
                         albedoFinal = baseColor.rgb * rampColor * lerp(_FaceDarkIntensity, 1,
-                            FaceShadowAttenuation(l, i.uv, _IsConvertFaceCoord));
+                        FaceShadowAttenuation(l, i.uv, _IsConvertFaceCoord));
                         // 面部阴影不接受实时光。
                     #else
                         rampColor = NPR_Base_Ramp(nl, _IsNight, rampRange);
                         albedoFinal = baseColor.rgb * rampColor * shadowAtt;
                     //return float4 (rampColor ,1);
                     #endif
-                
                 /*#else
                     albedoFinal = baseColor.rgb;*/
                 #endif
 
                 float3 specFinal = 0;
                 #if _SPECULAR_ON
-                    #if _HAIR_ON
-                        // 是否开启各向异性高光。
-                        float3 t = normalize(i.binormalWS); // 取片元的法线数据
-                        float shift = SAMPLE_TEXTURE2D(_ShiftMap, sampler_ShiftMap, i.uv).r * 2 - 1; // 模型发丝偏移效果
-                        t = shiftTangent(t, n, shift);
-                        specFinal = StrandSpecular(t, h, _AnisoPower); // 天使环高光衰减系数
-                    #else
-                        specFinal = NPR_Base_Specular2(nh, nv, n, baseColor.rgb,
-                            specLayerMask, specIntensity, aoMask)* shadowAtt;
-                    #endif
+                    
+                        specFinal = NPR_Base_Specular(nh, nv, n, baseColor.rgb,
+                        specLayerMask, specIntensity, aoMask)* shadowAtt;
+                        //return float4(specFinal, 1);
+                    
                 #endif
 
                 // return float4(specFinal, 1);
 
                 float3 rimFinal = 0;
                 #if _RIM_ON
-                    rimFinal = NPR_Base_RimLight2(nv, baseColor.rgb * shadowAtt);
+                    rimFinal = NPR_Base_RimLight(nv, baseColor.rgb * shadowAtt);
                 #endif
 
                 float3 emissionFinal = 0;
                 #if _EMISSION_ON
                     emissionFinal = NPR_Emission(baseColor);
+                //return float4(emissionFinal, 1);
                 #endif
-
+                //return  float4(i.color.a,i.color.a,i.color.a,1);
                 return float4(albedoFinal + specFinal + rimFinal + emissionFinal, 1);
             }
             ENDHLSL
         }
 
-        /*Pass
+        Pass
         {
             Name "Outline"
-            Tags
+            Tags { "LightMode" = "Outline"}
+            Cull off
+            blend SrcAlpha OneMinusSrcAlpha
+            Stencil
             {
-                "LightMode" = "SRPDefaultUnlit"
-                // "PassFlags" = "OnlyDirectional"
-                // "RequireOptions" = "SoftVegetation"
+                Ref [_StencilRef]
+                Comp NotEqual
+                Pass Replace
             }
-
-            Cull Front
-
             HLSLPROGRAM
-            #pragma vertex outline_vert
-            #pragma fragment outline_frag
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile _ _USE_SMOOTH_NORMAL_ON
 
-            v2f outline_vert(appdata v)
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _OutlineWidth;
+                float3 _OutlineColor;
+                
+
+                float _DiffuseCutLocation;
+                float _DiffuseCutSmoothness;
+                float _IsNight;
+
+                float _UseRimLight;
+                float _RimIntensity;
+                float _RimRadius;
+
+                float _FaceDarkIntensity;
+                float _IsConvertFaceCoord;
+                float _UseSdfShadow;
+                float _FaceSmoothRange;
+                float _EmissionIntensity;
+
+                float _UseVertexColor;
+            
+                float _Threshold;
+                float _Hardness;
+                
+                float _GlossIntensity;
+                float _MetalIntensity;
+                float _BlinnIntensity;
+                float _BlinnStep;
+                float _GlossStep;
+                float _GlossBlinnMargin;
+            CBUFFER_END
+
+            struct Attributes
             {
-                v2f o;
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normalOS : NORMAL;
+                float3 SmoothNormal : TEXCOORD7;
+                float4 Color : COLOR;
+                float4 tangentOS : TANGENT;
+            };
+            struct Varyings
+            {
+                float2 uv : TEXCOORD0;
+                float4 positionCS : SV_POSITION;
+                float3 normalWS : TEXCOORD1;
+                float4 Color : COLOR;
+            };
+            Varyings vert(Attributes input)
+            {
+                Varyings o;
+                o.uv = input.uv;
 
-                float camDistance = length(_WorldSpaceCameraPos - mul(GetObjectToWorldMatrix(), float4(v.vertex, 1.0)).xyz);
-                camDistance = lerp(1, camDistance, _PixelWidth);
-                float camFactor = camDistance * _ProjectionParams.w; // 透视相机远调节系数
+                float4 positionCS = GetVertexPositionInputs(input.positionOS.xyz).positionCS;
 
-                float3 outDir;
-                #if _AVG_NORMAL_ON
-                    outDir = v.avgNormal;
+                #if _USE_SMOOTH_NORMAL_ON
+                    float3 outlineNormalOS = input.SmoothNormal.xyz;
                 #else
-                    outDir = v.normalOS;
+                    float3 outlineNormalOS = input.normalOS;
                 #endif
 
-                float outLength;
-                #if _VERTEX_COLOR_MAP_ON
-                    float4 vColorMap = SAMPLE_TEXTURE2D_LOD(_VertexColorMap, sampler_VertexColorMap, v.uv, 0); // need vs 4.0
-                    outLength = vColorMap.a;
-                #else
-                    outLength = v.color.a;
-                #endif
+                float3 viewNormal = mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormalOS);
+                float2 projectedNormal = mul((float3x3)UNITY_MATRIX_P, viewNormal.xyz)* positionCS.w;
+                float4 nearUpperRight = mul(unity_CameraInvProjection, float4(1, 1, UNITY_NEAR_CLIP_VALUE, _ProjectionParams.y));  //将近裁剪面右上角位置的顶点变换到观察空间
+                float aspect = abs(nearUpperRight.y / nearUpperRight.x);//求得屏幕宽高比
+                projectedNormal.x *= aspect;
 
-                outDir *= _OutlineWidth * camFactor * outLength;
+                positionCS.xy += projectedNormal.xy * _OutlineWidth * 0.01 * input.Color.a;
 
-                float3 pos = v.vertex + outDir; // Object Space
-                o.pos = TransformObjectToHClip(pos); // Clip Space
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                o.color = v.color;
-
+                o.positionCS = positionCS;
+                o.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                o.Color = input.Color;
                 return o;
             }
 
-            float4 outline_frag(v2f i) : SV_Target
+            half4 frag (Varyings input) : SV_Target
             {
-                #if !_OUTLINE_ON
-                    discard;
-                #endif
-
-                #if _VERTEX_COLOR_ON
-                    #if _VERTEX_COLOR_MAP_ON
-                        float4 vColorMap = SAMPLE_TEXTURE2D(_VertexColorMap, sampler_VertexColorMap, i.uv);
-                        return float4(vColorMap.rgb, 1);
-                    #else
-                        return float4(i.color.rgb, 1);
-                    #endif
-                #else
-                    return float4(_OutlineColor, 1);
-                #endif
+                return float4(_OutlineColor.rgb, 1);
             }
             ENDHLSL
-        }*/
+        }
 
         Pass
         {
