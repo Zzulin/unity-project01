@@ -287,8 +287,8 @@ Material:
     - _OtherRimPow: 10
     - _OtherRimSmooth: 0.01
     - _Outline: 1
-    - _OutlineWidth: 0.653
-    - _OutlineZOffset: 0.0001
+    - _OutlineWidth: 0.76
+    - _OutlineZOffset: 0
     - _OutlineZOffsetMaskRemapEnd: 1
     - _OutlineZOffsetMaskRemapStart: 0
     - _Parallax: 0.02
@@ -330,7 +330,7 @@ Material:
     - _StencilComp: 0
     - _StencilFailOp: 0
     - _StencilPassOp: 0
-    - _StencilRef: 3
+    - _StencilRef: 1
     - _StencilZFailOp: 0
     - _StepBlinnMargin: 0.75
     - _StepIntensity: 1

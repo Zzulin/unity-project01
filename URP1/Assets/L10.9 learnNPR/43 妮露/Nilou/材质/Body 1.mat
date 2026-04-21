@@ -31,6 +31,7 @@ Material:
   - _OUTLINE_ON
   - _RIM_ON
   - _SPECULAR_ON
+  - _USE_SMOOTH_NORMAL_ON
   m_InvalidKeywords:
   - AVG_NORMAL_ON
   - ENABLE_METAL_SPECULAR
@@ -301,8 +302,8 @@ Material:
     - _OtherRimPow: 10
     - _OtherRimSmooth: 0.01
     - _Outline: 1
-    - _OutlineWidth: 0.653
-    - _OutlineZOffset: 0.0001
+    - _OutlineWidth: 0.95
+    - _OutlineZOffset: 0
     - _OutlineZOffsetMaskRemapEnd: 1
     - _OutlineZOffsetMaskRemapStart: 0
     - _Parallax: 0.02
@@ -360,7 +361,7 @@ Material:
     - _Threshold: 0
     - _USE_ANISO: 0
     - _USE_SDF_SHADOW: 0
-    - _USE_SMOOTH_NORMAL: 0
+    - _USE_SMOOTH_NORMAL: 1
     - _UVSec: 0
     - _UseAOMap: 0
     - _UseAniso: 0

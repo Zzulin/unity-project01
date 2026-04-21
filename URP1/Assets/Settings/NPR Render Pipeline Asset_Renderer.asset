@@ -128,7 +128,7 @@ MonoBehaviour:
       RenderQueueType: 0
       LayerMask:
         serializedVersion: 2
-        m_Bits: 1
+        m_Bits: 4294967295
       PassNames:
       - Outline
     overrideMaterial: {fileID: 0}

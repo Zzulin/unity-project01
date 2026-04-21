@@ -1,115 +1,189 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using System.IO;
+using System.Linq;
 using UnityEditor;
+using UnityEngine;
 
 public class SetNormalsInTangentSmoothNormal : MonoBehaviour
 {
     public string NewMeshPath = "Assets/Toon/Export";
+    [Min(0.000001f)] public float PositionTolerance = 0.0001f;
+    [Range(-1f, 1f)] public float MinNormalDot = -0.25f;
+    public bool StoreTangentSpaceNormal = true;
+    public bool AssignExportedMeshToRenderer = true;
 
-    [ContextMenu("导出共享法线模型（到NV7）")]//右键inspector中的挂载脚本菜单执行ExportSharedNormalsToTangent方法
+    [ContextMenu("导出共享法线模型（到UV8）")]
     void ExportSharedNormalsToTangent()
     {
         EditorCoroutineLooper.StartLoop(this, ExportSharedNormalsToTangentCo());
     }
+
     IEnumerator ExportSharedNormalsToTangentCo()
     {
-        //获取Mesh
-        Mesh mesh = new Mesh();
-        if (GetComponent<SkinnedMeshRenderer>())
+        Mesh mesh = null;
+        SkinnedMeshRenderer skinnedMeshRenderer = null;
+        MeshFilter meshFilter = null;
+        if (TryGetComponent(out skinnedMeshRenderer))
         {
-            mesh = GetComponent<SkinnedMeshRenderer>().sharedMesh;
+            mesh = skinnedMeshRenderer.sharedMesh;
         }
-        if (GetComponent<MeshFilter>())
+        else if (TryGetComponent(out meshFilter))
         {
-            mesh = GetComponent<MeshFilter>().sharedMesh;
+            mesh = meshFilter.sharedMesh;
         }
+
+        if (mesh == null)
+        {
+            Debug.LogError("No Mesh found on this GameObject.");
+            yield break;
+        }
+
         Debug.Log(mesh.name);
-        yield return null;//等待一帧，确保mesh加载完成
+        yield return null;
 
-        //声明一个Vector3数组，长度与mesh.normals一样，用于存放
-        //与mesh.vertices中顶点一一对应的光滑处理后的法线值
-        Vector4[] avgNormals = new Vector4[mesh.normals.Length]; // 24
-        Vector3[] meshVerts = mesh.vertices; // 避免属性数组拷贝开销
+        Vector3[] meshVerts = mesh.vertices;
         Vector3[] meshNormals = mesh.normals;
+        Vector3[] avgNormals = new Vector3[meshNormals.Length];
+        int[] avgCounts = new int[meshNormals.Length];
 
-        // 优化步骤：计算每个顶点到模型本地原点的长度
-        SortedList<float, List<int>> sl = new SortedList<float, List<int>>(); // 距离-顶点序号对应表
-        for (int i = 0; i < meshVerts.Length; i++)
+        // Per-submesh smoothing avoids mixing front/back duplicate parts from different material slots.
+        for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
         {
-            Vector3 v = meshVerts[i]; // 取得顶点的第i个向量
-            float f = Vector3.Magnitude(v); // 计算该向量距离模型本地原点的长度
-            if (sl.ContainsKey(f) == false)
-                sl[f] = new List<int>();
-            sl[f].Add(i);
-        }
+            int[] indices = mesh.GetIndices(subMeshIndex);
+            Dictionary<Vector3Int, List<int>> positionGroups = new Dictionary<Vector3Int, List<int>>();
 
-        //开始一个循环，循环的次数 = mesh.normals.Length = mesh.vertices.Length = meshNormals.Length
-        int len = avgNormals.Length;
-        for (int i = 0; i < len; i++)
-        {
-            //定义一个零值法线
-            Vector3 normal = Vector3.zero;
-
-            var slIndices = sl[Vector3.Magnitude(meshVerts[i])];
-            
-            //遍历mesh.vertices数组，如果遍历到的值与当前序号顶点值相同，则将其对应的法线与Normal相加
-            int sharedCnt = 0;
-            foreach (var j in slIndices)
+            foreach (int index in indices.Distinct())
             {
-                if (Vector3.Distance(meshVerts[j], meshVerts[i])<0.01f)
+                Vector3Int key = Quantize(meshVerts[index], PositionTolerance);
+                if (!positionGroups.TryGetValue(key, out List<int> group))
                 {
-                    normal += meshNormals[j]; // 把邻接的顶点的法线加到总法线向量
-                    sharedCnt++;//统计共享的顶点数量
+                    group = new List<int>();
+                    positionGroups.Add(key, group);
+                }
+
+                group.Add(index);
+            }
+
+            int processed = 0;
+            int total = positionGroups.Values.Sum(group => group.Count);
+            foreach (List<int> group in positionGroups.Values)
+            {
+                foreach (int index in group)
+                {
+                    Vector3 sourceNormal = meshNormals[index].normalized;
+                    Vector3 normal = Vector3.zero;
+                    int sharedCnt = 0;
+
+                    foreach (int otherIndex in group)
+                    {
+                        Vector3 otherNormal = meshNormals[otherIndex].normalized;
+                        if (Vector3.Dot(sourceNormal, otherNormal) < MinNormalDot)
+                        {
+                            continue;
+                        }
+
+                        normal += otherNormal;
+                        sharedCnt++;
+                    }
+
+                    if (normal.sqrMagnitude < 0.000001f)
+                    {
+                        normal = sourceNormal;
+                    }
+                    else
+                    {
+                        normal.Normalize();
+                    }
+
+                    avgNormals[index] += normal;
+                    avgCounts[index]++;
+
+                    processed++;
+                    if (processed % 200 != 0)
+                    {
+                        continue;
+                    }
+
+                    Debug.Log($"Processing submesh {subMeshIndex + 1} / {mesh.subMeshCount}, vertex {processed} / {total}, shared count = {sharedCnt}");
+                    yield return null;
                 }
             }
-            //归一化Normal并将meshNormals数列对应位置赋值为Normal,到此序号为i的顶点的对应法线光滑处理完成
-            //此时求得的法线为模型空间下的法线
-            normal.Normalize(); // 对总法线向量进行单位化
-            avgNormals[i] = normal;
-
-            if (i % 10 != 0)
-                continue;
-
-            Debug.Log($"Processing normal {i} / {avgNormals.Length}, shared count = {sharedCnt}");
-            yield return null;
         }
 
-        // 直接克隆原 mesh，完整保留 submeshes、blendshapes、skin/bone 等数据
-        //Mesh newMesh = Instantiate(mesh);
-        
-        // 创建一个新Mesh，并赋值给newMesh
-        Mesh newMesh = new Mesh();
-        newMesh.name = mesh.name;
-        newMesh.indexFormat = mesh.indexFormat;
-        newMesh.vertices = mesh.vertices;
-        newMesh.normals = mesh.normals;
-        newMesh.tangents = mesh.tangents;
-        newMesh.colors = mesh.colors;
-        newMesh.colors32 = mesh.colors32;
-        newMesh.uv = mesh.uv;
-        newMesh.uv2 = mesh.uv2;
-        newMesh.uv3 = mesh.uv3;
-        newMesh.uv4 = mesh.uv4;
-        newMesh.uv5 = mesh.uv5;
-        newMesh.uv6 = mesh.uv6;
-        newMesh.bindposes = mesh.bindposes;
-        newMesh.boneWeights = mesh.boneWeights;
-        newMesh.bounds = mesh.bounds;
-        newMesh.subMeshCount = mesh.subMeshCount;
-        for (int i = 0; i < mesh.subMeshCount; i++)
+        for (int i = 0; i < avgNormals.Length; i++)
         {
-            newMesh.SetIndices(
-                mesh.GetIndices(i),
-                mesh.GetTopology(i),
-                i,
-                calculateBounds: false);
+            if (avgCounts[i] == 0 || avgNormals[i].sqrMagnitude < 0.000001f)
+            {
+                avgNormals[i] = meshNormals[i];
+            }
+            else
+            {
+                avgNormals[i].Normalize();
+            }
         }
-        
-        newMesh.SetUVs(7, avgNormals);// channel 7 对应 UV8
-        //将新mesh保存为.asset文件，路径可以是"Assets/Character/Shader/VertexColorTest/TestMesh2.asset"                          
-        AssetDatabase.CreateAsset( newMesh, $"{NewMeshPath}/{mesh.name}.asset");
+
+        Vector3[] storedNormals = StoreTangentSpaceNormal
+            ? ConvertObjectNormalsToTangentSpace(avgNormals, meshNormals, mesh.tangents)
+            : avgNormals;
+
+        Mesh newMesh = Instantiate(mesh);
+        newMesh.name = mesh.name;
+        newMesh.SetUVs(7, storedNormals); // Mesh UV channel 7 maps to shader TEXCOORD7 / UV8.
+
+        Directory.CreateDirectory(NewMeshPath);
+        string assetPath = AssetDatabase.GenerateUniqueAssetPath($"{NewMeshPath}/{mesh.name}.asset");
+        AssetDatabase.CreateAsset(newMesh, assetPath);
         AssetDatabase.SaveAssets();
-        Debug.Log("Done: All finished!");
+
+        if (AssignExportedMeshToRenderer)
+        {
+            if (skinnedMeshRenderer != null)
+            {
+                skinnedMeshRenderer.sharedMesh = newMesh;
+            }
+            else if (meshFilter != null)
+            {
+                meshFilter.sharedMesh = newMesh;
+            }
+        }
+
+        Debug.Log($"Done: All finished! Saved to {assetPath}");
+    }
+
+    static Vector3Int Quantize(Vector3 position, float tolerance)
+    {
+        float invTolerance = 1f / tolerance;
+        return new Vector3Int(
+            Mathf.RoundToInt(position.x * invTolerance),
+            Mathf.RoundToInt(position.y * invTolerance),
+            Mathf.RoundToInt(position.z * invTolerance));
+    }
+
+    static Vector3[] ConvertObjectNormalsToTangentSpace(Vector3[] objectNormals, Vector3[] meshNormals, Vector4[] meshTangents)
+    {
+        Vector3[] tangentSpaceNormals = new Vector3[objectNormals.Length];
+
+        if (meshTangents == null || meshTangents.Length != objectNormals.Length)
+        {
+            Debug.LogWarning("Mesh tangents are missing or invalid. Smooth normals are stored in object space instead.");
+            objectNormals.CopyTo(tangentSpaceNormals, 0);
+            return tangentSpaceNormals;
+        }
+
+        for (int i = 0; i < objectNormals.Length; i++)
+        {
+            Vector3 normal = meshNormals[i].normalized;
+            Vector3 tangent = new Vector3(meshTangents[i].x, meshTangents[i].y, meshTangents[i].z).normalized;
+            Vector3 bitangent = Vector3.Cross(normal, tangent).normalized * meshTangents[i].w;
+
+            Vector3 objectNormal = objectNormals[i].normalized;
+            tangentSpaceNormals[i] = new Vector3(
+                Vector3.Dot(objectNormal, tangent),
+                Vector3.Dot(objectNormal, bitangent),
+                Vector3.Dot(objectNormal, normal)).normalized;
+        }
+
+        return tangentSpaceNormals;
     }
 }

@@ -8,7 +8,8 @@ Shader "Toon/Toonshader advanced2"
         [Tex(Base)] _NormalMap ("NormalMap", 2D) = "bump" { }
 
         [Main(Outline,_OUTLINE_ON,on)] _Outline ("描边", Float) = 0
-        [SubRange(Outline)] _OutlineWidth ("轮廓宽度", Range(0,2)) = 1
+        [SubRange(Outline)] _OutlineWidth ("轮廓宽度", Range(0,3)) = 1
+        [Sub(Outline)] _OutlineZOffset ("Outline Z Offset", Range(-0.1, 0.1)) = 0
         [Sub(Outline)] _OutlineColor ("轮廓颜色", Color) = (0, 0, 0, 1)
         [SubIntRange(Outline)] _StencilRef ("描边ID", Range(1, 8)) = 1
         [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
@@ -67,12 +68,12 @@ Shader "Toon/Toonshader advanced2"
                 // "RequireOptions" = "SoftVegetation"
             }
 
-             Stencil // (Ref & ReadMask) Comp (StencilBufferValue & ReadMask)
+             /*Stencil // (Ref & ReadMask) Comp (StencilBufferValue & ReadMask)
              {
                  Ref [_StencilRef]
                  Comp Always
                  Pass Replace
-             }
+             }*/
 
             Cull Off
             HLSLPROGRAM
@@ -116,6 +117,7 @@ Shader "Toon/Toonshader advanced2"
             CBUFFER_START(UnityPerMaterial)
             float4 _MainTex_ST;
             float _OutlineWidth;
+            float _OutlineZOffset;
             float3 _OutlineColor;
             
 
@@ -416,14 +418,16 @@ Shader "Toon/Toonshader advanced2"
         {
             Name "Outline"
             Tags { "LightMode" = "Outline"}
-            Cull off
+            Cull front
             blend SrcAlpha OneMinusSrcAlpha
-            Stencil
+            ZTest LEqual
+
+            /*Stencil
             {
                 Ref [_StencilRef]
                 Comp NotEqual
                 Pass Replace
-            }
+            }*/
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -435,6 +439,7 @@ Shader "Toon/Toonshader advanced2"
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float _OutlineWidth;
+                float _OutlineZOffset;
                 float3 _OutlineColor;
                 
 
@@ -479,6 +484,7 @@ Shader "Toon/Toonshader advanced2"
                 float2 uv : TEXCOORD0;
                 float4 positionCS : SV_POSITION;
                 float3 normalWS : TEXCOORD1;
+                float outlineMask : TEXCOORD2;
                 float4 Color : COLOR;
             };
             Varyings vert(Attributes input)
@@ -486,30 +492,43 @@ Shader "Toon/Toonshader advanced2"
                 Varyings o;
                 o.uv = input.uv;
 
-                float4 positionCS = GetVertexPositionInputs(input.positionOS.xyz).positionCS;
+                VertexPositionInputs vertexInputs = GetVertexPositionInputs(input.positionOS.xyz);
+                float4 positionCS = vertexInputs.positionCS;
 
                 #if _USE_SMOOTH_NORMAL_ON
-                    float3 outlineNormalOS = input.SmoothNormal.xyz;
+                    float3 bitangentOS = cross(input.normalOS, input.tangentOS.xyz) * input.tangentOS.w;
+                    float3x3 tangentToObject = float3x3(input.tangentOS.xyz, bitangentOS, input.normalOS);//tbn
+                    float3 outlineNormalOS = normalize(mul(input.SmoothNormal.xyz, tangentToObject));
                 #else
                     float3 outlineNormalOS = input.normalOS;
                 #endif
 
                 float3 viewNormal = mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormalOS);
-                float2 projectedNormal = mul((float3x3)UNITY_MATRIX_P, viewNormal.xyz)* positionCS.w;
-                float4 nearUpperRight = mul(unity_CameraInvProjection, float4(1, 1, UNITY_NEAR_CLIP_VALUE, _ProjectionParams.y));  //将近裁剪面右上角位置的顶点变换到观察空间
+                viewNormal.z = -0.1;
+
+                float outlineAmount = _OutlineWidth * 0.01 * input.Color.a;
+                float viewZOffset = normalize(viewNormal).z * outlineAmount + _OutlineZOffset;
+                positionCS = TransformWViewToHClip(vertexInputs.positionVS + float3(0, 0, viewZOffset));
+                //不能看做 把法线变成“裁剪空间法线” 而是把 View Space 法线方向转换成屏幕空间上的描边推出方向。
+                float3 projectedNormal = mul((float3x3)UNITY_MATRIX_P, viewNormal.xyz) * positionCS.w;
+                //修正描边正确宽度 没有修正会因为NDC空间是1：1的 屏幕显示不是1：1的 导致描边的上下宽度与左右宽度不普配 
+                //将近裁剪面右上角位置的顶点变换到观察空间
+                float4 nearUpperRight = mul(unity_CameraInvProjection, float4(1, 1, UNITY_NEAR_CLIP_VALUE, _ProjectionParams.y));  
                 float aspect = abs(nearUpperRight.y / nearUpperRight.x);//求得屏幕宽高比
                 projectedNormal.x *= aspect;
 
-                positionCS.xy += projectedNormal.xy * _OutlineWidth * 0.01 * input.Color.a;
-
+                positionCS.xy += projectedNormal.xy * outlineAmount;
                 o.positionCS = positionCS;
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                o.outlineMask = outlineAmount;
                 o.Color = input.Color;
                 return o;
             }
 
             half4 frag (Varyings input) : SV_Target
             {
+                //当 outlineMask < 0.0001时（即非轮廓区域），片元被 discard
+                clip(input.outlineMask - 0.0001);
                 return float4(_OutlineColor.rgb, 1);
             }
             ENDHLSL

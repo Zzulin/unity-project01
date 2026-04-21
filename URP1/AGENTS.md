@@ -3,6 +3,7 @@
 ## 协作约定
 - 默认中文输出；用户明确要求英文时再切换。
 - 重要进展只同步到本文件和 `codex/tasks.md`（保持简洁，不写长历史）。
+- 引用本仓库源码行号时，以 Rider 显示为准；命令行读取行号需按原始 LF 拆行或使用 `rg -n`，避免 PowerShell `Get-Content` 行号偏移。
 
 ## 可用技能
 - `unity-skills`：通过 REST API 自动化控制 Unity Editor。
