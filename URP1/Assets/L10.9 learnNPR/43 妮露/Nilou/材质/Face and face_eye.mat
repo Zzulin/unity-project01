@@ -224,6 +224,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _ClipScale: 0.5
+    - _ClouthRamp: 1
     - _Cull: 2
     - _Cutoff: 0.5
     - _DarkIntensity: 0.5
@@ -256,7 +257,7 @@ Material:
     - _EnableSpecular: 1
     - _EnvironmentReflections: 1
     - _Face: 1
-    - _FaceDarkIntensity: 0.76
+    - _FaceDarkIntensity: 0.742
     - _FaceShadowMapPow: 0.2
     - _FaceShadowOffset: 0
     - _FaceSmoothRange: 0
@@ -269,12 +270,14 @@ Material:
     - _Glossiness: 0.31622776
     - _GlossyReflections: 1
     - _Hair: 0
+    - _HairRamp: 1
     - _Hardness: 50
     - _IgnoreLightY: 0
     - _IsConvertFaceCoord: 1
     - _IsFace: 1
     - _IsNight: 0
     - _LightThreshold: 0.5
+    - _MentelRamp: 1
     - _Metal: 1
     - _MetalIntensity: 0
     - _MetalSpecIntensity: 1
@@ -316,6 +319,7 @@ Material:
     - _Shadow: 0
     - _ShadowArea: 0.5
     - _ShadowRampLerp: 0.5
+    - _SkinRamp: 1
     - _Smoothness: 0.31622776
     - _SmoothnessTextureChannel: 0
     - _SpecIntensity: 1
@@ -365,6 +369,14 @@ Material:
     - _WorkflowMode: 1
     - _WorldLightInfluence: 0.1
     - _ZWrite: 1
+    - _bright: 0.11
+    - _dark: 0
+    - _grey: 0.5
+    - _lightmapA0: 1
+    - _lightmapA1: 2
+    - _lightmapA2: 3
+    - _lightmapA3: 4
+    - _lightmapA4: 5
     - _spec: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}

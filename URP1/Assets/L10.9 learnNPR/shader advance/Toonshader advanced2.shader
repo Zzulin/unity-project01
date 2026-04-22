@@ -4,7 +4,7 @@ Shader "Toon/Toonshader advanced2"
     {
         [Main(Base, _, on, off)] _Base ("基础", Float) = 0
         [Tex(Base)] _MainTex ("主纹理", 2D) = "" { }
-        [Tex(Base)] _IlmMap ("Lightmap", 2D) = "" { }
+        [Tex(Base)] _IlmMap ("Lightmap", 2D) = "" {}
         [Tex(Base)] _NormalMap ("NormalMap", 2D) = "bump" { }
 
         [Main(Outline,_OUTLINE_ON,on)] _Outline ("描边", Float) = 0
@@ -15,11 +15,19 @@ Shader "Toon/Toonshader advanced2"
         [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
         
         [Main(Albedo,_ALBEDO_ON,on)] _Albedo ("基础色", Float) = 0
-        [Tex(Albedo)] _RampColorMap ("色条图", 2D) = "white" { }
+        [Tex(Albedo)] _RampColorMap ("色条图", 2D) = "" { }
         [SubToggle(Albedo)] _IsNight ("是否夜晚", Float) = 0
         [Sub(Albedo)] _Threshold ("NdotL Step", Range(0, 1)) = 0
         [Sub(Albedo)] _Hardness ("NdotL Smooth", Range(1, 50)) = 1
-
+        [Sub(Albedo)] _grey ("Half Lambert Grey", Range(0.001, 1)) = 0.5
+        [Sub(Albedo)] _dark ("Half Lambert Dark Offset", Range(-1, 1)) = 0
+        [Sub(Albedo)] _bright ("Bright Lambert", Range(0.001, 2)) = 0.1
+        [SubIntRange(Albedo)] _lightmapA0 ("lightmapA0", Range(1, 5)) = 1
+        [SubIntRange(Albedo)] _lightmapA1 ("lightmapA1", Range(1, 5)) = 2
+        [SubIntRange(Albedo)] _lightmapA2 ("lightmapA2", Range(1, 5)) = 3
+        [SubIntRange(Albedo)] _lightmapA3 ("lightmapA3", Range(1, 5)) = 4
+        [SubIntRange(Albedo)] _lightmapA4 ("lightmapA4", Range(1, 5)) = 5
+        
         [Main(Specular,_SPECULAR_ON,on)] _Specular ("高光", Float) = 0
         [Sub(Specular)] _GlossBlinnMargin ("GlossBlinnMargin", Range(0, 1)) = 0.2
         [Sub(Specular)] _GlossStep ("GlossStep", Range(0, 1)) = 0.5
@@ -124,7 +132,7 @@ Shader "Toon/Toonshader advanced2"
             float _DiffuseCutLocation;
             float _DiffuseCutSmoothness;
             float _IsNight;
-
+            
             float _UseRimLight;
             float _RimIntensity;
             float _RimRadius;
@@ -134,11 +142,20 @@ Shader "Toon/Toonshader advanced2"
             float _UseSdfShadow;
             float _FaceSmoothRange;
             float _EmissionIntensity;
-
+            
             float _UseVertexColor;
         
             float _Threshold;
             float _Hardness;
+            float _grey;
+            float _dark;
+            float _bright;
+            float _lightmapA0;
+            float _lightmapA1;
+            float _lightmapA2;
+            float _lightmapA3;
+            float _lightmapA4;
+            
             
             float _GlossIntensity;
             float _MetalIntensity;
@@ -279,6 +296,35 @@ Shader "Toon/Toonshader advanced2"
                 // return float3(uv, 0);
                 return rampFinal;
             }
+            float3 NPR_Base_Ramp2(float4 ilm, float NdotL ,float isnight)
+            {
+                ilm.g = smoothstep(0.2,0.3,ilm.g);//ao
+                float halfLambert = smoothstep(0.0, _grey, NdotL + _dark) * ilm.g;  //半Lambert x  ao
+                float brightMask = step(_bright, halfLambert); //亮面
+                float rampSampling = 0.0;
+                if(isnight == 0){rampSampling = 0.5;}
+                float ramp0 = _lightmapA0 * -0.1 + 1.05 - rampSampling;//0.95
+                float ramp1 = _lightmapA1 * -0.1 + 1.05 - rampSampling;//0.65
+                float ramp2 = _lightmapA2 * -0.1 + 1.05 - rampSampling;//0.75
+                float ramp3 = _lightmapA3 * -0.1 + 1.05 - rampSampling;//0.55
+                float ramp4 = _lightmapA4 * -0.1 + 1.05 - rampSampling;//0.45
+                
+                float lightmapA2 = step(0.25, ilm.a); //0.3
+                float lightmapA3 = step(0.45, ilm.a); //0.5
+                float lightmapA4 = step(0.65, ilm.a); //0.7
+                float lightmapA5 = step(0.95, ilm.a);//1.0
+                
+                float rampV = ramp0;
+                rampV = lerp(rampV,ramp1,lightmapA2);
+                rampV = lerp(rampV,ramp2,lightmapA3);
+                rampV = lerp(rampV,ramp3,lightmapA4);
+                rampV = lerp(rampV,ramp4,lightmapA5);
+                
+                float3 ramp = SAMPLE_TEXTURE2D(_RampColorMap, sampler_RampColorMap, float2(halfLambert, rampV)).rgb;
+                float3 shadowRamp = lerp(ramp,halfLambert,brightMask);
+                return shadowRamp;
+                
+            }
 
             float NPR_Base_Metallic(float3 normalWS)
             {
@@ -374,15 +420,17 @@ Shader "Toon/Toonshader advanced2"
                 #if _ALBEDO_ON
                     float3 rampColor;
                     #if _FACE_ON
-                        rampColor = NPR_Base_Ramp(nl, _IsNight, rampRange);
+                        //rampColor = NPR_Base_Ramp(nl, _IsNight, rampRange);
+                        rampColor = SAMPLE_TEXTURE2D(_RampColorMap, sampler_RampColorMap, i.uv);//脸ramp是个单色
                         albedoFinal = baseColor.rgb * rampColor * lerp(_FaceDarkIntensity, 1,
                         FaceShadowAttenuation(l, i.uv, _IsConvertFaceCoord));
                         // 面部阴影不接受实时光。
                     #else
                         rampColor = NPR_Base_Ramp(nl, _IsNight, rampRange);
+                        rampColor = NPR_Base_Ramp2(ilm,nl,_IsNight);
                         albedoFinal = baseColor.rgb * rampColor * shadowAtt;
-                    //return float4 (rampColor ,1);
                     #endif
+                return float4 (rampColor ,1);
                 /*#else
                     albedoFinal = baseColor.rgb;*/
                 #endif
@@ -408,7 +456,7 @@ Shader "Toon/Toonshader advanced2"
                     emissionFinal = NPR_Emission(baseColor);
                 //return float4(emissionFinal, 1);
                 #endif
-                //return  float4(i.color.a,i.color.a,i.color.a,1);
+                //return  float4(ilm.a,ilm.a,ilm.a,1);
                 return float4(albedoFinal + specFinal + rimFinal + emissionFinal, 1);
             }
             ENDHLSL
@@ -461,6 +509,8 @@ Shader "Toon/Toonshader advanced2"
             
                 float _Threshold;
                 float _Hardness;
+                float _grey;
+                float _dark;
                 
                 float _GlossIntensity;
                 float _MetalIntensity;
@@ -498,25 +548,30 @@ Shader "Toon/Toonshader advanced2"
                 #if _USE_SMOOTH_NORMAL_ON
                     float3 bitangentOS = cross(input.normalOS, input.tangentOS.xyz) * input.tangentOS.w;
                     float3x3 tangentToObject = float3x3(input.tangentOS.xyz, bitangentOS, input.normalOS);//tbn
-                    float3 outlineNormalOS = normalize(mul(input.SmoothNormal.xyz, tangentToObject));
+                    float3 outlineNormalOS = normalize(mul(input.SmoothNormal.xyz, tangentToObject));//tbn将裁剪空间的smooth法线转到Object空间
                 #else
                     float3 outlineNormalOS = input.normalOS;
                 #endif
-
+                
+                //将轮廓法线从对象空间变换到观察空间（逆转模型-视图矩阵） 正常的法线空间转换到view空间
                 float3 viewNormal = mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormalOS);
-                viewNormal.z = -0.1;
-
+                
+                viewNormal.z = -0.1;// View Space 的 z 方向做一点深度偏移
                 float outlineAmount = _OutlineWidth * 0.01 * input.Color.a;
                 float viewZOffset = normalize(viewNormal).z * outlineAmount + _OutlineZOffset;
+                //先在View Space移动z 再转换到 Clip Space
                 positionCS = TransformWViewToHClip(vertexInputs.positionVS + float3(0, 0, viewZOffset));
-                //不能看做 把法线变成“裁剪空间法线” 而是把 View Space 法线方向转换成屏幕空间上的描边推出方向。
+ 
+                
+                //这行是在把 View Space 法线方向 通过投影矩阵转换成一个 可以加到 positionCS.xy 上的屏幕/裁剪空间偏移方向。
                 float3 projectedNormal = mul((float3x3)UNITY_MATRIX_P, viewNormal.xyz) * positionCS.w;
                 //修正描边正确宽度 没有修正会因为NDC空间是1：1的 屏幕显示不是1：1的 导致描边的上下宽度与左右宽度不普配 
                 //将近裁剪面右上角位置的顶点变换到观察空间
                 float4 nearUpperRight = mul(unity_CameraInvProjection, float4(1, 1, UNITY_NEAR_CLIP_VALUE, _ProjectionParams.y));  
                 float aspect = abs(nearUpperRight.y / nearUpperRight.x);//求得屏幕宽高比
                 projectedNormal.x *= aspect;
-
+                
+                //扩宽描边
                 positionCS.xy += projectedNormal.xy * outlineAmount;
                 o.positionCS = positionCS;
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);

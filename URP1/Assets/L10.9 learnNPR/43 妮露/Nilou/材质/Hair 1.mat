@@ -154,7 +154,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampColorMap:
-        m_Texture: {fileID: 2800000, guid: 5c1eee19041c9b44a919be34070d1d58, type: 3}
+        m_Texture: {fileID: 2800000, guid: 61c51d5eddb53984194cad29e815a9d3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampMap:
@@ -234,6 +234,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _ClipScale: 0.5
+    - _ClouthRamp: 1
     - _Cull: 2
     - _Cutoff: 0.5
     - _DarkIntensity: 0.5
@@ -279,12 +280,14 @@ Material:
     - _Glossiness: 0.06324556
     - _GlossyReflections: 1
     - _Hair: 0
+    - _HairRamp: 1
     - _Hardness: 50
     - _IgnoreLightY: 0
     - _IsConvertFaceCoord: 0
     - _IsFace: 0
     - _IsNight: 0
     - _LightThreshold: 0.5
+    - _MentelRamp: 1
     - _Metal: 1
     - _MetalIntensity: 0
     - _MetalSpecIntensity: 1
@@ -326,6 +329,7 @@ Material:
     - _Shadow: 0
     - _ShadowArea: 0.5
     - _ShadowRampLerp: 0.5
+    - _SkinRamp: 1
     - _Smoothness: 0.06324556
     - _SmoothnessTextureChannel: 0
     - _SpecIntensity: 1
@@ -375,6 +379,14 @@ Material:
     - _WorkflowMode: 1
     - _WorldLightInfluence: 0.1
     - _ZWrite: 1
+    - _bright: 2
+    - _dark: 0
+    - _grey: 0.745
+    - _lightmapA0: 2
+    - _lightmapA1: 2
+    - _lightmapA2: 3
+    - _lightmapA3: 4
+    - _lightmapA4: 5
     - _spec: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
