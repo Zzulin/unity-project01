@@ -1,27 +1,28 @@
 # 当前任务（精简）
 
 ## 主任务
-- 围绕 `Assets/L11 NPR/L11.unity` 完成 StarRail NPR 角色渲染联调。
+- 围绕 `Assets/L11 NPR/L11.unity` 打通 StarRail NPR 角色渲染联调链路（管线、RendererFeature、材质、Shader）。
 
-## 当前状态
-- `Assets/L10.9 learnNPR/shader/Toonshader.shader` 已调整主光受影链路：阴影改为先参与 `NdotL -> step/ramp`，并暂时移除 `_MAIN_LIGHT_SHADOWS_SCREEN` 变体以排查“只剩一条线”的显示问题。
-- 场景：`L11`（角色观察场景）
-- 管线：Graphics 默认 `NPR Render Pipeline.asset`；当前质量档 `High` 为 `UniversalRP-HighQuality.asset`
-- 材质：`0_mesh_mesh` 多数槽位为 URP Lit 内嵌实例，`hair` 使用 `CharHair`
-- 工具：`Tools/NPR/输出 L11 上下文报告` 已增强，新增默认 RendererFeature 列表、StarRailFeature 命中提示、角色材质槽位统计
-- 代码状态：`Assets/L11 NPR/Editor/L11NprContextReporter.cs` 编译通过（`dotnet build Assembly-CSharp-Editor.csproj`，0 error）
-- 参考项目本地路径：
-- `Assets/UnityURPToonLitShaderExample-master`
-- `Plugins/StarRailNPRShader-main`
+## 当前结论
+- Graphics 默认 RP 指向 `Assets/Settings/NPR Render Pipeline.asset`，当前质量档 `High` 指向 `UniversalRP-HighQuality.asset`。
+- 活跃 Renderer：`Assets/Settings/NPR Render Pipeline Asset_Renderer.asset`。
+- `0_mesh_mesh` 材质槽位以场景内嵌 `(Instance)` 为主，`hair` 是 `CharHair`，多数身体/面部槽位仍是 URP Lit。
+- `CharBody.shader` 还未稳定进入当前主体材质链路，改 Shader 前要先确认材质治理策略。
+- 学习与实现基线收敛为 2 个仓库：`UnityURPToonLitShaderExample` + `StarRailNPRShader`。
+- 执行节奏：1 周冲刺，Demo 优先，不追全特性完美。
+
+## 可用工具
+- 快速核对工具：`Assets/L11 NPR/Editor/L11NprContextReporter.cs`
+- Unity 菜单：`Tools/NPR/输出 L11 上下文报告`
+- Reporter 已增强：输出活跃 URP Renderer、默认 RendererFeature 列表、StarRailFeature 命中提示、角色材质槽位统计（CharBody/Face/Hair、URP Lit、Embedded）。
+- 最近编译校验：`dotnet build Assembly-CSharp-Editor.csproj` 通过（0 error）。
 
 ## 待办（只保留未完成）
 - 在 Unity 中执行 `Tools/NPR/输出 L11 上下文报告`，产出最新“命中/未命中”清单。
 - 打开 Frame Debugger，验证 `HSRForward1/2/3`、`HSRHair*`、`HSROutline` 实际命中情况。
 - 进入 Day 3：按方案 A 将 Demo 角色身体/面部关键槽位逐步切换到 `CharBody/CharFace`（保持可回滚）。
 
-## 一周冲刺计划（2026-04-04 版，Demo 优先）
-
-- 参考源收敛：仅使用 `UnityURPToonLitShaderExample` + `StarRailNPRShader` 完成 Demo。
+## 一周冲刺计划（Demo 优先）
 
 ### 面试向细化目标
 - 目标 Demo：`L11` 场景中 1 个角色达到“现代 NPR 观感”（分段明暗 + 稳定描边 + 头发/脸部关系稳定 + 轻量后处理）。
@@ -64,7 +65,7 @@
 - 产出：Demo 验收包（场景、参数记录、截图）。
 - 必讲点：质量门禁和下一步工程化方向（性能/平台/许可边界）。
 
-### 本项目改造落点（首批）
+## 本项目改造落点（首批）
 - `Plugins/StarRailNPRShader-main/Runtime/StarRailRendererFeature.cs`
 - `Plugins/StarRailNPRShader-main/Shaders/Character/CharBody.shader`
 - `Plugins/StarRailNPRShader-main/Shaders/Character/CharBodyCore.hlsl`
@@ -74,7 +75,7 @@
 - `Plugins/StarRailNPRShader-main/Shaders/Character/CharHairCore.hlsl`
 - `Assets/L11 NPR/Editor/L11NprContextReporter.cs`
 
-### 完成标准（DoD）
+## 完成标准（DoD）
 - [ ] L11 场景已有 1 个“现代 NPR 观感”的可演示角色
 - [ ] Frame Debugger 可见关键 StarRail Pass 命中
 - [ ] 输出一份可复用参数基线（阈值/描边/Bloom/Tonemapping）
@@ -83,13 +84,3 @@
 ## 维护规则
 - 每次只记录“最新结论 + 未完成事项”，不要写长过程。
 - 完成一个待办就勾选，并删除过时信息。
-
-## 最新进展（2026-04-06）
-- 已重写 `Assets/L10.9 learnNPR/Script/SetStencilRef.cs`：支持 `stencilRef`、`includeInactive`、`applyOnStart`，并提供 `OnValidate` 实时刷新与 `Apply StencilRef To Children` 右键菜单。
-- 实现方式使用 `renderer.sharedMaterials`，仅对含 `_StencilRef` 的材质执行 `SetInt`，其他材质自动跳过。
-- 编译校验：`dotnet build Assembly-CSharp-Editor.csproj` 通过（0 error）。
-
-## 最新进展（2026-04-11）
-- `Assets/LX learn computeShader/LX.unity` 已补入一个最小 ComputeShader 教学示例：GPU 并行写入纹理，结果实时显示到场景内 Quad。
-- 新增 `Assets/LX learn computeShader/LXSimpleCompute.compute` 与 `Assets/LX learn computeShader/LXSimpleComputeDemo.cs`，用于演示“CPU 发参数，GPU 批量算像素”的基本分工。
-- 已追加 `ComputeBuffer` 教学示例：`LXComputeBufferBars.compute` + `LXComputeBufferBarsDemo.cs`，流程覆盖 `SetData / SetBuffer / Dispatch / GetData`，运行时会生成一排可视化柱子。
