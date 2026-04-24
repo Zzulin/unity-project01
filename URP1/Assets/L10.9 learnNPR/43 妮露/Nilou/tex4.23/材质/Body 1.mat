@@ -386,7 +386,7 @@ Material:
     - _ZWrite: 1
     - _bright: 1
     - _dark: 0.37
-    - _grey: 0.49
+    - _grey: 0.6
     - _lightmapA0: 1
     - _lightmapA1: 1
     - _lightmapA2: 5
