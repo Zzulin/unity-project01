@@ -290,7 +290,7 @@ Material:
     - _OtherRimPow: 10
     - _OtherRimSmooth: 0.01
     - _Outline: 1
-    - _OutlineWidth: 0.76
+    - _OutlineWidth: 0.34
     - _OutlineZOffset: 0
     - _OutlineZOffsetMaskRemapEnd: 1
     - _OutlineZOffsetMaskRemapStart: 0
@@ -386,6 +386,7 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmissionColors: {r: 0, g: 0, b: 0, a: 0}
     - _EmissionMapChannelMask: {r: 1, g: 1, b: 1, a: 0}
+    - _FaceColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 0, g: 0, b: 0, a: 0}
     - _MainColor: {r: 0.8584906, g: 0.65052164, b: 0.52157354, a: 1}
     - _OtherRimColor: {r: 1, g: 1, b: 1, a: 1}
@@ -396,6 +397,10 @@ Material:
     - _ShadowMultColor: {r: 0.6415094, g: 0.3452474, b: 0.11135633, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _outlineColor1: {r: 0, g: 0, b: 0, a: 1}
+    - _outlineColor2: {r: 0, g: 0, b: 0, a: 1}
+    - _outlineColor3: {r: 0, g: 0, b: 0, a: 1}
+    - _outlineColor4: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &7334429047178245279
 MonoBehaviour:

@@ -226,7 +226,7 @@ Material:
     - _BlinnPhongSpecularIntensity: 1
     - _BlinnRange: 0.96
     - _BlinnSpecIntensity: 10
-    - _BlinnStep: 0.815
+    - _BlinnStep: 0.969
     - _BloomFactor: 1
     - _BrightIntensity: 0.5
     - _BumpScale: 1
@@ -285,7 +285,7 @@ Material:
     - _IgnoreLightY: 0
     - _IsConvertFaceCoord: 0
     - _IsFace: 0
-    - _IsNight: 0
+    - _IsNight: 1
     - _LightThreshold: 0.5
     - _MentelRamp: 1
     - _Metal: 1
@@ -300,7 +300,7 @@ Material:
     - _OtherRimPow: 10
     - _OtherRimSmooth: 0.01
     - _Outline: 1
-    - _OutlineWidth: 0.95
+    - _OutlineWidth: 0.47
     - _OutlineZOffset: 0
     - _OutlineZOffsetMaskRemapEnd: 1
     - _OutlineZOffsetMaskRemapStart: 0
@@ -315,11 +315,11 @@ Material:
     - _ReceiveShadowMappingPosOffset: 0
     - _ReceiveShadows: 1
     - _Rim: 1
-    - _RimIntensity: 1
+    - _RimIntensity: 0.555
     - _RimOffsets: 0.1
     - _RimPow: 1
     - _RimPower: 1.81
-    - _RimRadius: 0.092
+    - _RimRadius: 0.079
     - _RimSmooth: 0.01
     - _RimSmoothness: 0.39
     - _RimThresholds: 1
@@ -379,13 +379,13 @@ Material:
     - _WorkflowMode: 1
     - _WorldLightInfluence: 0.1
     - _ZWrite: 1
-    - _bright: 2
-    - _dark: 0
-    - _grey: 0.745
-    - _lightmapA0: 2
+    - _bright: 1
+    - _dark: 0.37
+    - _grey: 0.49
+    - _lightmapA0: 3
     - _lightmapA1: 2
     - _lightmapA2: 3
-    - _lightmapA3: 4
+    - _lightmapA3: 5
     - _lightmapA4: 5
     - _spec: 1
     m_Colors:
@@ -396,14 +396,19 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmissionColors: {r: 0, g: 0, b: 0, a: 0}
     - _EmissionMapChannelMask: {r: 1, g: 1, b: 1, a: 0}
+    - _FaceColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 0, g: 0, b: 0, a: 0}
     - _MainColor: {r: 1, g: 1, b: 1, a: 1}
     - _OtherRimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
+    - _OutlineColor: {r: 0.33962262, g: 0.18456967, b: 0.17408326, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
     - _RimColors: {r: 1, g: 1, b: 1, a: 1}
     - _ShadowColor: {r: 1, g: 1, b: 1, a: 1}
     - _ShadowMultColor: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _outlineColor1: {r: 0, g: 0, b: 0, a: 1}
+    - _outlineColor2: {r: 0.35220122, g: 0.25362915, b: 0.2939541, a: 1}
+    - _outlineColor3: {r: 0, g: 0, b: 0, a: 1}
+    - _outlineColor4: {r: 0.38993704, g: 0.29140538, b: 0.22685014, a: 1}
   m_BuildTextureStacks: []

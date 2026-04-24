@@ -2,33 +2,26 @@ Shader "Toon/Toonshader advanced2"
 {
     Properties
     {
-        [Main(Base, _, on, off)] _Base ("基础", Float) = 0
+        [Main(Base, _, on, off)] _Base ("主要纹理", Float) = 0
         [Tex(Base)] _MainTex ("主纹理", 2D) = "" { }
         [Tex(Base)] _IlmMap ("Lightmap", 2D) = "" {}
         [Tex(Base)] _NormalMap ("NormalMap", 2D) = "bump" { }
-
-        [Main(Outline,_OUTLINE_ON,on)] _Outline ("描边", Float) = 0
-        [SubRange(Outline)] _OutlineWidth ("轮廓宽度", Range(0,3)) = 1
-        [Sub(Outline)] _OutlineZOffset ("Outline Z Offset", Range(-0.1, 0.1)) = 0
-        [Sub(Outline)] _OutlineColor ("轮廓颜色", Color) = (0, 0, 0, 1)
-        [SubIntRange(Outline)] _StencilRef ("描边ID", Range(1, 8)) = 1
-        [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
         
-        [Main(Albedo,_ALBEDO_ON,on)] _Albedo ("基础色", Float) = 0
+        [Main(Albedo,_ALBEDO_ON,on)] _Albedo ("漫反射", Float) = 0
         [Tex(Albedo)] _RampColorMap ("色条图", 2D) = "" { }
         [SubToggle(Albedo)] _IsNight ("是否夜晚", Float) = 0
         [Sub(Albedo)] _Threshold ("NdotL Step", Range(0, 1)) = 0
         [Sub(Albedo)] _Hardness ("NdotL Smooth", Range(1, 50)) = 1
         [Sub(Albedo)] _grey ("Half Lambert Grey", Range(0.001, 1)) = 0.5
         [Sub(Albedo)] _dark ("Half Lambert Dark Offset", Range(-1, 1)) = 0
-        [Sub(Albedo)] _bright ("Bright Lambert", Range(0.001, 2)) = 0.1
+        [Sub(Albedo)] _bright ("Bright Lambert", Range(0.001, 1)) = 0.8
         [SubIntRange(Albedo)] _lightmapA0 ("lightmapA0", Range(1, 5)) = 1
         [SubIntRange(Albedo)] _lightmapA1 ("lightmapA1", Range(1, 5)) = 2
         [SubIntRange(Albedo)] _lightmapA2 ("lightmapA2", Range(1, 5)) = 3
         [SubIntRange(Albedo)] _lightmapA3 ("lightmapA3", Range(1, 5)) = 4
         [SubIntRange(Albedo)] _lightmapA4 ("lightmapA4", Range(1, 5)) = 5
         
-        [Main(Specular,_SPECULAR_ON,on)] _Specular ("高光", Float) = 0
+        [Main(Specular,_SPECULAR_ON,on)] _Specular ("高光反射", Float) = 0
         [Sub(Specular)] _GlossBlinnMargin ("GlossBlinnMargin", Range(0, 1)) = 0.2
         [Sub(Specular)] _GlossStep ("GlossStep", Range(0, 1)) = 0.5
         [Sub(Specular)] _GlossIntensity ("GlossIntensity", Range(0, 8)) = 1
@@ -40,17 +33,30 @@ Shader "Toon/Toonshader advanced2"
         [Main(Emission,_EMISSION_ON,on)] _Emission ("自发光", Float) = 0
         [Sub(Emission)] _EmissionIntensity ("EmissionIntensity", Range(0, 2)) = 0.5
 
-        [Main(Rim,_RIM_ON,on)] _Rim ("外发光", Float) = 0
-        [Sub(Rim)] _RimIntensity ("外发光强度", Range(0, 2)) = 1
-        [Sub(Rim)] _RimRadius ("外发光半径", Range(0, 1)) = 1
+        [Main(Rim,_RIM_ON,on)] _Rim ("菲涅尔", Float) = 0
+        [Sub(Rim)] _RimIntensity ("菲涅尔强度", Range(0, 2)) = 1
+        [Sub(Rim)] _RimRadius ("菲涅尔半径", Range(0, 1)) = 1
 
-        [Main(Face,_FACE_ON,on)] _Face ("面部", Float) = 0
+        [Main(Face,_FACE_ON,on)] _Face ("是否面部", Float) = 0
+        [Sub(Face)] _FaceColor ("面部颜色", Color) = (0, 0, 0, 1)
+        
         [SubRange(Face)]_FaceDarkIntensity ("暗部暗度", Range(0, 1)) = 0.7
         [SubToggle(Face)] _IsConvertFaceCoord ("是否转换坐标", Float) = 0
         [SubRange(Face)]_FaceSmoothRange ("面部阴影Smooth", Range(0, 0.05)) = 0.03
         [Tex(Face)] _FaceLightMap ("面部SDF图", 2D) = "gray" { }
         
         [Main(Shadow,_SHADOW_ON,on)] _Shadow ("阴影", Float) = 0
+        
+        [Main(Outline,_OUTLINE_ON,on)] _Outline ("描边", Float) = 0
+        [SubRange(Outline)] _OutlineWidth ("轮廓宽度", Range(0,3)) = 1
+        [Sub(Outline)] _OutlineZOffset ("Outline Z Offset", Range(-0.1, 0.1)) = 0
+        [Sub(Outline)] _OutlineColor ("轮廓颜色0", Color) = (0, 0, 0, 1)
+        [Sub(Outline)] _outlineColor1 ("轮廓颜色1", Color) = (0, 0, 0, 1)
+        [Sub(Outline)] _outlineColor2 ("轮廓颜色2", Color) = (0, 0, 0, 1)
+        [Sub(Outline)] _outlineColor3 ("轮廓颜色3", Color) = (0, 0, 0, 1)
+        [Sub(Outline)] _outlineColor4 ("轮廓颜色4", Color) = (0, 0, 0, 1)
+        
+        [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
     }
 
     SubShader
@@ -127,7 +133,10 @@ Shader "Toon/Toonshader advanced2"
             float _OutlineWidth;
             float _OutlineZOffset;
             float3 _OutlineColor;
-            
+            float3 _outlineColor1;
+            float3 _outlineColor2;
+            float3 _outlineColor3;
+            float3 _outlineColor4;
 
             float _DiffuseCutLocation;
             float _DiffuseCutSmoothness;
@@ -138,6 +147,7 @@ Shader "Toon/Toonshader advanced2"
             float _RimRadius;
 
             float _FaceDarkIntensity;
+            float3 _FaceColor;
             float _IsConvertFaceCoord;
             float _UseSdfShadow;
             float _FaceSmoothRange;
@@ -303,25 +313,30 @@ Shader "Toon/Toonshader advanced2"
                 float brightMask = step(_bright, halfLambert); //亮面
                 float rampSampling = 0.0;
                 if(isnight == 0){rampSampling = 0.5;}
-                float ramp0 = _lightmapA0 * -0.1 + 1.05 - rampSampling;//0.95
-                float ramp1 = _lightmapA1 * -0.1 + 1.05 - rampSampling;//0.65
-                float ramp2 = _lightmapA2 * -0.1 + 1.05 - rampSampling;//0.75
-                float ramp3 = _lightmapA3 * -0.1 + 1.05 - rampSampling;//0.55
-                float ramp4 = _lightmapA4 * -0.1 + 1.05 - rampSampling;//0.45
+                
+                float ramp0 = _lightmapA0 * -0.1 + 1.05 - rampSampling;
+                float ramp1 = _lightmapA1 * -0.1 + 1.05 - rampSampling;  
+                float ramp2 = _lightmapA2 * -0.1 + 1.05 - rampSampling;  
+                float ramp3 = _lightmapA3 * -0.1 + 1.05 - rampSampling;  
+                float ramp4 = _lightmapA4 * -0.1 + 1.05 - rampSampling;  
                 
                 float lightmapA2 = step(0.25, ilm.a); //0.3
                 float lightmapA3 = step(0.45, ilm.a); //0.5
                 float lightmapA4 = step(0.65, ilm.a); //0.7
                 float lightmapA5 = step(0.95, ilm.a);//1.0
                 
-                float rampV = ramp0;
-                rampV = lerp(rampV,ramp1,lightmapA2);
-                rampV = lerp(rampV,ramp2,lightmapA3);
-                rampV = lerp(rampV,ramp3,lightmapA4);
-                rampV = lerp(rampV,ramp4,lightmapA5);
+                float rampV = ramp0;                 //ilm.a <0.25 默认值为 ramp0
+                rampV = lerp(rampV,ramp1,lightmapA2);//ilm.a >0.25 的时为 ramp1
+                rampV = lerp(rampV,ramp2,lightmapA3);//ilm.a >0.45 的时为 ramp2
+                rampV = lerp(rampV,ramp3,lightmapA4);//ilm.a >0.65 的时为 ramp3
+                rampV = lerp(rampV,ramp4,lightmapA5);//ilm.a >0.95 的时为 ramp4
                 
                 float3 ramp = SAMPLE_TEXTURE2D(_RampColorMap, sampler_RampColorMap, float2(halfLambert, rampV)).rgb;
                 float3 shadowRamp = lerp(ramp,halfLambert,brightMask);
+                //return float3(ilm.a,ilm.a,ilm.a);
+                //return float3(halfLambert,halfLambert,halfLambert);
+                //return float3(brightMask,brightMask,brightMask);
+                //return float3(ramp);
                 return shadowRamp;
                 
             }
@@ -392,7 +407,7 @@ Shader "Toon/Toonshader advanced2"
                 float3 h = SafeNormalize(l + v);
 
                 // blinn
-                float nl = dot(n, l) * 0.5 + 0.5; 
+                float nl = dot(n, l); 
                 float nh = dot(n, h); 
                 float nv = dot(n, v); // 外发光相关菲涅尔
                 
@@ -430,7 +445,7 @@ Shader "Toon/Toonshader advanced2"
                         rampColor = NPR_Base_Ramp2(ilm,nl,_IsNight);
                         albedoFinal = baseColor.rgb * rampColor * shadowAtt;
                     #endif
-                return float4 (rampColor ,1);
+                //return float4 (rampColor ,1);
                 /*#else
                     albedoFinal = baseColor.rgb;*/
                 #endif
@@ -483,13 +498,30 @@ Shader "Toon/Toonshader advanced2"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_IlmMap);
+            SAMPLER(sampler_IlmMap);
+            TEXTURE2D(_NormalMap);
+            SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_RampColorMap);
+            SAMPLER(sampler_RampColorMap);
+            
+            TEXTURE2D(_FaceLightMap);
+            SAMPLER(sampler_FaceLightMap);
+            TEXTURE2D(_MetalMap);
+            SAMPLER(sampler_MetalMap);
+            TEXTURE2D(_SpecMap);
+            SAMPLER(sampler_SpecMap);
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float _OutlineWidth;
                 float _OutlineZOffset;
                 float3 _OutlineColor;
-                
+                float3 _outlineColor1;
+                float3 _outlineColor2;
+                float3 _outlineColor3;
+                float3 _outlineColor4;
 
                 float _DiffuseCutLocation;
                 float _DiffuseCutSmoothness;
@@ -500,6 +532,7 @@ Shader "Toon/Toonshader advanced2"
                 float _RimRadius;
 
                 float _FaceDarkIntensity;
+                float3 _FaceColor;
                 float _IsConvertFaceCoord;
                 float _UseSdfShadow;
                 float _FaceSmoothRange;
@@ -584,7 +617,20 @@ Shader "Toon/Toonshader advanced2"
             {
                 //当 outlineMask < 0.0001时（即非轮廓区域），片元被 discard
                 clip(input.outlineMask - 0.0001);
-                return float4(_OutlineColor.rgb, 1);
+                //采样贴图
+                float4 lightmap = SAMPLE_TEXTURE2D(_IlmMap, sampler_IlmMap, input.uv).rgba;
+                //分离lightmap.a各材质
+                float lightmapA2 = step(0.25, lightmap.a);  //0.3
+                float lightmapA3 = step(0.45, lightmap.a);  //0.5
+                float lightmapA4 = step(0.65, lightmap.a);  //0.7
+                float lightmapA5 = step(0.95, lightmap.a);  //1.0
+                //重组lightmap.a
+                float3 outlineColor = _OutlineColor;  //0.0
+                outlineColor = lerp(outlineColor, _outlineColor1, lightmapA2);  //0.3
+                outlineColor = lerp(outlineColor, _outlineColor2, lightmapA3);  //0.5
+                outlineColor = lerp(outlineColor, _outlineColor3, lightmapA4);  //0.7
+                outlineColor = lerp(outlineColor, _outlineColor4, lightmapA5);  //1.0
+                return half4(outlineColor, 1.0);
             }
             ENDHLSL
         }
