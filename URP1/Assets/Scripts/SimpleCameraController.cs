@@ -58,6 +58,7 @@ namespace UnityTemplateProjects
 
         CameraState m_TargetCameraState = new CameraState();
         CameraState m_InterpolatingCameraState = new CameraState();
+        bool m_SkipNextMouseDelta;
 
         [Header("Movement Settings")]
         [Tooltip("Exponential boost factor on translation, controllable by mouse wheel.")]
@@ -65,6 +66,9 @@ namespace UnityTemplateProjects
 
         [Tooltip("Time it takes to interpolate camera position 99% of the way to the target."), Range(0.001f, 1f)]
         public float positionLerpTime = 0.2f;
+
+        [Tooltip("Camera-plane pan speed while dragging with the middle mouse button.")]
+        public float middleMousePanSensitivity = 0.015f;
 
         [Header("Rotation Settings")]
         [Tooltip("Multiplier for the sensitivity of the rotation.")]
@@ -179,7 +183,14 @@ namespace UnityTemplateProjects
             // Hide and lock cursor when right mouse button pressed
             if (IsRightMouseButtonDown())
             {
+                m_SkipNextMouseDelta = true;
+                Cursor.visible = false;
                 Cursor.lockState = CursorLockMode.Locked;
+            }
+
+            if (IsMiddleMouseButtonDown())
+            {
+                m_SkipNextMouseDelta = true;
             }
 
             // Unlock and show cursor when right mouse button released
@@ -204,6 +215,7 @@ namespace UnityTemplateProjects
             
             // Translation
             var translation = GetInputTranslationDirection() * Time.deltaTime;
+            translation += GetCameraPlanePanTranslation();
 
             // Speed up movement when shift key held
             if (IsBoostPressed())
@@ -237,6 +249,12 @@ namespace UnityTemplateProjects
 
         Vector2 GetInputLookRotation()
         {
+            if (m_SkipNextMouseDelta)
+            {
+                m_SkipNextMouseDelta = false;
+                return Vector2.zero;
+            }
+
             // try to compensate the diff between the two input systems by multiplying with empirical values
 #if ENABLE_INPUT_SYSTEM
             var delta = lookAction.ReadValue<Vector2>();
@@ -246,6 +264,17 @@ namespace UnityTemplateProjects
 #else
             return new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
 #endif
+        }
+
+        Vector3 GetCameraPlanePanTranslation()
+        {
+            if (!IsMiddleMouseButtonPressed())
+            {
+                return Vector3.zero;
+            }
+
+            Vector2 mouseMovement = GetInputLookRotation();
+            return new Vector3(-mouseMovement.x, -mouseMovement.y, 0f) * middleMousePanSensitivity;
         }
 
         bool IsBoostPressed()
@@ -283,7 +312,7 @@ namespace UnityTemplateProjects
         bool IsRightMouseButtonDown()
         {
 #if ENABLE_INPUT_SYSTEM
-            return Mouse.current != null ? Mouse.current.rightButton.isPressed : false;
+            return Mouse.current != null ? Mouse.current.rightButton.wasPressedThisFrame : false;
 #else
             return Input.GetMouseButtonDown(1);
 #endif
@@ -292,9 +321,27 @@ namespace UnityTemplateProjects
         bool IsRightMouseButtonUp()
         {
 #if ENABLE_INPUT_SYSTEM
-            return Mouse.current != null ? !Mouse.current.rightButton.isPressed : false;
+            return Mouse.current != null ? Mouse.current.rightButton.wasReleasedThisFrame : false;
 #else
             return Input.GetMouseButtonUp(1);
+#endif
+        }
+
+        bool IsMiddleMouseButtonDown()
+        {
+#if ENABLE_INPUT_SYSTEM
+            return Mouse.current != null ? Mouse.current.middleButton.wasPressedThisFrame : false;
+#else
+            return Input.GetMouseButtonDown(2);
+#endif
+        }
+
+        bool IsMiddleMouseButtonPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            return Mouse.current != null ? Mouse.current.middleButton.isPressed : false;
+#else
+            return Input.GetMouseButton(2);
 #endif
         }
 
