@@ -29,6 +29,7 @@
   - 快速核对工具：`Assets/L11 NPR/Editor/L11NprContextReporter.cs`（菜单 `Tools/NPR/输出 L11 上下文报告`）
 
 ## 当前结论（短版）
+- L10.9 运行时相机漫游与最早版近距离屏幕抖动溶解保留；后续“整体同步/模型范围”重做方案效果不理想，已 discard 回退，不作为当前基线。
 - Graphics 默认 RP 指向 `NPR Render Pipeline.asset`，当前质量档 `High` 指向 `UniversalRP-HighQuality.asset`。
 - `0_mesh_mesh` 材质槽位以场景内嵌 `(Instance)` 为主，`hair` 是 `CharHair`，多数身体/面部槽位仍是 URP Lit。
 - `CharBody.shader` 还未稳定进入当前主体材质链路，改 Shader 前要先确认材质治理策略。
