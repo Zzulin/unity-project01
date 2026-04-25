@@ -5,7 +5,7 @@
 - `Assets/L11 NPR/L11.unity` 的 StarRail NPR 完整链路仍作为后续任务保留，暂不继续沿旧的一周冲刺计划推进。
 
 ## 已完成结论
-- `Main Camera` 已挂 `Assets/Scripts/SimpleCameraController.cs`，运行后支持 WASD 移动、右键旋转视角、中键拖拽平移、Shift 加速、Q/E 升降。
+- `Main Camera` 已挂 `Assets/Scripts/SimpleCameraController.cs`，运行后支持 WASD 移动、右键旋转视角、中键拖拽平移、滚轮前后推拉、Shift 加速、Q/E 升降。
 - `Assets/L10.9 learnNPR/shader advance/Toonshader advanced2.shader` 已加入近距离屏幕抖动溶解，用于替代摄像机贴近角色时的 near clip 硬切。
 - Nilou 材质 `Body 1.mat`、`Body 2.mat`、`Hair 1.mat`、`Face and face_eye.mat` 已启用近距离溶解并完成一版演示参数。
 - 当前验证：Play 模式贴近角色可见柔性颗粒消隐；Console Error 为 0；`L10.9` 场景未变脏。

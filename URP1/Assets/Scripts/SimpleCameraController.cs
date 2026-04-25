@@ -61,7 +61,7 @@ namespace UnityTemplateProjects
         bool m_SkipNextMouseDelta;
 
         [Header("Movement Settings")]
-        [Tooltip("Exponential boost factor on translation, controllable by mouse wheel.")]
+        [Tooltip("Exponential multiplier for keyboard translation speed.")]
         public float boost = 3.5f;
 
         [Tooltip("Time it takes to interpolate camera position 99% of the way to the target."), Range(0.001f, 1f)]
@@ -69,6 +69,9 @@ namespace UnityTemplateProjects
 
         [Tooltip("Camera-plane pan speed while dragging with the middle mouse button.")]
         public float middleMousePanSensitivity = 0.015f;
+
+        [Tooltip("Camera forward/backward dolly speed when using the mouse wheel.")]
+        public float scrollZoomSensitivity = 0.08f;
 
         [Header("Rotation Settings")]
         [Tooltip("Multiplier for the sensitivity of the rotation.")]
@@ -87,7 +90,7 @@ namespace UnityTemplateProjects
         InputAction movementAction;
         InputAction verticalMovementAction;
         InputAction lookAction;
-        InputAction boostFactorAction;
+        InputAction scrollAction;
         bool        mouseRightButtonPressed;
 
         void Start()
@@ -97,7 +100,7 @@ namespace UnityTemplateProjects
             lookAction = map.AddAction("look", binding: "<Mouse>/delta");
             movementAction = map.AddAction("move", binding: "<Gamepad>/leftStick");
             verticalMovementAction = map.AddAction("Vertical Movement");
-            boostFactorAction = map.AddAction("Boost Factor", binding: "<Mouse>/scroll");
+            scrollAction = map.AddAction("Scroll Zoom", binding: "<Mouse>/scroll");
 
             lookAction.AddBinding("<Gamepad>/rightStick").WithProcessor("scaleVector2(x=15, y=15)");
             movementAction.AddCompositeBinding("Dpad")
@@ -116,12 +119,10 @@ namespace UnityTemplateProjects
                 .With("Down", "<Keyboard>/q")
                 .With("Up", "<Gamepad>/rightshoulder")
                 .With("Down", "<Gamepad>/leftshoulder");
-            boostFactorAction.AddBinding("<Gamepad>/Dpad").WithProcessor("scaleVector2(x=1, y=4)");
-
             movementAction.Enable();
             lookAction.Enable();
             verticalMovementAction.Enable();
-            boostFactorAction.Enable();
+            scrollAction.Enable();
         }
 #endif
 
@@ -215,7 +216,6 @@ namespace UnityTemplateProjects
             
             // Translation
             var translation = GetInputTranslationDirection() * Time.deltaTime;
-            translation += GetCameraPlanePanTranslation();
 
             // Speed up movement when shift key held
             if (IsBoostPressed())
@@ -223,9 +223,10 @@ namespace UnityTemplateProjects
                 translation *= 10.0f;
             }
             
-            // Modify movement by a boost factor (defined in Inspector and modified in play mode through the mouse scroll wheel)
-            boost += GetBoostFactor();
+            // Modify movement by a boost factor defined in Inspector.
             translation *= Mathf.Pow(2.0f, boost);
+            translation += GetCameraPlanePanTranslation();
+            translation += GetScrollZoomTranslation();
 
             m_TargetCameraState.Translate(translation);
 
@@ -238,12 +239,12 @@ namespace UnityTemplateProjects
             m_InterpolatingCameraState.UpdateTransform(transform);
         }
 
-        float GetBoostFactor()
+        float GetScrollDelta()
         {
 #if ENABLE_INPUT_SYSTEM
-            return boostFactorAction.ReadValue<Vector2>().y * 0.01f;
+            return scrollAction.ReadValue<Vector2>().y * 0.01f;
 #else
-            return Input.mouseScrollDelta.y * 0.01f;
+            return Input.mouseScrollDelta.y;
 #endif
         }
 
@@ -275,6 +276,17 @@ namespace UnityTemplateProjects
 
             Vector2 mouseMovement = GetInputLookRotation();
             return new Vector3(-mouseMovement.x, -mouseMovement.y, 0f) * middleMousePanSensitivity;
+        }
+
+        Vector3 GetScrollZoomTranslation()
+        {
+            float scrollDelta = GetScrollDelta();
+            if (Mathf.Approximately(scrollDelta, 0f))
+            {
+                return Vector3.zero;
+            }
+
+            return Vector3.forward * scrollDelta * scrollZoomSensitivity * Mathf.Pow(2.0f, boost);
         }
 
         bool IsBoostPressed()
