@@ -1,86 +1,29 @@
 # 当前任务（精简）
 
-## 主任务
-- 围绕 `Assets/L11 NPR/L11.unity` 打通 StarRail NPR 角色渲染联调链路（管线、RendererFeature、材质、Shader）。
+## 当前主线
+- `Assets/L10.9 learnNPR/L10.9.unity` 已作为当前可演示 Demo 场景推进：角色展示、运行时相机漫游、近距离镜头消隐已跑通。
+- `Assets/L11 NPR/L11.unity` 的 StarRail NPR 完整链路仍作为后续任务保留，暂不继续沿旧的一周冲刺计划推进。
 
-## 当前结论
-- Graphics 默认 RP 指向 `Assets/Settings/NPR Render Pipeline.asset`，当前质量档 `High` 指向 `UniversalRP-HighQuality.asset`。
-- 活跃 Renderer：`Assets/Settings/NPR Render Pipeline Asset_Renderer.asset`。
-- `0_mesh_mesh` 材质槽位以场景内嵌 `(Instance)` 为主，`hair` 是 `CharHair`，多数身体/面部槽位仍是 URP Lit。
-- `CharBody.shader` 还未稳定进入当前主体材质链路，改 Shader 前要先确认材质治理策略。
-- 学习与实现基线收敛为 2 个仓库：`UnityURPToonLitShaderExample` + `StarRailNPRShader`。
-- 执行节奏：1 周冲刺，Demo 优先，不追全特性完美。
+## 已完成结论
+- `Main Camera` 已挂 `Assets/Scripts/SimpleCameraController.cs`，运行后支持 WASD 移动、右键旋转视角、Shift 加速、Q/E 升降。
+- `Assets/L10.9 learnNPR/shader advance/Toonshader advanced2.shader` 已加入近距离屏幕抖动溶解，用于替代摄像机贴近角色时的 near clip 硬切。
+- Nilou 材质 `Body 1.mat`、`Body 2.mat`、`Hair 1.mat`、`Face and face_eye.mat` 已启用近距离溶解并完成一版演示参数。
+- 当前验证：Play 模式贴近角色可见柔性颗粒消隐；Console Error 为 0；`L10.9` 场景未变脏。
 
-## 可用工具
-- 快速核对工具：`Assets/L11 NPR/Editor/L11NprContextReporter.cs`
-- Unity 菜单：`Tools/NPR/输出 L11 上下文报告`
-- Reporter 已增强：输出活跃 URP Renderer、默认 RendererFeature 列表、StarRailFeature 命中提示、角色材质槽位统计（CharBody/Face/Hair、URP Lit、Embedded）。
-- 最近编译校验：`dotnet build Assembly-CSharp-Editor.csproj` 通过（0 error）。
+## 当前改动落点
+- `Assets/L10.9 learnNPR/L10.9.unity`
+- `Assets/L10.9 learnNPR/shader advance/Toonshader advanced2.shader`
+- `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Body 1.mat`
+- `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Body 2.mat`
+- `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Hair 1.mat`
+- `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Face and face_eye.mat`
 
 ## 待办（只保留未完成）
-- 在 Unity 中执行 `Tools/NPR/输出 L11 上下文报告`，产出最新“命中/未命中”清单。
-- 打开 Frame Debugger，验证 `HSRForward1/2/3`、`HSRHair*`、`HSROutline` 实际命中情况。
-- 进入 Day 3：按方案 A 将 Demo 角色身体/面部关键槽位逐步切换到 `CharBody/CharFace`（保持可回滚）。
-
-## 一周冲刺计划（Demo 优先）
-
-### 面试向细化目标
-- 目标 Demo：`L11` 场景中 1 个角色达到“现代 NPR 观感”（分段明暗 + 稳定描边 + 头发/脸部关系稳定 + 轻量后处理）。
-- 面试可讲：能清楚解释“从最小 Toon 方程到 URP RendererFeature 多 Pass 落地”的设计取舍。
-
-### Day 1：最小 Toon 光照跑通
-- 参考 `UnityURPToonLitShaderExample`，在项目内做可调阈值/软硬边的最小 Toon Shader。
-- 产出：1 个学习材质 + 3 张阈值对比截图。
-- 必讲点：`NoL -> smoothstep -> 阴影色混合`，以及为什么先做最小闭环。
-
-### Day 2：L11 链路核对
-- 读 `StarRailRendererFeature.cs`，只关注实际启用的关键 Pass 与关键词。
-- 用 `Tools/NPR/输出 L11 上下文报告` + Frame Debugger 确认 L11 是否命中 StarRail 链路。
-- 产出：1 份“当前命中/未命中”清单。
-- 必讲点：`HSRForward1/2/3`、`HSRHair*`、`HSROutline` 在渲染顺序中的作用。
-
-### Day 3：材质治理（只做 Demo 角色）
-- 选择方案 A（场景内嵌材质逐槽位切换），不做全项目资产重构。
-- 将 Demo 角色身体/面部/头发切到 `CharBody/CharFace/CharHair`。
-- 产出：1 套可回放的材质切换结果。
-- 必讲点：为什么短周期 Demo 选 A（快、风险低、可回滚）。
-
-### Day 4：视觉一轮联调
-- 只调最影响观感的参数：明暗阈值、阴影色、描边宽度、头发高光。
-- 产出：中景/近景截图对比（调前 vs 调后）。
-- 必讲点：优先级排序（先读形体再读材质细节）。
-
-### Day 5：阴影与前发遮挡稳定化
-- 优先保证角色脸部与头发关系稳定，不追求复杂极端机位。
-- 产出：3 个机位下无遮挡穿帮的可演示结果。
-- 必讲点：前发深度遮挡的必要性与常见 artifact 控制。
-
-### Day 6：后处理与整体观感
-- 轻量联调 Bloom/Tonemapping，只做到“角色不灰、不爆、风格统一”。
-- 产出：一组最终展示参数（可复制）。
-- 必讲点：为什么后处理只做轻量，不让风格依赖强后期。
-
-### Day 7：验收与打包
-- 回归检查：PlayMode 稳定、主镜头观感稳定、关键截图齐全。
-- 产出：Demo 验收包（场景、参数记录、截图）。
-- 必讲点：质量门禁和下一步工程化方向（性能/平台/许可边界）。
-
-## 本项目改造落点（首批）
-- `Plugins/StarRailNPRShader-main/Runtime/StarRailRendererFeature.cs`
-- `Plugins/StarRailNPRShader-main/Shaders/Character/CharBody.shader`
-- `Plugins/StarRailNPRShader-main/Shaders/Character/CharBodyCore.hlsl`
-- `Plugins/StarRailNPRShader-main/Shaders/Character/CharFace.shader`
-- `Plugins/StarRailNPRShader-main/Shaders/Character/CharFaceCore.hlsl`
-- `Plugins/StarRailNPRShader-main/Shaders/Character/CharHair.shader`
-- `Plugins/StarRailNPRShader-main/Shaders/Character/CharHairCore.hlsl`
-- `Assets/L11 NPR/Editor/L11NprContextReporter.cs`
-
-## 完成标准（DoD）
-- [ ] L11 场景已有 1 个“现代 NPR 观感”的可演示角色
-- [ ] Frame Debugger 可见关键 StarRail Pass 命中
-- [ ] 输出一份可复用参数基线（阈值/描边/Bloom/Tonemapping）
-- [ ] 明确 GPL-3.0 边界：学习可用，商用代码需重写实现
+- 录制/截图一组 L10.9 演示视角：中景、近景、贴近溶解触发前后。
+- 视效果微调近距离溶解参数：`_NearDissolveStart`、`_NearDissolveEnd`、`_NearDissolvePatternScale`、边缘颜色/强度。
+- 若继续 L11：先重新执行 `Tools/NPR/输出 L11 上下文报告`，再用 Frame Debugger 验证 `HSRForward1/2/3`、`HSRHair*`、`HSROutline` 是否命中。
+- 若继续 StarRail 材质治理：先确认目标角色与材质策略，再决定是否切到 `CharBody/CharFace/CharHair`，不要沿用旧 Day 3 计划直接改。
 
 ## 维护规则
 - 每次只记录“最新结论 + 未完成事项”，不要写长过程。
-- 完成一个待办就勾选，并删除过时信息。
+- 完成一个待办就勾选或删除过时项。
