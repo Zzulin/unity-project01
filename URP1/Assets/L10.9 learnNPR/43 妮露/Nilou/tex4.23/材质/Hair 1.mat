@@ -50,6 +50,7 @@ Material:
   - _FIXDARKSHADOW_ON
   - _ISNIGHT_ON
   - _METAL_ON
+  - _NEARDISSOLVE_ON
   - _PIXELWIDTH_ON
   - _SHADERENUM_HAIR
   - _SHADOW_ALGO_MUL
@@ -296,6 +297,12 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _NORMALMAP: 1
+    - _NearDissolve: 1
+    - _NearDissolveEdgeIntensity: 0.85
+    - _NearDissolveEdgeWidth: 0.055
+    - _NearDissolveEnd: 0.22
+    - _NearDissolvePatternScale: 2
+    - _NearDissolveStart: 0.58
     - _OcclusionStrength: 1
     - _OtherRimPow: 10
     - _OtherRimSmooth: 0.01
@@ -399,6 +406,7 @@ Material:
     - _FaceColor: {r: 0, g: 0, b: 0, a: 1}
     - _FaceInfo: {r: 0, g: 0, b: 0, a: 0}
     - _MainColor: {r: 1, g: 1, b: 1, a: 1}
+    - _NearDissolveEdgeColor: {r: 0.35, g: 0.75, b: 1, a: 1}
     - _OtherRimColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineColor: {r: 0.33962262, g: 0.18456967, b: 0.17408326, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}

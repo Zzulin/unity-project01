@@ -57,6 +57,15 @@ Shader "Toon/Toonshader advanced2"
         [Sub(Outline)] _outlineColor4 ("轮廓颜色4", Color) = (0, 0, 0, 1)
         
         [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
+
+        [Header(Near Camera Dissolve)]
+        [Toggle] _NearDissolve ("启用近距离屏幕溶解", Float) = 0
+        _NearDissolveStart ("开始溶解距离", Range(0.01, 3)) = 0.65
+        _NearDissolveEnd ("完全溶解距离", Range(0.01, 3)) = 0.28
+        _NearDissolvePatternScale ("溶解颗粒大小", Range(1, 12)) = 3
+        _NearDissolveEdgeWidth ("溶解边缘宽度", Range(0.001, 0.35)) = 0.08
+        _NearDissolveEdgeIntensity ("溶解边缘强度", Range(0, 4)) = 1.2
+        _NearDissolveEdgeColor ("溶解边缘颜色", Color) = (0.35, 0.75, 1, 1)
     }
 
     SubShader
@@ -173,6 +182,13 @@ Shader "Toon/Toonshader advanced2"
             float _BlinnStep;
             float _GlossStep;
             float _GlossBlinnMargin;
+            float _NearDissolve;
+            float _NearDissolveStart;
+            float _NearDissolveEnd;
+            float _NearDissolvePatternScale;
+            float _NearDissolveEdgeWidth;
+            float _NearDissolveEdgeIntensity;
+            float4 _NearDissolveEdgeColor;
             CBUFFER_END
             
             struct appdata
@@ -385,8 +401,54 @@ Shader "Toon/Toonshader advanced2"
                 return max(0,baseColor.a * baseColor.rgb * _EmissionIntensity * (sin(_Time.z * 0.5) + 0.5));
             }
 
+            float NearDissolveHash(float2 p)
+            {
+                float3 p3 = frac(float3(p.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return frac((p3.x + p3.y) * p3.z);
+            }
+
+            float NearDissolveBayer(float2 pixel)
+            {
+                static const float4 thresholds[4] =
+                {
+                    float4(01.0 / 17.0, 09.0 / 17.0, 03.0 / 17.0, 11.0 / 17.0),
+                    float4(13.0 / 17.0, 05.0 / 17.0, 15.0 / 17.0, 07.0 / 17.0),
+                    float4(04.0 / 17.0, 12.0 / 17.0, 02.0 / 17.0, 10.0 / 17.0),
+                    float4(16.0 / 17.0, 08.0 / 17.0, 14.0 / 17.0, 06.0 / 17.0)
+                };
+
+                uint xIndex = (uint)fmod(pixel.x, 4);
+                uint yIndex = (uint)fmod(pixel.y, 4);
+                return thresholds[yIndex][xIndex];
+            }
+
+            float ApplyNearCameraDissolve(float4 positionCS, float3 positionWS)
+            {
+                if (_NearDissolve < 0.5)
+                {
+                    return 0;
+                }
+
+                float dissolveStart = max(_NearDissolveStart, _NearDissolveEnd + 0.001);
+                float viewDistance = distance(positionWS, _WorldSpaceCameraPos.xyz);
+                float dissolveAlpha = saturate((viewDistance - _NearDissolveEnd) / (dissolveStart - _NearDissolveEnd));
+
+                float2 pixel = floor(positionCS.xy / max(_NearDissolvePatternScale, 1.0));
+                float orderedThreshold = NearDissolveBayer(pixel);
+                float organicThreshold = NearDissolveHash(pixel * 0.73 + floor(viewDistance * 16.0));
+                float threshold = lerp(orderedThreshold, organicThreshold, 0.35);
+
+                clip(dissolveAlpha - threshold);
+
+                float edge = 1.0 - smoothstep(0.0, max(_NearDissolveEdgeWidth, 0.001), abs(dissolveAlpha - threshold));
+                return edge * step(dissolveAlpha, 0.995);
+            }
+
             float4 frag(v2f i) : SV_Target
             {
+                float nearDissolveEdge = ApplyNearCameraDissolve(i.pos, i.posWS);
+
                 Light mainLight;
                 float4 shadowCoord=TransformWorldToShadowCoord(i.posWS);//必须在fs中计算shadowcoord
                 //shadowCoord = i.shadowCoord;
@@ -472,7 +534,8 @@ Shader "Toon/Toonshader advanced2"
                 //return float4(emissionFinal, 1);
                 #endif
                 //return  float4(ilm.a,ilm.a,ilm.a,1);
-                return float4(albedoFinal + specFinal + rimFinal + emissionFinal, 1);
+                float3 nearDissolveEdgeColor = _NearDissolveEdgeColor.rgb * _NearDissolveEdgeIntensity * nearDissolveEdge;
+                return float4(albedoFinal + specFinal + rimFinal + emissionFinal + nearDissolveEdgeColor, 1);
             }
             ENDHLSL
         }
@@ -551,6 +614,13 @@ Shader "Toon/Toonshader advanced2"
                 float _BlinnStep;
                 float _GlossStep;
                 float _GlossBlinnMargin;
+                float _NearDissolve;
+                float _NearDissolveStart;
+                float _NearDissolveEnd;
+                float _NearDissolvePatternScale;
+                float _NearDissolveEdgeWidth;
+                float _NearDissolveEdgeIntensity;
+                float4 _NearDissolveEdgeColor;
             CBUFFER_END
 
             struct Attributes
@@ -569,6 +639,7 @@ Shader "Toon/Toonshader advanced2"
                 float3 normalWS : TEXCOORD1;
                 float outlineMask : TEXCOORD2;
                 float4 Color : COLOR;
+                float3 positionWS : TEXCOORD3;
             };
             Varyings vert(Attributes input)
             {
@@ -610,13 +681,59 @@ Shader "Toon/Toonshader advanced2"
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 o.outlineMask = outlineAmount;
                 o.Color = input.Color;
+                o.positionWS = TransformViewToWorld(vertexInputs.positionVS + float3(0, 0, viewZOffset));
                 return o;
+            }
+
+            float NearDissolveHash(float2 p)
+            {
+                float3 p3 = frac(float3(p.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return frac((p3.x + p3.y) * p3.z);
+            }
+
+            float NearDissolveBayer(float2 pixel)
+            {
+                static const float4 thresholds[4] =
+                {
+                    float4(01.0 / 17.0, 09.0 / 17.0, 03.0 / 17.0, 11.0 / 17.0),
+                    float4(13.0 / 17.0, 05.0 / 17.0, 15.0 / 17.0, 07.0 / 17.0),
+                    float4(04.0 / 17.0, 12.0 / 17.0, 02.0 / 17.0, 10.0 / 17.0),
+                    float4(16.0 / 17.0, 08.0 / 17.0, 14.0 / 17.0, 06.0 / 17.0)
+                };
+
+                uint xIndex = (uint)fmod(pixel.x, 4);
+                uint yIndex = (uint)fmod(pixel.y, 4);
+                return thresholds[yIndex][xIndex];
+            }
+
+            float ApplyNearCameraDissolve(float4 positionCS, float3 positionWS)
+            {
+                if (_NearDissolve < 0.5)
+                {
+                    return 0;
+                }
+
+                float dissolveStart = max(_NearDissolveStart, _NearDissolveEnd + 0.001);
+                float viewDistance = distance(positionWS, _WorldSpaceCameraPos.xyz);
+                float dissolveAlpha = saturate((viewDistance - _NearDissolveEnd) / (dissolveStart - _NearDissolveEnd));
+
+                float2 pixel = floor(positionCS.xy / max(_NearDissolvePatternScale, 1.0));
+                float orderedThreshold = NearDissolveBayer(pixel);
+                float organicThreshold = NearDissolveHash(pixel * 0.73 + floor(viewDistance * 16.0));
+                float threshold = lerp(orderedThreshold, organicThreshold, 0.35);
+
+                clip(dissolveAlpha - threshold);
+
+                float edge = 1.0 - smoothstep(0.0, max(_NearDissolveEdgeWidth, 0.001), abs(dissolveAlpha - threshold));
+                return edge * step(dissolveAlpha, 0.995);
             }
 
             half4 frag (Varyings input) : SV_Target
             {
                 //当 outlineMask < 0.0001时（即非轮廓区域），片元被 discard
                 clip(input.outlineMask - 0.0001);
+                float nearDissolveEdge = ApplyNearCameraDissolve(input.positionCS, input.positionWS);
                 //采样贴图
                 float4 lightmap = SAMPLE_TEXTURE2D(_IlmMap, sampler_IlmMap, input.uv).rgba;
                 //分离lightmap.a各材质
@@ -630,6 +747,7 @@ Shader "Toon/Toonshader advanced2"
                 outlineColor = lerp(outlineColor, _outlineColor2, lightmapA3);  //0.5
                 outlineColor = lerp(outlineColor, _outlineColor3, lightmapA4);  //0.7
                 outlineColor = lerp(outlineColor, _outlineColor4, lightmapA5);  //1.0
+                outlineColor += _NearDissolveEdgeColor.rgb * _NearDissolveEdgeIntensity * nearDissolveEdge;
                 return half4(outlineColor, 1.0);
             }
             ENDHLSL
