@@ -48,6 +48,7 @@ Shader "Toon/Toonshader advanced2"
         [Main(Shadow,_SHADOW_ON,on)] _Shadow ("阴影", Float) = 0
         
         [Main(Outline,_OUTLINE_ON,on)] _Outline ("描边", Float) = 0
+        [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
         [SubRange(Outline)] _OutlineWidth ("轮廓宽度", Range(0,3)) = 1
         [Sub(Outline)] _OutlineZOffset ("Outline Z Offset", Range(-0.1, 0.1)) = 0
         [Sub(Outline)] _OutlineColor ("轮廓颜色0", Color) = (0, 0, 0, 1)
@@ -56,16 +57,14 @@ Shader "Toon/Toonshader advanced2"
         [Sub(Outline)] _outlineColor3 ("轮廓颜色3", Color) = (0, 0, 0, 1)
         [Sub(Outline)] _outlineColor4 ("轮廓颜色4", Color) = (0, 0, 0, 1)
         
-        [SubToggle(Outline)] _USE_SMOOTH_NORMAL ("启用平均化法线", Float) = 1
-
-        [Header(Near Camera Dissolve)]
-        [Toggle] _NearDissolve ("启用近距离屏幕溶解", Float) = 0
-        _NearDissolveStart ("开始溶解距离", Range(0.01, 3)) = 0.65
-        _NearDissolveEnd ("完全溶解距离", Range(0.01, 3)) = 0.28
-        _NearDissolvePatternScale ("溶解颗粒大小", Range(1, 12)) = 3
-        _NearDissolveEdgeWidth ("溶解边缘宽度", Range(0.001, 0.35)) = 0.08
-        _NearDissolveEdgeIntensity ("溶解边缘强度", Range(0, 4)) = 1.2
-        _NearDissolveEdgeColor ("溶解边缘颜色", Color) = (0.35, 0.75, 1, 1)
+        
+        [Main(_NearDissolve,_NearDissolve_ON,on)] _NearDissolve ("启用近距离屏幕溶解", Float) = 0
+        [Sub(_NearDissolve)] _NearDissolveStart ("开始溶解距离", Range(0.01, 3)) = 0.65
+        [Sub(_NearDissolve)] _NearDissolveEnd ("完全溶解距离", Range(0.01, 3)) = 0.28
+        [Sub(_NearDissolve)] _NearDissolvePatternScale ("溶解颗粒大小", Range(1, 12)) = 3
+        [Sub(_NearDissolve)] _NearDissolveEdgeWidth ("溶解边缘宽度", Range(0.001, 0.35)) = 0.08
+        [Sub(_NearDissolve)] _NearDissolveEdgeIntensity ("溶解边缘强度", Range(0, 4)) = 1.2
+        [Sub(_NearDissolve)] _NearDissolveEdgeColor ("溶解边缘颜色", Color) = (0.35, 0.75, 1, 1)
     }
 
     SubShader
