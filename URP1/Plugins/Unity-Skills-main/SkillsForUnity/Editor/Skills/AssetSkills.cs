@@ -15,12 +15,14 @@ namespace UnitySkills
             Category = SkillCategory.Asset, Operation = SkillOperation.Create,
             Tags = new[] { "import", "copy", "external" },
             Outputs = new[] { "imported", "assetPath" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesAssets = true, RiskLevel = "medium")]
         public static object AssetImport(string sourcePath, string destinationPath)
         {
-            if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
+            bool isDir = Directory.Exists(sourcePath);
+            if (!File.Exists(sourcePath) && !isDir)
                 return new { error = $"Source not found: {sourcePath}" };
-            if (Directory.Exists(sourcePath))
+            if (isDir)
                 return new { error = $"Source path must be a file, not a directory: {sourcePath}" };
             if (Validate.SafePath(destinationPath, "destinationPath") is object err) return err;
 
@@ -63,11 +65,12 @@ namespace UnitySkills
             Tags = new[] { "delete", "remove", "cleanup" },
             Outputs = new[] { "deleted" },
             RequiresInput = new[] { "assetPath" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesAssets = true, RiskLevel = "medium")]
         public static object AssetDelete(string assetPath)
         {
             if (Validate.SafePath(assetPath, "assetPath", isDelete: true) is object err) return err;
-            if (!File.Exists(assetPath) && !Directory.Exists(assetPath))
+            if (!SkillsCommon.PathExists(assetPath))
                 return new { error = $"Asset not found: {assetPath}" };
 
             var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
@@ -104,7 +107,8 @@ namespace UnitySkills
             Tags = new[] { "move", "rename", "reorganize" },
             Outputs = new[] { "from", "to" },
             RequiresInput = new[] { "assetPath" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesAssets = true, RiskLevel = "medium")]
         public static object AssetMove(string sourcePath, string destinationPath)
         {
             if (Validate.SafePath(sourcePath, "sourcePath") is object err1) return err1;

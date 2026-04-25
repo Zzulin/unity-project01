@@ -260,7 +260,7 @@ namespace UnitySkills
                 System.StringComparer.OrdinalIgnoreCase);
 
             // Pre-build dependency index: collect all paths that are depended upon by any asset
-            var allGuids = AssetDatabase.FindAssets("t:Object");
+            var allGuids = AssetDatabase.FindAssets("t:Object", new[] { "Assets" });
             var referencedPaths = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
             foreach (var g in allGuids)
             {

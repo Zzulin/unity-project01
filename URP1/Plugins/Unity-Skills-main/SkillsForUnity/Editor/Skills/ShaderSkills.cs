@@ -11,7 +11,6 @@ namespace UnitySkills
     /// </summary>
     public static class ShaderSkills
     {
-        private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
 
         [UnitySkill("shader_create", "Create a new shader file",
             Category = SkillCategory.Shader, Operation = SkillOperation.Create,
@@ -83,7 +82,7 @@ namespace UnitySkills
             }}
 }}
 ";
-            File.WriteAllText(savePath, content, Utf8NoBom);
+            File.WriteAllText(savePath, content, SkillsCommon.Utf8NoBom);
             AssetDatabase.ImportAsset(savePath);
 
             var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(savePath);
@@ -322,7 +321,7 @@ namespace UnitySkills
         }}
     }}
 }}";
-            File.WriteAllText(savePath, content, Utf8NoBom);
+            File.WriteAllText(savePath, content, SkillsCommon.Utf8NoBom);
             AssetDatabase.ImportAsset(savePath);
 
             var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(savePath);

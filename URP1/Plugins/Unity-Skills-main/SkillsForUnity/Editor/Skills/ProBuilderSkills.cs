@@ -31,7 +31,8 @@ namespace UnitySkills
         [UnitySkill("probuilder_create_shape", "Create a ProBuilder primitive shape (Cube/Sphere/Cylinder/Cone/Torus/Prism/Arch/Pipe/Stairs/Door/Plane)", TracksWorkflow = true,
             Category = SkillCategory.ProBuilder, Operation = SkillOperation.Create,
             Tags = new[] { "probuilder", "shape", "primitive", "mesh", "modeling" },
-            Outputs = new[] { "success", "name", "instanceId", "shape", "vertexCount", "faceCount" })]
+            Outputs = new[] { "success", "name", "instanceId", "shape", "vertexCount", "faceCount" },
+            MutatesScene = true, RiskLevel = "medium", RequiresPackages = new[] { "com.unity.probuilder" })]
         public static object ProBuilderCreateShape(
             string shape = "Cube",
             string name = null,

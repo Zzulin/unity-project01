@@ -23,11 +23,11 @@ namespace UnitySkills
                 return new { success = false, error = "assetPath is required" };
             if (Validate.SafePath(assetPath, "assetPath") is object pathErr) return pathErr;
 
-            if (!File.Exists(assetPath) && !Directory.Exists(assetPath))
+            if (!SkillsCommon.PathExists(assetPath))
             {
                 var projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
                 var fullPath = Path.Combine(projectRoot, assetPath);
-                if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
+                if (!SkillsCommon.PathExists(fullPath))
                     return new { success = false, error = $"Asset not found: {assetPath}" };
             }
 
@@ -344,7 +344,14 @@ namespace UnitySkills
             }
 
             if (pixelsPerUnit.HasValue) importer.spritePixelsPerUnit = pixelsPerUnit.Value;
-            if (!string.IsNullOrEmpty(packingTag)) importer.spritePackingTag = packingTag;
+            if (!string.IsNullOrEmpty(packingTag))
+            {
+#if !UNITY_2023_1_OR_NEWER
+#pragma warning disable CS0618
+                importer.spritePackingTag = packingTag;
+#pragma warning restore CS0618
+#endif
+            }
             if (pivotX != null && pivotY != null)
             {
                 importer.spritePivot = new Vector2(

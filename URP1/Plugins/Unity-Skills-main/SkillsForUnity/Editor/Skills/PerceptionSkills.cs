@@ -1,12 +1,18 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Compilation;
+using UnityEditorInternal;
 using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace UnitySkills
 {
@@ -59,6 +65,931 @@ namespace UnitySkills
         {
             _codeDependencyCache = null;
             _codeDependencyCacheDirty = true;
+        }
+
+        private sealed class SceneMetricsSnapshot
+        {
+            public Scene Scene;
+            public IReadOnlyList<GameObject> Objects;
+            public Dictionary<string, int> ComponentCounts = new Dictionary<string, int>();
+            public int TotalObjects;
+            public int ActiveObjects;
+            public int DisabledObjects;
+            public int RootObjects;
+            public int MaxHierarchyDepth;
+            public int Cameras;
+            public int MainCameraCount;
+            public int Lights;
+            public int Canvases;
+            public int EventSystems;
+            public int AudioListeners;
+            public int PrefabInstances;
+            public bool HasUiGraphic;
+            public bool HasUiToolkitDocument;
+            public int EmptyLeafCount;
+        }
+
+        private sealed class SceneHotspot
+        {
+            public string Type;
+            public string Severity;
+            public string Name;
+            public string Path;
+            public int Count;
+            public int Depth;
+            public string Message;
+        }
+
+        private static readonly string[] DefaultContractRoots = { "Systems", "Managers", "Gameplay", "UIRoot" };
+
+        private static SceneMetricsSnapshot CollectSceneMetrics(bool includeComponentStats = true)
+        {
+            var scene = SceneManager.GetActiveScene();
+            var allObjects = GameObjectFinder.GetSceneObjects();
+            var snapshot = new SceneMetricsSnapshot
+            {
+                Scene = scene,
+                Objects = allObjects,
+                TotalObjects = allObjects.Count,
+                RootObjects = scene.rootCount
+            };
+
+            var componentBuffer = new List<Component>(8);
+            var uiDocumentType = FindTypeInAssemblies("UnityEngine.UIElements.UIDocument");
+
+            foreach (var go in allObjects)
+            {
+                if (go.activeInHierarchy) snapshot.ActiveObjects++;
+                else snapshot.DisabledObjects++;
+
+                var depth = GameObjectFinder.GetDepth(go);
+                if (depth > snapshot.MaxHierarchyDepth)
+                    snapshot.MaxHierarchyDepth = depth;
+
+                if (PrefabUtility.IsPartOfPrefabInstance(go) && !PrefabUtility.IsPartOfPrefabAsset(go))
+                    snapshot.PrefabInstances++;
+
+                componentBuffer.Clear();
+                go.GetComponents(componentBuffer);
+
+                if (componentBuffer.Count == 1 && go.transform.childCount == 0)
+                    snapshot.EmptyLeafCount++;
+
+                foreach (var component in componentBuffer)
+                {
+                    if (component == null)
+                        continue;
+
+                    var typeName = component.GetType().Name;
+                    if (includeComponentStats)
+                    {
+                        snapshot.ComponentCounts[typeName] = snapshot.ComponentCounts.TryGetValue(typeName, out var count)
+                            ? count + 1
+                            : 1;
+                    }
+
+                    if (component is Camera)
+                    {
+                        snapshot.Cameras++;
+                        if (go.CompareTag("MainCamera"))
+                            snapshot.MainCameraCount++;
+                    }
+                    else if (component is Light)
+                    {
+                        snapshot.Lights++;
+                    }
+                    else if (component is Canvas)
+                    {
+                        snapshot.Canvases++;
+                    }
+                    else if (component is EventSystem)
+                    {
+                        snapshot.EventSystems++;
+                    }
+                    else if (component is AudioListener)
+                    {
+                        snapshot.AudioListeners++;
+                    }
+                    else if (component is Graphic)
+                    {
+                        snapshot.HasUiGraphic = true;
+                    }
+                }
+
+                if (uiDocumentType != null && go.GetComponent(uiDocumentType) != null)
+                    snapshot.HasUiToolkitDocument = true;
+            }
+
+            return snapshot;
+        }
+
+        private static Type FindTypeInAssemblies(string fullName) => SkillsCommon.FindTypeByName(fullName);
+
+        private static object GetPropertyValue(object target, string name)
+        {
+            if (target == null)
+                return null;
+
+            if (target is JObject jObject)
+                return jObject.TryGetValue(name, StringComparison.OrdinalIgnoreCase, out var token) ? UnwrapJToken(token) : null;
+
+            if (target is JToken jToken)
+            {
+                var child = jToken[name];
+                return child != null ? UnwrapJToken(child) : null;
+            }
+
+            if (target is IDictionary<string, object> dict &&
+                dict.TryGetValue(name, out var directValue))
+            {
+                return directValue;
+            }
+
+            if (target is IDictionary legacyDict && legacyDict.Contains(name))
+                return legacyDict[name];
+
+            var property = target.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public);
+            if (property != null)
+                return property.GetValue(target);
+
+            var field = target.GetType().GetField(name, BindingFlags.Instance | BindingFlags.Public);
+            return field?.GetValue(target);
+        }
+
+        private static T GetPropertyValue<T>(object target, string name, T fallback = default)
+        {
+            var value = GetPropertyValue(target, name);
+            if (value == null)
+                return fallback;
+
+            if (value is T typed)
+                return typed;
+
+            try
+            {
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
+        private static IEnumerable<object> GetEnumerableProperty(object target, string name)
+        {
+            var value = GetPropertyValue(target, name);
+            if (value is IEnumerable enumerable && !(value is string))
+                return enumerable.Cast<object>();
+
+            return Enumerable.Empty<object>();
+        }
+
+        private static object UnwrapJToken(JToken token)
+        {
+            if (token == null)
+                return null;
+
+            return token.Type switch
+            {
+                JTokenType.Object => token as JObject,
+                JTokenType.Array => token as JArray,
+                JTokenType.Integer => token.Value<long>(),
+                JTokenType.Float => token.Value<double>(),
+                JTokenType.Boolean => token.Value<bool>(),
+                JTokenType.String => token.Value<string>(),
+                JTokenType.Null => null,
+                _ => ((JValue)token).Value
+            };
+        }
+
+        private static object[] BuildTopComponents(SceneMetricsSnapshot snapshot, int topComponentsLimit)
+        {
+            return snapshot.ComponentCounts
+                .Where(kv => kv.Key != "Transform")
+                .OrderByDescending(kv => kv.Value)
+                .Take(topComponentsLimit)
+                .Select(kv => (object)new { component = kv.Key, count = kv.Value })
+                .ToArray();
+        }
+
+        private static string[] ParseOptionalStringArray(string rawJson, string[] defaults)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+                return defaults?.ToArray() ?? Array.Empty<string>();
+
+            return JArray.Parse(rawJson)
+                .Values<string>()
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static List<SceneHotspot> CollectHotspots(IReadOnlyList<GameObject> allObjects, int deepHierarchyThreshold, int largeChildCountThreshold, int maxResults)
+        {
+            var hotspots = new List<SceneHotspot>();
+
+            foreach (var go in allObjects)
+            {
+                var depth = GameObjectFinder.GetDepth(go);
+                if (depth >= deepHierarchyThreshold)
+                {
+                    hotspots.Add(new SceneHotspot
+                    {
+                        Type = "DeepHierarchy",
+                        Severity = depth >= deepHierarchyThreshold + 3 ? "Warning" : "Info",
+                        Name = go.name,
+                        Path = GameObjectFinder.GetCachedPath(go),
+                        Depth = depth,
+                        Count = depth,
+                        Message = $"Hierarchy depth {depth} exceeds threshold {deepHierarchyThreshold}."
+                    });
+                }
+
+                if (go.transform.childCount >= largeChildCountThreshold)
+                {
+                    hotspots.Add(new SceneHotspot
+                    {
+                        Type = "LargeChildSet",
+                        Severity = go.transform.childCount >= largeChildCountThreshold * 2 ? "Warning" : "Info",
+                        Name = go.name,
+                        Path = GameObjectFinder.GetCachedPath(go),
+                        Count = go.transform.childCount,
+                        Message = $"{go.transform.childCount} direct children under one node."
+                    });
+                }
+            }
+
+            foreach (var group in allObjects.GroupBy(go => go.name).Where(g => g.Count() > 1))
+            {
+                hotspots.Add(new SceneHotspot
+                {
+                    Type = "DuplicateNameCluster",
+                    Severity = group.Count() >= 5 ? "Warning" : "Info",
+                    Name = group.Key,
+                    Count = group.Count(),
+                    Message = $"{group.Count()} objects share the name '{group.Key}'."
+                });
+            }
+
+            var emptyLeafGroups = allObjects
+                .Where(go => go.transform.childCount == 0 && go.GetComponents<Component>().Length == 1)
+                .GroupBy(go => go.transform.parent != null ? GameObjectFinder.GetCachedPath(go.transform.parent.gameObject) : "<root>")
+                .Where(g => g.Count() >= 3);
+
+            foreach (var group in emptyLeafGroups)
+            {
+                hotspots.Add(new SceneHotspot
+                {
+                    Type = "EmptyLeafCluster",
+                    Severity = "Info",
+                    Path = group.Key,
+                    Count = group.Count(),
+                    Message = $"{group.Count()} empty leaf objects are grouped under '{group.Key}'."
+                });
+            }
+
+            return hotspots
+                .OrderBy(h => GetSeverityRank(h.Severity))
+                .ThenByDescending(h => h.Count)
+                .ThenByDescending(h => h.Depth)
+                .Take(maxResults)
+                .ToList();
+        }
+
+        private static int GetSeverityRank(string severity)
+        {
+            switch (severity)
+            {
+                case "Error":
+                    return 0;
+                case "Warning":
+                    return 1;
+                default:
+                    return 2;
+            }
+        }
+
+        private static HashSet<string> ReadInstalledPackageIds()
+        {
+            var packageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var manifestPath = Path.Combine("Packages", "manifest.json");
+            if (!File.Exists(manifestPath))
+                return packageIds;
+
+            try
+            {
+                var manifest = JObject.Parse(File.ReadAllText(manifestPath, Encoding.UTF8));
+                if (manifest["dependencies"] is JObject dependencies)
+                {
+                    foreach (var dependency in dependencies.Properties())
+                        packageIds.Add(dependency.Name);
+                }
+            }
+            catch
+            {
+                // Ignore malformed manifest and fall back to empty detection.
+            }
+
+            return packageIds;
+        }
+
+        private static string DetectInputHandling(HashSet<string> packageIds)
+        {
+            var property = typeof(PlayerSettings).GetProperty("activeInputHandler", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                ?? typeof(PlayerSettings).GetProperty("activeInputHandling", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+
+            if (property != null)
+            {
+                try
+                {
+                    var value = property.GetValue(null);
+                    if (value != null)
+                        return value.ToString();
+                }
+                catch
+                {
+                    // Ignore reflection failure and fall back to package-based inference.
+                }
+            }
+
+            return packageIds.Contains("com.unity.inputsystem")
+                ? "InputSystemPackageInstalled"
+                : "LegacyInputManager";
+        }
+
+        private static string DetermineUiRoute(SceneMetricsSnapshot metrics, bool hasUiToolkitAssets)
+        {
+            var usesUgui = metrics.Canvases > 0 || metrics.HasUiGraphic;
+            var usesUiToolkit = metrics.HasUiToolkitDocument || hasUiToolkitAssets;
+
+            if (usesUgui && usesUiToolkit) return "Both";
+            if (usesUiToolkit) return "UIToolkit";
+            if (usesUgui) return "UGUI";
+            return "Unknown";
+        }
+
+        private static string DetermineProjectProfile(SceneMetricsSnapshot metrics, bool xrDetected, string uiRoute)
+        {
+            if (xrDetected)
+                return "XR";
+
+            var spriteRendererCount = metrics.ComponentCounts.TryGetValue(nameof(SpriteRenderer), out var spriteCount) ? spriteCount : 0;
+            var meshRendererCount = metrics.ComponentCounts.TryGetValue(nameof(MeshRenderer), out var meshCount) ? meshCount : 0;
+
+            if (uiRoute != "Unknown" && metrics.Canvases >= Math.Max(1, metrics.Cameras))
+                return "UI";
+
+            if (spriteRendererCount > meshRendererCount && spriteRendererCount > 0)
+                return "2D";
+
+            return "3D";
+        }
+
+        private static List<object> BuildSuggestedNextSkills(IEnumerable<object> findings)
+        {
+            var findingTypes = findings
+                .Select(f => GetPropertyValue<string>(f, "type", string.Empty))
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var suggestions = new List<object>
+            {
+                new { skill = "scene_context", reason = "Export a deeper scene snapshot for follow-up coding or review.", priority = 3 }
+            };
+
+            if (findingTypes.Contains("MissingScript") || findingTypes.Contains("MissingReference"))
+                suggestions.Add(new { skill = "batch_fix_missing_scripts", reason = "Use the validation output as input to preview missing-script cleanup.", priority = 1 });
+
+            if (findingTypes.Contains("DuplicateName") || findingTypes.Contains("DuplicateNameCluster"))
+                suggestions.Add(new { skill = "batch_standardize_naming", reason = "Normalize duplicate or inconsistent object names before more automation.", priority = 2 });
+
+            if (findingTypes.Contains("EmptyGameObject") || findingTypes.Contains("EmptyLeafCluster"))
+                suggestions.Add(new { skill = "batch_cleanup_temp_objects", reason = "Preview cleanup for empty or temporary helper objects.", priority = 2 });
+
+            if (findingTypes.Contains("MissingEventSystem") || findingTypes.Contains("MissingCanvas"))
+                suggestions.Add(new { skill = "ui_create_canvas", reason = "Repair missing UI infrastructure before adding more UI automation.", priority = 1 });
+
+            if (findingTypes.Contains("MissingRoot") || findingTypes.Contains("MissingTagDefinition") || findingTypes.Contains("MissingLayerDefinition"))
+                suggestions.Add(new { skill = "scene_contract_validate", reason = "Re-run contract validation after aligning scene conventions.", priority = 2 });
+
+            return suggestions
+                .GroupBy(s => GetPropertyValue<string>(s, "skill", string.Empty), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.OrderBy(s => GetPropertyValue<int>(s, "priority", 99)).First())
+                .Where(s => SkillRouter.HasSkill(GetPropertyValue<string>(s, "skill", string.Empty)))
+                .OrderBy(s => GetPropertyValue<int>(s, "priority", 99))
+                .Cast<object>()
+                .ToList();
+        }
+
+        private static List<object> DeduplicateFindings(IEnumerable<object> findings)
+        {
+            var result = new List<object>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var finding in findings)
+            {
+                var key = string.Join("|",
+                    GetPropertyValue<string>(finding, "type", string.Empty),
+                    GetPropertyValue<string>(finding, "path", string.Empty),
+                    GetPropertyValue<string>(finding, "message", string.Empty));
+
+                if (seen.Add(key))
+                    result.Add(finding);
+            }
+
+            return result;
+        }
+
+        [UnitySkill("scene_component_stats", "Get detailed scene component statistics and key infrastructure counts.",
+            Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
+            Tags = new[] { "scene", "components", "statistics", "overview" },
+            Outputs = new[] { "sceneName", "stats", "keyFacilities", "topComponents" },
+            ReadOnly = true)]
+        public static object SceneComponentStats(int topComponentsLimit = 15)
+        {
+            var metrics = CollectSceneMetrics(includeComponentStats: true);
+            var totalObjects = Math.Max(metrics.TotalObjects, 1);
+
+            return new
+            {
+                success = true,
+                sceneName = metrics.Scene.name,
+                stats = new
+                {
+                    totalObjects = metrics.TotalObjects,
+                    activeObjects = metrics.ActiveObjects,
+                    inactiveObjects = metrics.TotalObjects - metrics.ActiveObjects,
+                    rootObjects = metrics.RootObjects,
+                    maxHierarchyDepth = metrics.MaxHierarchyDepth,
+                    prefabInstances = metrics.PrefabInstances,
+                    disabledObjects = metrics.DisabledObjects,
+                    disabledRatio = (float)Math.Round(metrics.DisabledObjects / (double)totalObjects, 3),
+                    emptyLeafObjects = metrics.EmptyLeafCount,
+                    cameras = metrics.Cameras,
+                    mainCameras = metrics.MainCameraCount,
+                    lights = metrics.Lights,
+                    canvases = metrics.Canvases,
+                    eventSystems = metrics.EventSystems,
+                    audioListeners = metrics.AudioListeners
+                },
+                keyFacilities = new
+                {
+                    hasMainCamera = metrics.MainCameraCount > 0,
+                    hasLight = metrics.Lights > 0,
+                    hasCanvas = metrics.Canvases > 0,
+                    hasEventSystem = metrics.EventSystems > 0,
+                    hasAudioListener = metrics.AudioListeners > 0,
+                    hasUgui = metrics.Canvases > 0 || metrics.HasUiGraphic,
+                    hasUiToolkit = metrics.HasUiToolkitDocument
+                },
+                topComponents = BuildTopComponents(metrics, topComponentsLimit)
+            };
+        }
+
+        [UnitySkill("scene_find_hotspots", "Find deep hierarchies, large child groups, duplicate-name clusters, and empty-node hotspots in the current scene.",
+            Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
+            Tags = new[] { "scene", "hotspots", "hierarchy", "diagnostics" },
+            Outputs = new[] { "sceneName", "hotspotCount", "hotspots" },
+            ReadOnly = true)]
+        public static object SceneFindHotspots(int deepHierarchyThreshold = 8, int largeChildCountThreshold = 25, int maxResults = 20)
+        {
+            var metrics = CollectSceneMetrics(includeComponentStats: false);
+            var hotspots = CollectHotspots(metrics.Objects, deepHierarchyThreshold, largeChildCountThreshold, maxResults);
+
+            return new
+            {
+                success = true,
+                sceneName = metrics.Scene.name,
+                thresholds = new
+                {
+                    deepHierarchyThreshold,
+                    largeChildCountThreshold
+                },
+                hotspotCount = hotspots.Count,
+                hotspots = hotspots.Select(h => new
+                {
+                    type = h.Type,
+                    severity = h.Severity,
+                    name = h.Name,
+                    path = h.Path,
+                    count = h.Count,
+                    depth = h.Depth,
+                    message = h.Message
+                }).ToArray()
+            };
+        }
+
+        [UnitySkill("scene_health_check", "Run a read-only scene health report: missing scripts, missing references, duplicate names, empty nodes, deep hierarchy, and missing infrastructure.",
+            Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
+            Tags = new[] { "scene", "health", "validation", "diagnostics" },
+            Outputs = new[] { "sceneName", "summary", "findings", "hotspots", "suggestedNextSkills" },
+            ReadOnly = true)]
+        public static object SceneHealthCheck(int issueLimit = 100, int deepHierarchyThreshold = 8, int largeChildCountThreshold = 25)
+        {
+            var metrics = CollectSceneMetrics(includeComponentStats: false);
+            var findings = new List<object>();
+
+            var sceneValidation = ValidationSkills.ValidateScene(checkEmptyGameObjects: true);
+            foreach (var issue in GetEnumerableProperty(sceneValidation, "issues"))
+            {
+                findings.Add(new
+                {
+                    type = GetPropertyValue<string>(issue, "type", "Unknown"),
+                    severity = GetPropertyValue<string>(issue, "severity", "Info"),
+                    gameObject = GetPropertyValue<string>(issue, "gameObject", null),
+                    path = GetPropertyValue<string>(issue, "path", null),
+                    message = GetPropertyValue<string>(issue, "message", null),
+                    count = GetPropertyValue<int>(issue, "count", 0),
+                    source = "validate_scene"
+                });
+            }
+
+            var missingReferences = ValidationSkills.ValidateMissingReferences(issueLimit);
+            foreach (var issue in GetEnumerableProperty(missingReferences, "issues"))
+            {
+                findings.Add(new
+                {
+                    type = "MissingReference",
+                    severity = "Error",
+                    gameObject = GetPropertyValue<string>(issue, "gameObject", null),
+                    path = GetPropertyValue<string>(issue, "path", null),
+                    message = $"{GetPropertyValue<string>(issue, "component", "Component")}.{GetPropertyValue<string>(issue, "property", "property")} is missing a reference.",
+                    source = "validate_missing_references"
+                });
+            }
+
+            if (metrics.MainCameraCount == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingMainCamera",
+                    severity = "Error",
+                    message = "No MainCamera-tagged camera was found in the active scene.",
+                    source = "scene_health"
+                });
+            }
+
+            if (metrics.Lights == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingLight",
+                    severity = "Warning",
+                    message = "No Light component was found in the active scene.",
+                    source = "scene_health"
+                });
+            }
+
+            if ((metrics.Canvases > 0 || metrics.HasUiGraphic) && metrics.EventSystems == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingEventSystem",
+                    severity = "Error",
+                    message = "UGUI objects exist but no EventSystem was found.",
+                    source = "scene_health"
+                });
+            }
+
+            if (metrics.HasUiGraphic && metrics.Canvases == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingCanvas",
+                    severity = "Error",
+                    message = "UI graphics exist but no Canvas was found.",
+                    source = "scene_health"
+                });
+            }
+
+            if (metrics.Cameras > 0 && metrics.AudioListeners == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingAudioListener",
+                    severity = "Warning",
+                    message = "Scene contains cameras but no AudioListener component was found.",
+                    source = "scene_health"
+                });
+            }
+
+            var hotspots = CollectHotspots(metrics.Objects, deepHierarchyThreshold, largeChildCountThreshold, issueLimit);
+            foreach (var hotspot in hotspots.Where(h => h.Type != "DuplicateNameCluster"))
+            {
+                findings.Add(new
+                {
+                    type = hotspot.Type,
+                    severity = hotspot.Severity,
+                    path = hotspot.Path,
+                    message = hotspot.Message,
+                    count = hotspot.Count,
+                    depth = hotspot.Depth,
+                    source = "scene_hotspots"
+                });
+            }
+
+            var uniqueFindings = DeduplicateFindings(findings);
+            var visibleFindings = uniqueFindings.Take(issueLimit).ToArray();
+            var suggestedNextSkills = BuildSuggestedNextSkills(visibleFindings);
+
+            return new
+            {
+                success = true,
+                sceneName = metrics.Scene.name,
+                summary = new
+                {
+                    totalFindings = uniqueFindings.Count,
+                    shownFindings = visibleFindings.Length,
+                    errors = visibleFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Error"),
+                    warnings = visibleFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Warning"),
+                    info = visibleFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Info"),
+                    truncated = uniqueFindings.Count > visibleFindings.Length
+                },
+                findings = visibleFindings,
+                hotspots = hotspots.Select(h => new
+                {
+                    type = h.Type,
+                    severity = h.Severity,
+                    name = h.Name,
+                    path = h.Path,
+                    count = h.Count,
+                    depth = h.Depth,
+                    message = h.Message
+                }).ToArray(),
+                suggestedNextSkills = suggestedNextSkills.ToArray()
+            };
+        }
+
+        [UnitySkill("scene_contract_validate", "Validate default scene conventions (Systems/Managers/UIRoot/Gameplay, UI infrastructure, tags, and layers).",
+            Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
+            Tags = new[] { "scene", "contract", "convention", "validation" },
+            Outputs = new[] { "sceneName", "summary", "findings", "checkedRoots" },
+            ReadOnly = true)]
+        public static object SceneContractValidate(
+            string requiredRootsJson = null,
+            string requiredTagsJson = null,
+            string requiredLayersJson = null,
+            bool requireEventSystemForUi = true)
+        {
+            string[] requiredRoots;
+            string[] requiredTags;
+            string[] requiredLayers;
+
+            try
+            {
+                requiredRoots = ParseOptionalStringArray(requiredRootsJson, DefaultContractRoots);
+                requiredTags = ParseOptionalStringArray(requiredTagsJson, Array.Empty<string>());
+                requiredLayers = ParseOptionalStringArray(requiredLayersJson, Array.Empty<string>());
+            }
+            catch (Exception ex)
+            {
+                return new { success = false, error = $"Invalid contract JSON array: {ex.Message}" };
+            }
+
+            var metrics = CollectSceneMetrics(includeComponentStats: false);
+            var findings = new List<object>();
+            var rootNames = metrics.Scene.GetRootGameObjects()
+                .Select(go => go.name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var requiredRoot in requiredRoots)
+            {
+                if (!rootNames.Contains(requiredRoot))
+                {
+                    findings.Add(new
+                    {
+                        type = "MissingRoot",
+                        severity = "Warning",
+                        name = requiredRoot,
+                        message = $"Required root '{requiredRoot}' is missing."
+                    });
+                }
+            }
+
+            if (metrics.MainCameraCount == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingMainCamera",
+                    severity = "Error",
+                    message = "Convention requires a MainCamera-tagged camera."
+                });
+            }
+
+            if (metrics.Lights == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingLight",
+                    severity = "Warning",
+                    message = "Convention expects at least one Light in the scene."
+                });
+            }
+
+            if (metrics.HasUiGraphic && metrics.Canvases == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingCanvas",
+                    severity = "Error",
+                    message = "UGUI graphics were found but no Canvas exists."
+                });
+            }
+
+            if (requireEventSystemForUi && (metrics.Canvases > 0 || metrics.HasUiGraphic) && metrics.EventSystems == 0)
+            {
+                findings.Add(new
+                {
+                    type = "MissingEventSystem",
+                    severity = "Error",
+                    message = "UGUI infrastructure exists but EventSystem is missing."
+                });
+            }
+
+            var definedTags = new HashSet<string>(InternalEditorUtility.tags, StringComparer.OrdinalIgnoreCase);
+            foreach (var requiredTag in requiredTags)
+            {
+                if (!definedTags.Contains(requiredTag))
+                {
+                    findings.Add(new
+                    {
+                        type = "MissingTagDefinition",
+                        severity = "Warning",
+                        name = requiredTag,
+                        message = $"Required tag '{requiredTag}' is not defined in TagManager."
+                    });
+                }
+            }
+
+            var definedLayers = new HashSet<string>(InternalEditorUtility.layers, StringComparer.OrdinalIgnoreCase);
+            foreach (var requiredLayer in requiredLayers)
+            {
+                if (!definedLayers.Contains(requiredLayer))
+                {
+                    findings.Add(new
+                    {
+                        type = "MissingLayerDefinition",
+                        severity = "Warning",
+                        name = requiredLayer,
+                        message = $"Required layer '{requiredLayer}' is not defined in TagManager."
+                    });
+                }
+            }
+
+            var uniqueFindings = DeduplicateFindings(findings);
+            return new
+            {
+                success = true,
+                sceneName = metrics.Scene.name,
+                checkedRoots = requiredRoots,
+                checkedTags = requiredTags,
+                checkedLayers = requiredLayers,
+                summary = new
+                {
+                    passed = uniqueFindings.Count == 0,
+                    errors = uniqueFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Error"),
+                    warnings = uniqueFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Warning"),
+                    info = uniqueFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Info")
+                },
+                findings = uniqueFindings.ToArray()
+            };
+        }
+
+        [UnitySkill("project_stack_detect", "Detect the current project's render pipeline, UI route, input system, major packages, and common folder conventions.",
+            Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
+            Tags = new[] { "project", "stack", "detect", "pipeline", "packages" },
+            Outputs = new[] { "unityVersion", "renderPipeline", "ui", "input", "packages", "projectProfile" },
+            ReadOnly = true)]
+        public static object ProjectStackDetect()
+        {
+            var metrics = CollectSceneMetrics(includeComponentStats: true);
+            var packageIds = ReadInstalledPackageIds();
+            var hasUiToolkitAssets = AssetDatabase.FindAssets("t:VisualTreeAsset", new[] { "Assets" }).Length > 0
+                || AssetDatabase.FindAssets("t:PanelSettings", new[] { "Assets" }).Length > 0;
+
+            var cinemachineDetected = packageIds.Contains("com.unity.cinemachine")
+                || FindTypeInAssemblies("Cinemachine.CinemachineBrain") != null
+                || FindTypeInAssemblies("Unity.Cinemachine.CinemachineBrain") != null;
+            var timelineDetected = packageIds.Contains("com.unity.timeline")
+                || AssetDatabase.FindAssets("t:TimelineAsset", new[] { "Assets" }).Length > 0;
+            var navMeshDetected = packageIds.Contains("com.unity.ai.navigation")
+                || FindTypeInAssemblies("Unity.AI.Navigation.NavMeshSurface") != null;
+            var xrDetected = packageIds.Contains("com.unity.xr.interaction.toolkit")
+                || packageIds.Contains("com.unity.xr.management")
+                || FindTypeInAssemblies("UnityEngine.XR.Interaction.Toolkit.XRInteractionManager") != null;
+            var proBuilderDetected = packageIds.Contains("com.unity.probuilder")
+                || FindTypeInAssemblies("UnityEngine.ProBuilder.ProBuilderMesh") != null;
+            var inputSystemDetected = packageIds.Contains("com.unity.inputsystem");
+            var uiRoute = DetermineUiRoute(metrics, hasUiToolkitAssets);
+            var inputHandling = DetectInputHandling(packageIds);
+            var testAsmdefs = AssetDatabase.FindAssets("t:AssemblyDefinitionAsset", new[] { "Assets" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(path => !string.IsNullOrEmpty(path))
+                .ToArray();
+
+            return new
+            {
+                success = true,
+                unityVersion = Application.unityVersion,
+                renderPipeline = new
+                {
+                    type = ProjectSkills.DetectRenderPipeline().ToString(),
+                    defaultShader = ProjectSkills.GetDefaultShaderName(),
+                    unlitShader = ProjectSkills.GetUnlitShaderName()
+                },
+                input = new
+                {
+                    mode = inputHandling,
+                    inputSystemInstalled = inputSystemDetected,
+                    legacyInputManagerAvailable = !inputSystemDetected || inputHandling.IndexOf("Both", StringComparison.OrdinalIgnoreCase) >= 0
+                },
+                ui = new
+                {
+                    route = uiRoute,
+                    uguiDetected = metrics.Canvases > 0 || metrics.HasUiGraphic || packageIds.Contains("com.unity.ugui"),
+                    uiToolkitDetected = metrics.HasUiToolkitDocument || hasUiToolkitAssets
+                },
+                packages = new
+                {
+                    cinemachine = cinemachineDetected,
+                    timeline = timelineDetected,
+                    navMesh = navMeshDetected,
+                    xr = xrDetected,
+                    proBuilder = proBuilderDetected,
+                    inputSystem = inputSystemDetected
+                },
+                tests = new
+                {
+                    detected = Directory.Exists("Assets/Tests") || testAsmdefs.Any(path => Path.GetFileNameWithoutExtension(path).IndexOf("Test", StringComparison.OrdinalIgnoreCase) >= 0),
+                    nunitLoaded = AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().Name.IndexOf("nunit", StringComparison.OrdinalIgnoreCase) >= 0)
+                },
+                projectFolders = new
+                {
+                    scripts = Directory.Exists("Assets/Scripts"),
+                    scenes = Directory.Exists("Assets/Scenes"),
+                    prefabs = Directory.Exists("Assets/Prefabs"),
+                    materials = Directory.Exists("Assets/Materials"),
+                    tests = Directory.Exists("Assets/Tests")
+                },
+                projectProfile = DetermineProjectProfile(metrics, xrDetected, uiRoute)
+            };
+        }
+
+        [UnitySkill("scene_analyze", "Analyze the active scene and project context in one pass. Returns summary, health findings, stack detection, recommendations, and suggested next skills.",
+            Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
+            Tags = new[] { "scene", "analyze", "overview", "context", "recommendations" },
+            Outputs = new[] { "summary", "stats", "findings", "recommendations", "suggestedNextSkills" },
+            ReadOnly = true)]
+        public static object SceneAnalyze(int topComponentsLimit = 10, int issueLimit = 100, int deepHierarchyThreshold = 8, int largeChildCountThreshold = 25)
+        {
+            var metrics = CollectSceneMetrics(includeComponentStats: true);
+            var componentStats = SceneComponentStats(topComponentsLimit);
+            var health = SceneHealthCheck(issueLimit, deepHierarchyThreshold, largeChildCountThreshold);
+            var contract = SceneContractValidate();
+            var stack = ProjectStackDetect();
+
+            var allFindings = new List<object>();
+            allFindings.AddRange(GetEnumerableProperty(health, "findings"));
+            allFindings.AddRange(GetEnumerableProperty(contract, "findings"));
+            var dedupedFindings = DeduplicateFindings(allFindings);
+            var warnings = dedupedFindings
+                .Where(f => GetPropertyValue<string>(f, "severity", "Info") != "Error")
+                .Take(Math.Min(20, dedupedFindings.Count))
+                .ToArray();
+
+            var recommendations = BuildSuggestedNextSkills(dedupedFindings);
+            var projectProfile = GetPropertyValue<string>(stack, "projectProfile", "Unknown");
+            var errorCount = dedupedFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Error");
+            var warningCount = dedupedFindings.Count(f => GetPropertyValue<string>(f, "severity", "Info") == "Warning");
+
+            return new
+            {
+                success = true,
+                sceneName = metrics.Scene.name,
+                summary = new
+                {
+                    headline = $"{projectProfile} scene with {metrics.TotalObjects} objects, {errorCount} errors, and {warningCount} warnings detected.",
+                    projectProfile,
+                    totalObjects = metrics.TotalObjects,
+                    activeObjects = metrics.ActiveObjects,
+                    errors = errorCount,
+                    warnings = warningCount
+                },
+                stats = GetPropertyValue(componentStats, "stats"),
+                findings = dedupedFindings.ToArray(),
+                warnings,
+                recommendations = recommendations.ToArray(),
+                suggestedNextSkills = recommendations.Select(r => new
+                {
+                    skill = GetPropertyValue<string>(r, "skill", null),
+                    reason = GetPropertyValue<string>(r, "reason", null)
+                }).ToArray(),
+                componentStats,
+                health,
+                contract,
+                stack
+            };
         }
 
         [UnitySkill("scene_summarize", "Get a structured summary of the current scene (object counts, component stats, hierarchy depth)",
@@ -284,8 +1215,7 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object ScriptAnalyze(string scriptName, bool includePrivate = false)
         {
-            var type = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new Type[0]; } })
+            var type = SkillsCommon.GetAllLoadedTypes()
                 .FirstOrDefault(t => t.Name.Equals(scriptName, StringComparison.OrdinalIgnoreCase) &&
                                      (typeof(MonoBehaviour).IsAssignableFrom(t) ||
                                       typeof(ScriptableObject).IsAssignableFrom(t) ||
@@ -972,7 +1902,7 @@ namespace UnitySkills
             var dir = Path.GetDirectoryName(savePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-            File.WriteAllText(savePath, sb.ToString(), new UTF8Encoding(false));
+            File.WriteAllText(savePath, sb.ToString(), SkillsCommon.Utf8NoBom);
             AssetDatabase.ImportAsset(savePath);
 
             return new
@@ -1453,7 +2383,7 @@ namespace UnitySkills
                 var dir = Path.GetDirectoryName(savePath);
                 if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
-                File.WriteAllText(savePath, md, new UTF8Encoding(false));
+                File.WriteAllText(savePath, md, SkillsCommon.Utf8NoBom);
                 AssetDatabase.ImportAsset(savePath);
                 savedPath = savePath;
             }
@@ -1488,8 +2418,7 @@ namespace UnitySkills
                 return new { success = false, error = "scriptName is required" };
 
             // Find the entry script type
-            var allTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new Type[0]; } })
+            var allTypes = SkillsCommon.GetAllLoadedTypes()
                 .Where(t => t.IsClass && IsUserScript(t))
                 .ToList();
 
@@ -1860,7 +2789,7 @@ namespace UnitySkills
 
             // 3. High-poly meshes without LOD
             var meshFilters = FindHelper.FindAll<MeshFilter>();
-            var highPoly = meshFilters.Where(mf => mf.sharedMesh != null && mf.sharedMesh.triangles.Length / 3 > 10000
+            var highPoly = meshFilters.Where(mf => mf.sharedMesh != null && SkillsCommon.GetTriangleCount(mf.sharedMesh) > 10000
                 && mf.GetComponent<LODGroup>() == null).ToArray();
             if (highPoly.Length > 0)
                 hints.Add(new { priority = 2, category = "Geometry", issue = $"{highPoly.Length} high-poly meshes (>10k tris) without LOD",
@@ -1885,6 +2814,229 @@ namespace UnitySkills
                     suggestion = "Scene looks good", fixSkill = (string)null });
 
             return new { success = true, hintCount = hints.Count, hints };
+        }
+
+        // ==================================================================================
+        // Scene Diff
+        // ==================================================================================
+
+        [UnitySkill("scene_diff", "Compare current scene against a previous snapshot to see what changed. Call without snapshotJson to capture a snapshot; call with snapshotJson to compare.",
+            Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
+            Tags = new[] { "scene", "diff", "compare", "before-after", "changes", "snapshot" },
+            Outputs = new[] { "mode", "snapshot", "added", "removed", "modified", "summary" },
+            ReadOnly = true)]
+        public static object SceneDiff(string snapshotJson = null)
+        {
+            if (string.IsNullOrWhiteSpace(snapshotJson))
+            {
+                // Capture mode: return current scene snapshot
+                var snapshot = CaptureSceneSnapshot();
+                return new
+                {
+                    success = true,
+                    mode = "snapshot",
+                    sceneName = SceneManager.GetActiveScene().name,
+                    objectCount = snapshot.Count,
+                    snapshot
+                };
+            }
+
+            // Compare mode: parse previous snapshot and diff
+            JArray previousSnapshot;
+            try { previousSnapshot = JArray.Parse(snapshotJson); }
+            catch (Exception ex) { return new { error = $"Invalid snapshotJson: {ex.Message}" }; }
+
+            var previousMap = new Dictionary<int, JObject>();
+            foreach (var item in previousSnapshot)
+            {
+                var id = item["instanceId"]?.Value<int>() ?? 0;
+                if (id != 0)
+                    previousMap[id] = item as JObject;
+            }
+
+            var currentSnapshot = CaptureSceneSnapshot();
+            var currentMap = new Dictionary<int, Dictionary<string, object>>();
+            foreach (var item in currentSnapshot)
+            {
+                var id = GetPropertyValue<int>(item, "instanceId", 0);
+                if (id != 0)
+                    currentMap[id] = item as Dictionary<string, object> ?? new Dictionary<string, object>();
+            }
+
+            var added = new List<object>();
+            var removed = new List<object>();
+            var modified = new List<object>();
+
+            // Find added (in current but not in previous)
+            foreach (var kvp in currentMap)
+            {
+                if (!previousMap.ContainsKey(kvp.Key))
+                {
+                    added.Add(new
+                    {
+                        instanceId = kvp.Key,
+                        name = GetPropertyValue<string>(kvp.Value, "name", ""),
+                        path = GetPropertyValue<string>(kvp.Value, "path", "")
+                    });
+                }
+            }
+
+            // Find removed (in previous but not in current)
+            foreach (var kvp in previousMap)
+            {
+                if (!currentMap.ContainsKey(kvp.Key))
+                {
+                    removed.Add(new
+                    {
+                        instanceId = kvp.Key,
+                        name = kvp.Value["name"]?.ToString() ?? "",
+                        path = kvp.Value["path"]?.ToString() ?? ""
+                    });
+                }
+            }
+
+            // Find modified (same instanceId, different properties)
+            foreach (var kvp in currentMap)
+            {
+                if (previousMap.TryGetValue(kvp.Key, out var prev))
+                {
+                    var changes = new List<string>();
+                    var curName = GetPropertyValue<string>(kvp.Value, "name", "");
+                    var prevName = prev["name"]?.ToString() ?? "";
+                    if (!string.Equals(curName, prevName, StringComparison.Ordinal))
+                        changes.Add("name");
+
+                    var curPath = GetPropertyValue<string>(kvp.Value, "path", "");
+                    var prevPath = prev["path"]?.ToString() ?? "";
+                    if (!string.Equals(curPath, prevPath, StringComparison.Ordinal))
+                        changes.Add("path");
+
+                    var curComponents = GetPropertyValue<string>(kvp.Value, "componentList", "");
+                    var prevComponents = prev["componentList"]?.ToString() ?? "";
+                    if (!string.Equals(curComponents, prevComponents, StringComparison.Ordinal))
+                        changes.Add("components");
+
+                    if (HasVectorDifference(kvp.Value, prev, "position"))
+                        changes.Add("position");
+
+                    if (HasVectorDifference(kvp.Value, prev, "rotation"))
+                        changes.Add("rotation");
+
+                    if (HasVectorDifference(kvp.Value, prev, "scale"))
+                        changes.Add("scale");
+
+                    if (changes.Count > 0)
+                    {
+                        modified.Add(new
+                        {
+                            instanceId = kvp.Key,
+                            name = curName,
+                            path = curPath,
+                            changes = changes.ToArray()
+                        });
+                    }
+                }
+            }
+
+            return new
+            {
+                success = true,
+                mode = "diff",
+                sceneName = SceneManager.GetActiveScene().name,
+                summary = new { addedCount = added.Count, removedCount = removed.Count, modifiedCount = modified.Count },
+                added = added.ToArray(),
+                removed = removed.ToArray(),
+                modified = modified.ToArray()
+            };
+        }
+
+        private static List<object> CaptureSceneSnapshot()
+        {
+            var snapshot = new List<object>();
+            var activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.isLoaded)
+                return snapshot;
+
+            var rootObjects = Resources.FindObjectsOfTypeAll<GameObject>()
+                .Where(go =>
+                    go != null &&
+                    go.hideFlags == HideFlags.None &&
+                    !EditorUtility.IsPersistent(go) &&
+                    go.scene.IsValid() &&
+                    go.scene.handle == activeScene.handle &&
+                    go.transform.parent == null)
+                .OrderBy(go => go.transform.GetSiblingIndex())
+                .ThenBy(go => go.name, StringComparer.Ordinal)
+                .ToArray();
+
+            foreach (var root in rootObjects)
+            {
+                CaptureSceneSnapshotRecursive(root, activeScene, snapshot);
+            }
+
+            return snapshot;
+        }
+
+        private static void CaptureSceneSnapshotRecursive(GameObject go, Scene activeScene, List<object> snapshot)
+        {
+            if (go == null || go.hideFlags != HideFlags.None)
+                return;
+            if (!go.scene.IsValid() || go.scene.handle != activeScene.handle)
+                return;
+
+            var components = go.GetComponents<Component>()
+                .Where(c => c != null)
+                .Select(c => c.GetType().Name)
+                .ToArray();
+            var t = go.transform;
+
+            snapshot.Add(new Dictionary<string, object>
+            {
+                ["instanceId"] = go.GetInstanceID(),
+                ["name"] = go.name,
+                ["path"] = GameObjectFinder.GetPath(go),
+                ["componentList"] = string.Join(",", components),
+                ["components"] = components,
+                ["position"] = new { x = t.localPosition.x, y = t.localPosition.y, z = t.localPosition.z },
+                ["rotation"] = new { x = t.localEulerAngles.x, y = t.localEulerAngles.y, z = t.localEulerAngles.z },
+                ["scale"] = new { x = t.localScale.x, y = t.localScale.y, z = t.localScale.z }
+            });
+
+            for (var i = 0; i < t.childCount; i++)
+            {
+                CaptureSceneSnapshotRecursive(t.GetChild(i).gameObject, activeScene, snapshot);
+            }
+        }
+
+        private static bool HasVectorDifference(
+            IDictionary<string, object> current,
+            JObject previous,
+            string propertyName,
+            float tolerance = 0.0001f)
+        {
+            if (current == null || previous == null)
+                return false;
+
+            var currentToken = current.TryGetValue(propertyName, out var currentValue)
+                ? JToken.FromObject(currentValue)
+                : null;
+            var previousToken = previous[propertyName];
+            if (currentToken == null || previousToken == null)
+                return false;
+
+            return HasNumericDifference(currentToken["x"], previousToken["x"], tolerance) ||
+                   HasNumericDifference(currentToken["y"], previousToken["y"], tolerance) ||
+                   HasNumericDifference(currentToken["z"], previousToken["z"], tolerance);
+        }
+
+        private static bool HasNumericDifference(JToken current, JToken previous, float tolerance)
+        {
+            if (current == null || previous == null)
+                return false;
+
+            var currentValue = current.Value<float>();
+            var previousValue = previous.Value<float>();
+            return Mathf.Abs(currentValue - previousValue) > tolerance;
         }
     }
 }

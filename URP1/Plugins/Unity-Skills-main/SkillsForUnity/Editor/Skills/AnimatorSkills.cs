@@ -140,12 +140,8 @@ namespace UnitySkills
         {
             if (Validate.Required(paramName, "paramName") is object err) return err;
 
-            var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (animator, error) = GameObjectFinder.FindComponentOrError<Animator>(name, instanceId, path);
             if (error != null) return error;
-
-            var animator = go.GetComponent<Animator>();
-            if (animator == null)
-                return new { error = $"No Animator component on {go.name}" };
 
             WorkflowManager.SnapshotObject(animator);
             Undo.RecordObject(animator, "Set Animator Parameter");
@@ -154,16 +150,16 @@ namespace UnitySkills
             {
                 case "float":
                     animator.SetFloat(paramName, floatValue);
-                    return new { success = true, gameObject = go.name, parameter = paramName, value = floatValue };
+                    return new { success = true, gameObject = animator.gameObject.name, parameter = paramName, value = floatValue };
                 case "int":
                     animator.SetInteger(paramName, intValue);
-                    return new { success = true, gameObject = go.name, parameter = paramName, value = intValue };
+                    return new { success = true, gameObject = animator.gameObject.name, parameter = paramName, value = intValue };
                 case "bool":
                     animator.SetBool(paramName, boolValue);
-                    return new { success = true, gameObject = go.name, parameter = paramName, value = boolValue };
+                    return new { success = true, gameObject = animator.gameObject.name, parameter = paramName, value = boolValue };
                 case "trigger":
                     animator.SetTrigger(paramName);
-                    return new { success = true, gameObject = go.name, parameter = paramName, triggered = true };
+                    return new { success = true, gameObject = animator.gameObject.name, parameter = paramName, triggered = true };
                 default:
                     return new { error = $"Unknown parameter type: {paramType}" };
             }
@@ -178,16 +174,12 @@ namespace UnitySkills
         {
             if (Validate.Required(stateName, "stateName") is object err1) return err1;
 
-            var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (animator, error) = GameObjectFinder.FindComponentOrError<Animator>(name, instanceId, path);
             if (error != null) return error;
-
-            var animator = go.GetComponent<Animator>();
-            if (animator == null)
-                return new { error = $"No Animator component on {go.name}" };
 
             animator.Play(stateName, layer, normalizedTime);
 
-            return new { success = true, gameObject = go.name, state = stateName, layer };
+            return new { success = true, gameObject = animator.gameObject.name, state = stateName, layer };
         }
 
         [UnitySkill("animator_get_info", "Get Animator component information (supports name/instanceId/path)",
@@ -198,12 +190,8 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object AnimatorGetInfo(string name = null, int instanceId = 0, string path = null)
         {
-            var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (animator, error) = GameObjectFinder.FindComponentOrError<Animator>(name, instanceId, path);
             if (error != null) return error;
-
-            var animator = go.GetComponent<Animator>();
-            if (animator == null)
-                return new { error = $"No Animator component on {go.name}" };
 
             var controllerPath = animator.runtimeAnimatorController != null
                 ? AssetDatabase.GetAssetPath(animator.runtimeAnimatorController)
@@ -211,8 +199,8 @@ namespace UnitySkills
 
             return new
             {
-                gameObject = go.name,
-                instanceId = go.GetInstanceID(),
+                gameObject = animator.gameObject.name,
+                instanceId = animator.gameObject.GetInstanceID(),
                 hasController = animator.runtimeAnimatorController != null,
                 controllerPath,
                 speed = animator.speed,

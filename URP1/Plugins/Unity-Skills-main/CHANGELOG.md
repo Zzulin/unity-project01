@@ -2,6 +2,123 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [1.8.0] - 2026-04-24
+
+### Added
+- **YooAsset 资源管理模块** — 新增 40 个 Skill（`yooasset_*`），覆盖资源包构建、加载、释放、更新、文件系统查询和 PlayMode 模拟，基于反射实现零编译依赖（`#if YOO_ASSET`）。
+- **Netcode 网络模块** — 新增 33 个 Skill（`netcode_*`），覆盖 NetworkManager 创建/配置、NetworkObject/NetworkTransform 管理、Prefab 列表、Scene Management、Transport 配置和运行时启停（`#if NETCODE_GAMEOBJECTS`）。
+- **Shader Graph 模块** — 新增 23 个 Skill（`shadergraph_*`），支持创建/查看/编辑 Shader Graph 和 Sub Graph 资产，含节点增删、连线、属性管理等操作。配套 `ShaderGraphReflectionHelper`（2697 行）和 `ShaderGraphNodeRegistry` 实现类型安全的反射编辑。
+- **DOTween 动画模块** — 新增 21 个 Skill（`dotween_*`），覆盖 DOTween 状态查询、Settings 配置、Tween/Sequence 脚本生成，以及 DOTween Pro Animation 组件的完整 CRUD。配套 `DOTweenReflectionHelper` 和 `DOTweenPresenceDetector` 实现纯反射调用。
+- **PostProcess 后处理模块** — 新增 20 个 Skill（`postprocess_*`），提供 SRP 后处理效果的统一管理，含 Bloom、DoF、Tonemapping、Vignette、Color Adjustments 快捷配置。
+- **Volume 体积系统模块** — 新增 18 个 Skill（`volume_*`），支持 VolumeProfile 创建/管理、VolumeComponent 增删改查、批量参数设置。
+- **Graphics 图形设置模块** — 新增 11 个 Skill（`graphics_*`），涵盖质量设置、渲染管线资产管理、Always Included Shaders 和 Shader Stripping 配置，从 Project 模块独立为专用模块。
+- **URP 管线模块** — 新增 14 个 Skill（`urp_*`），覆盖 URP 资产配置、Renderer 数据和 Renderer Feature 的增删改查与启停。
+- **Decal 贴花模块** — 新增 14 个 Skill（`decal_*`），支持 URP Decal Projector 的创建/配置/查找/批量操作，含 Renderer Feature 自动注入。
+- **RenderPipelineSkillsCommon** — 新增 SRP 共享基础设施（877 行），为 URP、Volume、PostProcess、Decal、Graphics 模块提供统一的渲染管线感知和配置操作辅助方法。
+- **6 个新 Advisory 模块** — `addressables-design`（8 文档）、`netcode-design`（9 文档）、`shadergraph-design`（5 文档）、`unitask-design`（8 文档）、`dotween-design`（8 文档）、`yooasset-design`（8 文档），Advisory 总数从 13 增至 19。
+- **asmdef 扩展** — 新增 `Unity.Netcode.Runtime`、`YooAsset`、`Unity.RenderPipelines.*.Runtime` 程序集引用；新增 `NETCODE_GAMEOBJECTS`、`YOO_ASSET`、`SRP_CORE`、`URP`、`HDRP` 版本定义。
+- **SkillCategory 扩展** — `UnitySkillAttribute` 新增 Netcode、YooAsset、DOTween、Graphics、Volume、URP、Decal、PostProcess、ShaderGraph 共 9 个分类枚举。
+- **SkillRouter ShaderGraph 路由** — 新增 `shadergraph`/`subgraph`/`着色图`/`子图` 意图关键词映射。
+
+### Changed
+- **路径检查统一** — 多个模块（AssetImportSkills、AssetSkills、CleanerSkills、SkillPlanningService、GameObjectFinder）统一使用 `SkillsCommon.PathExists()` 替代重复的 `File.Exists + Directory.Exists` 组合。
+- **类型查找缓存** — `SkillsCommon.FindTypeByName()` 提供跨程序集类型查找与缓存（含 null miss 缓存），`PerceptionSkills.FindTypeInAssemblies` 委托至此实现。
+- **Quality 设置迁移** — `project_get_quality_settings` 和 `project_set_quality_level` 从 ProjectSkills 迁移至 GraphicsSkills，与渲染管线设置统一管理。
+- **LightmapSettings API 适配** — `LightGetLightmapSettings` 改用 `Lightmapping.lightingSettings` 读取 `lightmapMaxSize`/`lightmapPadding`，兼容新版 LightingSettings 工作流。
+- **spritePackingTag 兼容处理** — AssetImportSkills 对已废弃的 `spritePackingTag` 加 `#if !UNITY_2023_1_OR_NEWER` 条件编译保护。
+- **CinemachineSkills 编译清理** — `FindCinemachineType` 方法增加 `#if CINEMACHINE_2 || CINEMACHINE_3` 条件编译，消除未安装 Cinemachine 时的编译警告。
+- **UnitySkillsWindow 优化** — Validate 按钮文本本地化，移除未使用的 `_showSkillConfig` 和 `_autoStartServer` 字段。
+- **SkillPlanningService 简化** — `ResolveGameObject` 使用默认参数合并两个重载；路径存在性检查统一委托 `SkillsCommon.PathExists`。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.8.0`。
+
+### Docs
+- **9 个新功能模块文档** — decal、dotween、graphics、netcode、postprocess、shadergraph、urp、volume、yooasset 各含完整 SKILL.md。
+- **6 个新 Advisory 文档集** — 共 ~46 个 markdown 文档，覆盖 Addressables、Netcode、ShaderGraph、UniTask、DOTween、YooAsset 的设计要点与常见陷阱。
+- **architecture / patterns advisory 扩展** — architecture 新增"执行顺序与入口保护"章节；patterns 新增"Decision Lab"对比决策方法。
+- **SKILL.md 统计同步** — 模块文档目录从 53 更新为 68（49 功能 + 19 Advisory）。
+
+## [1.7.3] - 2026-04-20
+
+### Added
+- **Cinemachine 能力全面提升** — 新增 11 个 Skill（`cinemachine_set_priority`、`cinemachine_set_blend`、`cinemachine_set_brain`、`cinemachine_create_sequencer`、`cinemachine_sequencer_add_instruction`、`cinemachine_create_freelook`、`cinemachine_configure_camera_manager`、`cinemachine_configure_body`、`cinemachine_configure_aim`、`cinemachine_configure_extension`、`cinemachine_configure_impulse_source`），Cinemachine 技能总数从 23 增至 34，覆盖 Priority/Blend/Brain 配置、Sequencer/FreeLook 创建、Body/Aim 阶段统一配置、Extension 与 ImpulseSource 调节。
+- **纹理导入器扩展** — 新增 `texture_get_import_settings`、`texture_find_assets`、`texture_get_info`、`texture_find_by_size`、`texture_set_type`、`texture_set_platform_settings`、`texture_get_platform_settings`、`texture_set_sprite_settings`、`sprite_set_import_settings`，支持按尺寸查找纹理、逐平台覆盖设置、Sprite 专属配置等。
+- **音频导入器与场景技能扩展** — 新增 `audio_get_import_settings`、`audio_find_clips`、`audio_get_clip_info`、`audio_add_source`、`audio_get_source_info`、`audio_set_source_properties`、`audio_find_sources_in_scene`、`audio_create_mixer`，覆盖音频资产查询、AudioSource 场景管理和 AudioMixer 创建。
+- **模型导入器扩展** — 新增 `model_get_import_settings`、`model_find_assets`、`model_get_mesh_info`、`model_get_materials_info`、`model_get_animations_info`、`model_get_rig_info`、`model_set_animation_clips`、`model_set_rig`，覆盖网格统计、材质/动画/骨骼信息查询、动画片段分割与绑定模式切换。
+- **资产标签管理** — 新增 `asset_set_labels` 和 `asset_get_labels`，支持对资产设置和读取标签。
+
+### Changed
+- **CinemachineAdapter 架构抽象** — 新增 `CinemachineAdapter.cs` 适配层（562 行），将 Cinemachine 2.x 与 3.x 的 API 差异集中到适配器，`CinemachineSkills` 的业务方法不再包含条件编译，提高可维护性和可读性。
+- **GameObjectFinder 增强** — 新增 `SafePathExists` 验证方法和 `EnsureDirectoryExists` 辅助方法，统一资产路径校验逻辑。
+- **SkillPlanningService 批量分析重构** — 引入 `BatchAnalyzeContext` 上下文对象，将批量操作的 item 解析、错误收集、计划构建统一封装，消除多个 `Analyze*Batch` 方法间的重复代码。
+- **UIToolkitSkills / GameObjectSkills 代码质量提升** — 提取公共 helper、消除重复模式、补全日志记录。
+
+### Docs
+- **importer 模块文档大幅扩展** — `importer/SKILL.md` 从基础导入设置扩展到涵盖查询、运行时、平台覆盖、动画/骨骼等完整能力矩阵。
+- **cinemachine 模块文档补全** — `cinemachine/SKILL.md` 新增全部 11 个 Skill 的参数文档。
+- **asset 模块文档更新** — `asset/SKILL.md` 新增 `asset_set_labels`、`asset_get_labels` 文档。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.7.3`。
+
+## [1.7.2] - 2026-04-18
+
+### Changed
+- **SkillRouter 热路径性能优化** — `SkillInfo` 注册时预计算并缓存 `ParameterNames` 与 `AllowedParameterSet`，`Execute`/`DryRun` 的未知参数校验不再每次分配新的数组/`HashSet`；`GetSchema()` 新增结果缓存 `_cachedSchema`，避免每次调用都重新序列化 manifest,多次访问时开销降为常量。
+- **BatchExecutor 反射结果缓存** — `BatchExecutor` 新增 `ConcurrentDictionary<Type, bool>` 缓存 `HasErrorMember` 反射结果，大规模批量操作时避免对每个 item 重复执行 `GetProperty("error")` / `GetField("error")`。
+- **AsyncJobService 代码去重** — 将 Test 作业 filter 构建逻辑抽取为私有 `BuildTestFilter` 方法，消除 `StartTestRun` 与 Job reconnect 分支之间的重复块，修改测试过滤规则时只需改一处。
+- **BatchJobService 日志写入统一** — 取消 Job 的日志写入改用现有 `AddLog()` 辅助方法，使所有日志落盘逻辑走同一条路径，便于后续统一格式或注入遥测。
+- **SkillsHttpServer 清理冗余字段** — 移除 `RequestJob.ResponseDispatched` 与所有对它的赋值。该字段自引入以来从未被读取，删除后 request pool 状态更精简。
+
+### Fixed
+- **SKILL.md 幽灵引用修复** — skillcheck 审计发现 11 个模块（cinemachine/cleaner/optimization/profiler/project/scriptableobject/smart/terrain/timeline/batch 及 Routing 区块）的 `DO NOT` 章节指向了不存在的"纠正后 Skill"，AI 被误导后仍会调用 404 路由。统一替换为真实 Skill 名（例如 `optimize_compress_textures`→`optimize_compress_texture`、`terrain_set_heights`→`terrain_set_heights_batch`、`smart_query`→`smart_scene_query` 等）。
+- **SKILL.md 反向错误修复** — `shader/SKILL.md` 将 `shader_get_properties` 错误标为"不存在"，实际该 Skill 存在且返回 shader 属性定义；`navmesh/SKILL.md` 同样把实际存在的 `navmesh_set_agent`、`navmesh_add_obstacle` 标记为幻觉。改为说明它们与 `component_*` 的分工关系，避免 AI 绕开真实 Skill。
+
+### Docs
+- **batch 模块补齐 Skill 文档** — `batch/SKILL.md` 新增 `batch_query_assets`（6 个参数含 `searchFilter`/`folder`/`typeFilter`/`namePattern`/`labelFilter`/`maxResults`）与 `batch_retry_failed`（`reportId`/`runAsync`/`chunkSize`）的完整表格，此前这两个 Skill 仅存在于 C# 但未在文档中暴露。
+- **agent.md 目录结构同步** — `Editor/Skills/` 由 55 更新为 61 个 C# 文件；`unity-skills~/skills/` 由 54 更新为 53 个模块文档（40 functional + 13 advisory），匹配 v1.7.0 以来的 importer/workflow 目录合并结果。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.7.2`。
+
+## [1.7.1] - 2026-04-17
+
+### Added
+- **机器可读 Skill Schema 端点** — 新增 `GET /skills/schema`，返回带 `schemaVersion`、参数定义、Skill 元数据和保留请求参数的结构化清单，便于 AI Agent 在低 token 场景下精确获取能力边界。
+- **Python `get_skill_schema()`** — Python 客户端新增 `get_skill_schema()`，可直接读取服务端 canonical skill schema。
+- **`test_smoke_skills` 回归验证 Skill** — Test 模块新增 `test_smoke_skills`，对安全只读技能直接执行、对其余技能走 dry-run，用于快速 smoke test 与发布前回归检查。
+
+### Changed
+- **Cinemachine 属性设置增强** — `cinemachine_set_vcam_property` 现支持 `fov`、`nearClip`、`farClip`、`orthoSize` 等镜头简写参数，设置常见 Lens 属性时更直接。
+- **Skill 参数校验升级** — SkillRouter 现在会识别未知参数、返回允许参数列表，并对常见误传参数给出建议与提示；语义校验结果也会更完整地体现在 execute / dry-run / plan 响应中。
+- **异步测试作业基础设施增强** — 异步测试与 smoke job 的作业管理能力得到扩展，提升测试型 Skill 的可观测性与复用性。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.7.1`。
+
+### Fixed
+- **Undo / Redo 事务边界修复** — 修正 REST 调用场景下的撤销分组与事务边界处理，改善 `editor_undo`、`editor_redo` 以及 workflow 撤销/重做的一致性。
+- **只读组件查询副作用修复** — `ComponentSkills` 在读取 `Renderer` 材质属性时改用安全路径，避免查询型操作意外触发材质实例化。
+- **场景感知与辅助行为稳定性提升** — 改进 `PerceptionSkills` 场景根对象枚举方式，并修复 `CanvasGroup` Undo 注册、书签空选择处理，以及 XR 场景报告对 ActionBased locomotion/turn provider 的识别。
+
+### Docs
+- **模块文档与参考资料增强** — 多个 `SKILL.md` 补充了更精确的签名、参数说明和调用示例，并为 importer、ProBuilder、UI、UI Toolkit、XR 等模块拆分出独立 reference 文档。
+- **统计信息同步** — 文档统计已同步为 `41` 个功能模块、`543` 个 REST Skills，且 Test 模块更新为 `11` 个 Skills。
+
+## [1.7.0] - 2026-04-15
+
+### Added
+- **统一异步 Job 基础设施 `AsyncJobService`** — 新增统一 Job 模型，接入 Test Runner、包管理和脚本变更监测。Job 状态、进度事件和日志通过 `BatchPersistence` 持久化到 `Library/UnitySkills/batch_state.json`，Domain Reload 后未完成作业会以 `reconnecting` 状态恢复。
+- **批量处理服务 `BatchJobService`** — 新增批量作业执行器，负责 Batch 预览结果的排队、分块执行、取消、报告生成，以及与 `WorkflowManager` 的会话级联动。
+- **Batch Skill 模块** — 新增 21 个 Batch/Job 相关 Skill，包括 `batch_query_*`、`batch_preview_*`、`batch_execute`、`batch_report_*`、`batch_retry_failed` 以及 `job_status`/`job_logs`/`job_list`/`job_wait`/`job_cancel`，形成查询、预览、执行、报告、重试与状态查询闭环。
+- **作业模型与持久化** — 新增 `BatchModels.cs` 与 `BatchPersistence.cs`，定义批量作业、报告、预览、日志、进度事件等数据结构，并提供 JSON 持久化与 reload 后恢复逻辑。
+- **Skill 规划服务 `SkillPlanningService`** — 新增通用规划引擎，为 Skill 提供参数校验、语义检查、变更预测、风险提示和 `serverAvailability` 预判；HTTP 层新增 `POST /skill/{name}?mode=dryRun` 与 `POST /skill/{name}?mode=plan`。
+- **`workflow_plan` 聚合规划 Skill** — Workflow 模块新增 `workflow_plan`，可对多步 Skill 调用做聚合规划，输出总风险、依赖关系、分步计划与警告信息。
+
+### Changed
+- **Perception Skill 全面升级** — 新增 7 个场景感知 Skill（`scene_analyze`, `scene_health_check`, `scene_contract_validate`, `scene_component_stats`, `scene_find_hotspots`, `scene_diff`, `project_stack_detect`），现有 Skill 补充 `scene_export_report`、`scene_dependency_analyze`、`scene_context` 等能力，Perception 模块从 11 个 Skill 扩展到 18 个。
+- **SkillRouter 增强** — `UnitySkillAttribute` 新增 `MutatesScene`、`MutatesAssets`、`MayTriggerReload`、`RiskLevel`、`RequiresPackages` 元数据；SkillRouter 初始化时构建输出索引并扩展中英文意图同义词表；新增 `DryRun`/`Plan` 请求模式。
+- **技能文档规范化** — 14 个 SKILL.md 模块文档新增标准参数表（参数名/类型/必选/默认值/描述）和 Canonical Signature 块，所有 Skill 参数与 C# 方法签名完全一致。
+- **Skill 数量提升** — 总计从 513 提升到 542（+29 个），功能模块从 40 个增加到 41 个（新增 Batch），Advisory 模块从 14 个调整为 13 个（移除 XR advisory，其内容合并到 xr/SKILL.md）。
+
+### Fixed
+- **Batch 作业恢复与状态一致性** — `BatchPersistence` 会在 Domain Reload 后将未终态 Job 规范化为 `reconnecting`，避免批量任务在重载后丢失执行状态。
+- **Test Runner 回调泄漏** — `AsyncJobService` 在 Job 完成后显式 `UnregisterCallbacksFromObject`，防止回调对象泄漏导致内存占用持续增长。
+- **Skill 路由中文匹配** — `SkillRouter` 新增中文同义词表，确保"创建方块"等中文自然语言能正确路由到 `gameobject_create`。
+
 ## [1.6.9] - 2026-04-03
 
 ### Added
@@ -17,6 +134,7 @@ All notable changes to **UnitySkills** will be documented in this file.
 
 ### Changed
 - **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.6.9`。
+- **版本号更新** — `SkillsLogger.Version`、`package.json`、Python helper 和文档同步提升到 `1.7.0`。
 
 ## [1.6.8] - 2026-04-03
 

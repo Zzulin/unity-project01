@@ -22,13 +22,11 @@ namespace UnitySkills
         private string _testResult = "";
         private Dictionary<string, List<SkillInfo>> _skillsByCategory;
         private Dictionary<string, bool> _categoryFoldouts = new Dictionary<string, bool>();
-        private bool _showSkillConfig = true;
         private int _selectedTab = 0;
 
         // Server monitoring
         private double _lastRepaintTime;
         private const double RepaintInterval = 0.5;
-        private bool _autoStartServer = true;
         private string _customInstallPath = "";
         private string _customAgentName = "Custom";
 
@@ -85,9 +83,7 @@ namespace UnitySkills
         {
             _skillsByCategory = new Dictionary<string, List<SkillInfo>>();
 
-            var allTypes = System.AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => !a.IsDynamic)
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new System.Type[0]; } });
+            var allTypes = SkillsCommon.GetAllLoadedTypes();
 
             foreach (var type in allTypes)
             {
@@ -346,16 +342,16 @@ namespace UnitySkills
                 RefreshSkillsList();
                 SkillRouter.Refresh();
             }
-            if (GUILayout.Button("Validate", GUILayout.Width(70)))
+            if (GUILayout.Button(L("validate"), GUILayout.Width(70)))
             {
                 var issues = SkillRouter.ValidateMetadata();
                 if (issues.Count == 0)
                 {
-                    SkillsLogger.Log("Metadata validation passed — all skills OK!");
+                    SkillsLogger.Log(L("metadata_validation_passed"));
                 }
                 else
                 {
-                    SkillsLogger.Log($"Metadata validation: {issues.Count} issue(s) found");
+                    SkillsLogger.Log(string.Format(L("metadata_validation_found"), issues.Count));
                     foreach (var msg in issues)
                     {
                         if (msg.StartsWith("[ERROR]"))

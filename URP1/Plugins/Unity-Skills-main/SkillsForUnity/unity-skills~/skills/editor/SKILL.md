@@ -38,7 +38,7 @@ Control the Unity Editor itself - enter play mode, manage selection, undo/redo, 
 | `editor_execute_menu` | Execute menu item |
 | `editor_get_tags` | Get all tags |
 | `editor_get_layers` | Get all layers |
-| `editor_set_pause_on_error` | Pause play mode on error |
+| `console_set_pause_on_error` | Pause play mode on error (console module) |
 
 ---
 
@@ -123,12 +123,10 @@ Get all available layers.
 
 **Returns**: `{success, layers: [{index, name}]}`
 
-### editor_set_pause_on_error
-Configure whether to pause play mode when an error occurs.
+### Pause On Error
+Pause-on-error is provided by the console module, not the editor module.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `enabled` | bool | No | true | Enable pause on error |
+Use `console_set_pause_on_error` from [console/SKILL.md](/E:/CodeSpace/Unity-Skills/SkillsForUnity/unity-skills~/skills/console/SKILL.md).
 
 ---
 
@@ -166,3 +164,7 @@ unity_skills.call_skill("editor_execute_menu", menuPath="File/Save")
 3. Use undo for safe experimentation
 4. Use `editor_get_context` to get instanceId for batch operations
 5. Menu commands must match exact paths
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

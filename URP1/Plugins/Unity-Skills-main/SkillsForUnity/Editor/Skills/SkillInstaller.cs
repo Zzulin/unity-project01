@@ -73,7 +73,7 @@ namespace UnitySkills
                     Directory.CreateDirectory(workflowPath);
                 
                 var workflowMd = GenerateAntigravityWorkflow();
-                var utf8NoBom = new UTF8Encoding(false);
+                var utf8NoBom = SkillsCommon.Utf8NoBom;
                 File.WriteAllText(Path.Combine(workflowPath, "unity-skills.md"), workflowMd.Replace("\r\n", "\n"), utf8NoBom);
                 
                 return (true, targetPath);
@@ -234,7 +234,7 @@ namespace UnitySkills
         private static void UpdateAgentsMd()
         {
             var agentsPath = AgentsMdPath;
-            var utf8NoBom = new UTF8Encoding(false);
+            var utf8NoBom = SkillsCommon.Utf8NoBom;
 
             if (File.Exists(agentsPath))
             {
@@ -280,7 +280,7 @@ This file declares available skills for AI agents like Codex.
                 
                 // Clean up empty consecutive lines
                 var cleanedContent = string.Join("\n", lines).Trim() + "\n";
-                var utf8NoBom = new UTF8Encoding(false);
+                var utf8NoBom = SkillsCommon.Utf8NoBom;
                 File.WriteAllText(agentsPath, cleanedContent.Replace("\r\n", "\n"), utf8NoBom);
                 SkillsLogger.Log("Removed unity-skills from AGENTS.md");
             }
@@ -303,7 +303,7 @@ This file declares available skills for AI agents like Codex.
 
             // CRITICAL: Use UTF-8 WITHOUT BOM for Gemini CLI compatibility
             // Gemini CLI cannot parse YAML frontmatter if BOM (EF BB BF) is present at start of file
-            var utf8NoBom = new UTF8Encoding(false);
+            var utf8NoBom = SkillsCommon.Utf8NoBom;
             CopyTemplateDirectory(GetSkillTemplateRoot(), targetPath, utf8NoBom);
 
             // Write agent config for automatic agent identification

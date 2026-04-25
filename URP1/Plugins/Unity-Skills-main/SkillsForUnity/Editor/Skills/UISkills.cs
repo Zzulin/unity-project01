@@ -1439,7 +1439,12 @@ namespace UnitySkills
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
             if (error != null) return error;
 
-            var group = go.GetComponent<CanvasGroup>() ?? Undo.AddComponent<CanvasGroup>(go);
+            var group = go.GetComponent<CanvasGroup>();
+            if (group == null)
+            {
+                group = go.AddComponent<CanvasGroup>();
+                Undo.RegisterCreatedObjectUndo(group, "Add CanvasGroup");
+            }
             WorkflowManager.SnapshotObject(group);
             Undo.RecordObject(group, "Set CanvasGroup");
 

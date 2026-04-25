@@ -19,6 +19,29 @@ Use this skill before creating gameplay scripts, or after scripts are generated 
 - Testability: can the core logic move into a plain C# class?
 - Naming: do class and field names explain intent without cryptic abbreviations?
 
+## Data Lifecycle Boundary
+
+The Review Checklist above asks "where does this *class* live". Ask the same question for every *field*. Every piece of state has one of three lifecycles, and putting a field on the wrong one is the most common cause of "why did this break when the designer tweaked a value" and "why are my unit tests flaky".
+
+| Lifecycle | When the value is decided | Where it belongs | Typical idiom |
+|-----------|--------------------------|------------------|---------------|
+| **Authoring-time** | By a designer in the Editor, before Play | `ScriptableObject` asset, or `[SerializeField] private` on a prefab | Immutable at runtime; read via `_config.Speed` |
+| **Composition-time** | Once per scene/instance, at `Awake`/`Start` | `private` field, assigned from `GetComponent` / `GetComponentInChildren` / ctor arg | Cached reference, no per-frame lookup |
+| **Runtime-mutable** | Every frame or on gameplay events | `private` backing field + `public` read-only property + event | Exposed via `public float Health { get; private set; }` + `OnHealthChanged` |
+
+### Typical assignments
+
+- Weapon damage / fire rate / clip size → **Authoring-time** (ScriptableObject so balance can be hot-swapped).
+- Enemy AI's current target `Transform` → **Composition-time** if set once at spawn, **Runtime-mutable** if re-targeted each frame.
+- Player current HP → **Runtime-mutable** with event. Never `public float hp;`.
+- Reference to `Rigidbody`/`Animator` on the same GameObject → **Composition-time**, cached in `Awake`.
+- Level music track → **Authoring-time** via ScriptableObject level descriptor.
+- "Is in combat" flag → **Runtime-mutable**, but usually derived from other state — review whether it should be a field at all.
+
+### Why the separation matters
+
+Mixing the three lifecycles is what turns a clean class into a god object. A `MonoBehaviour` whose `public float speed` is edited by both the Inspector **and** a power-up script has two owners and no invariant; a bug in either path corrupts the other. The ECS baking pipeline makes this distinction a hard architectural boundary (Authoring → Baker → System), and the discipline transfers directly: if you would not mix an Authoring component with runtime write-back in ECS, do not mix them in a MonoBehaviour either. *Source: `EntitiesSamples/Docs/baking.md:5-16`.*
+
 ## Guardrails
 
 **Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills

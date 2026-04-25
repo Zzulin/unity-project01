@@ -134,54 +134,6 @@ Find all lights in scene.
 
 **Returns**: `{count, lights: [{name, instanceId, path, lightType, intensity, enabled}]}`
 
----
-
-## Example: Efficient Lighting Setup
-
-```python
-import unity_skills
-
-# BAD: 4 API calls
-unity_skills.call_skill("light_set_properties", name="Light1", intensity=2.0)
-unity_skills.call_skill("light_set_properties", name="Light2", intensity=2.0)
-unity_skills.call_skill("light_set_properties", name="Light3", intensity=2.0)
-unity_skills.call_skill("light_set_properties", name="Light4", intensity=2.0)
-
-# GOOD: 1 API call
-unity_skills.call_skill("light_set_properties_batch", items=[
-    {"name": "Light1", "intensity": 2.0},
-    {"name": "Light2", "intensity": 2.0},
-    {"name": "Light3", "intensity": 2.0},
-    {"name": "Light4", "intensity": 2.0}
-])
-```
-
-## Common Light Setups
-
-### Outdoor Scene (Sun)
-```python
-unity_skills.call_skill("light_create",
-    name="Sun", lightType="Directional",
-    r=1, g=0.95, b=0.85, intensity=1.2, shadows="soft"
-)
-```
-
-### Indoor Scene (Ceiling Light)
-```python
-unity_skills.call_skill("light_create",
-    name="CeilingLight", lightType="Point",
-    y=3, r=1, g=0.98, b=0.9, intensity=1.5, range=10
-)
-```
-
-### Dramatic Spotlight
-```python
-unity_skills.call_skill("light_create",
-    name="Spotlight", lightType="Spot",
-    y=5, intensity=8, spotAngle=25, shadows="hard"
-)
-```
-
 ### `light_add_probe_group`
 Add a Light Probe Group to a GameObject. Optional grid layout: gridX/gridY/gridZ (count per axis), spacingX/spacingY/spacingZ (meters between probes).
 
@@ -214,11 +166,40 @@ Create a Reflection Probe at a position.
 ### `light_get_lightmap_settings`
 Get Lightmap baking settings.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| *(none)* | — | — | — | No parameters required |
+No parameters.
 
 **Returns:** `{ success, bakedGI, realtimeGI, lightmapSize, lightmapPadding, isRunning, lightmapCount }`
+
+---
+
+## Example: Efficient Lighting Setup
+
+```python
+import unity_skills
+
+# BAD: 4 API calls
+unity_skills.call_skill("light_set_properties", name="Light1", intensity=2.0)
+unity_skills.call_skill("light_set_properties", name="Light2", intensity=2.0)
+unity_skills.call_skill("light_set_properties", name="Light3", intensity=2.0)
+unity_skills.call_skill("light_set_properties", name="Light4", intensity=2.0)
+
+# GOOD: 1 API call
+unity_skills.call_skill("light_set_properties_batch", items=[
+    {"name": "Light1", "intensity": 2.0},
+    {"name": "Light2", "intensity": 2.0},
+    {"name": "Light3", "intensity": 2.0},
+    {"name": "Light4", "intensity": 2.0}
+])
+```
+
+## Minimal Example
+
+```python
+unity_skills.call_skill("light_create",
+    name="Sun", lightType="Directional",
+    r=1, g=0.95, b=0.85, intensity=1.2, shadows="soft"
+)
+```
 
 ---
 
@@ -230,3 +211,8 @@ Get Lightmap baking settings.
 4. Limit real-time shadows for performance
 5. Area lights require baking (not real-time)
 6. Use intensity > 1 for HDR/bloom effects
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

@@ -157,3 +157,7 @@ unity_skills.call_skill("scene_screenshot", filename="preview.png", width=1920, 
 3. Keep scene hierarchy organized with empty parent objects
 4. Use `scene_get_info` to verify scene state
 5. Screenshots are saved to project root by default
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

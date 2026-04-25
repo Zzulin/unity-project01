@@ -17,7 +17,8 @@ namespace UnitySkills
             Category = SkillCategory.Scene, Operation = SkillOperation.Create,
             Tags = new[] { "new", "empty", "setup" },
             Outputs = new[] { "scenePath", "sceneName" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesScene = true, MutatesAssets = true, RiskLevel = "high")]
         public static object SceneCreate(string scenePath)
         {
             if (Validate.Required(scenePath, "scenePath") is object err) return err;
@@ -38,7 +39,8 @@ namespace UnitySkills
             Category = SkillCategory.Scene, Operation = SkillOperation.Execute,
             Tags = new[] { "open", "load", "additive" },
             Outputs = new[] { "sceneName", "scenePath" },
-            RequiresInput = new[] { "scenePath" })]
+            RequiresInput = new[] { "scenePath" },
+            MutatesScene = true, RiskLevel = "high")]
         public static object SceneLoad(string scenePath, bool additive = false)
         {
             if (!File.Exists(scenePath))
@@ -54,7 +56,8 @@ namespace UnitySkills
             Category = SkillCategory.Scene, Operation = SkillOperation.Execute,
             Tags = new[] { "save", "persist", "write" },
             Outputs = new[] { "scenePath" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesAssets = true, RiskLevel = "high")]
         public static object SceneSave(string scenePath = null)
         {
             if (!string.IsNullOrEmpty(scenePath) && Validate.SafePath(scenePath, "scenePath") is object pathErr) return pathErr;

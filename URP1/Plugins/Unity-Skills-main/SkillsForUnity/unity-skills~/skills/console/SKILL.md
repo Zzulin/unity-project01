@@ -166,3 +166,8 @@ unity_skills.call_skill("console_stop_capture")
 3. Use custom logs to mark AI agent actions
 4. Clear console before starting new capture session
 5. Stop capture when done to free resources
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

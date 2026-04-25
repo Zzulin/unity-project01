@@ -26,12 +26,12 @@ Save and recall Scene View camera positions.
 ### `bookmark_set`
 Save current Scene View camera position as a bookmark.
 **Parameters:**
-- `name` (string): Bookmark name.
+- `bookmarkName` (string): Bookmark name.
 
 ### `bookmark_goto`
 Move Scene View camera to a saved bookmark.
 **Parameters:**
-- `name` (string): Bookmark name.
+- `bookmarkName` (string): Bookmark name.
 
 ### `bookmark_list`
 List all saved bookmarks.
@@ -40,4 +40,8 @@ List all saved bookmarks.
 ### `bookmark_delete`
 Delete a saved bookmark.
 **Parameters:**
-- `name` (string): Bookmark name.
+- `bookmarkName` (string): Bookmark name.
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

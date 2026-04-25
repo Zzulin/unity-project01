@@ -37,12 +37,25 @@ namespace UnitySkills
             Outputs = new[] { "count", "query", "results" },
             ReadOnly = true)]
         public static object SmartSceneQuery(
-            string componentName, 
-            string propertyName, 
+            string componentName = null,
+            string propertyName = null,
             string op = "==",       // ==, !=, >, <, >=, <=, contains
-            string value = null, 
-            int limit = 50)
+            string value = null,
+            int limit = 50,
+            string query = null)
         {
+            if (string.IsNullOrWhiteSpace(componentName) && !string.IsNullOrWhiteSpace(query))
+            {
+                return new
+                {
+                    success = false,
+                    error = "query shorthand is not supported. Use componentName/propertyName/op/value, e.g. componentName='Light', propertyName='intensity', op='>', value='2'."
+                };
+            }
+
+            if (Validate.Required(componentName, "componentName") is object componentErr) return componentErr;
+            if (Validate.Required(propertyName, "propertyName") is object propertyErr) return propertyErr;
+
             var results = new List<object>();
             
             // Resolve Type
@@ -175,7 +188,7 @@ namespace UnitySkills
             if (string.IsNullOrEmpty(fieldName)) return new { error = "fieldName is required" };
 
             // 1. Find Target
-            var targetGo = GameObject.Find(targetName);
+            var targetGo = GameObjectFinder.Find(name: targetName);
             if (targetGo == null) 
                 return new { success = false, error = $"Target '{targetName}' not found" };
 
@@ -284,12 +297,13 @@ namespace UnitySkills
 
         private static System.Type GetTypeByName(string name)
         {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+
             // Fast path: common Unity types (static dictionary)
             if (CommonUnityTypes.TryGetValue(name, out var t)) return t;
 
             // Slow path: reflection
-            return System.AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new System.Type[0]; } })
+            return SkillsCommon.GetAllLoadedTypes()
                 .FirstOrDefault(type => type.Name.Equals(name, System.StringComparison.OrdinalIgnoreCase));
         }
 
@@ -342,7 +356,7 @@ namespace UnitySkills
                     case "contains": return valStr.ToLower().Contains(target?.ToLower() ?? "");
                 }
             }
-            catch { }
+            catch (System.Exception ex) { SkillsLogger.LogVerbose($"Condition eval failed: {ex.Message}"); }
             return false;
         }
 
@@ -523,8 +537,11 @@ namespace UnitySkills
             Category = SkillCategory.Smart, Operation = SkillOperation.Execute,
             Tags = new[] { "select", "component", "filter", "batch" },
             Outputs = new[] { "selected", "component" })]
-        public static object SmartSelectByComponent(string componentName)
+        public static object SmartSelectByComponent(string componentName = null, string componentType = null)
         {
+            componentName = componentName ?? componentType;
+            if (Validate.Required(componentName, "componentName") is object componentErr) return componentErr;
+
             var type = GetTypeByName(componentName);
             if (type == null) return new { error = $"Component type '{componentName}' not found" };
             var components = Object.FindObjectsOfType(type);

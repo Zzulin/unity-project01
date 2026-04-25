@@ -27,7 +27,9 @@ Control the Scene View camera.
 ### `camera_align_view_to_object`
 Align Scene View camera to look at an object.
 **Parameters:**
-- `objectName` (string): Name of the target GameObject.
+- `name` (string, optional): Target GameObject name.
+- `instanceId` (int, optional): Target GameObject instance ID.
+- `path` (string, optional): Target GameObject hierarchy path.
 
 ### `camera_get_info`
 Get Scene View camera position and rotation.
@@ -42,9 +44,10 @@ Set Scene View camera position/rotation manually.
 - `instant` (bool, optional): Move instantly (default true).
 
 ### `camera_look_at`
-Focus Scene View camera on a point.
+Focus Scene View camera on a world-space point.
 **Parameters:**
 - `x`, `y`, `z` (float): Target point.
+- Does not support `targetName` or GameObject lookup. For object focus, use `camera_align_view_to_object`.
 
 ### `camera_create`
 Create a new Game Camera.
@@ -134,3 +137,8 @@ List all cameras in the scene.
 |-----------|------|----------|---------|-------------|
 
 **Returns:** `{ count, cameras: [{ name, instanceId, path, depth, orthographic, enabled }] }`
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

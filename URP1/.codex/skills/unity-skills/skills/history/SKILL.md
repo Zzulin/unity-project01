@@ -34,3 +34,7 @@ Redo the last undone operation.
 ### `history_get_current`
 Get current undo history state.
 **Parameters:** None.
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

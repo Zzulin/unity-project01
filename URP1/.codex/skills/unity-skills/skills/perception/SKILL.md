@@ -5,316 +5,141 @@ description: "Scene understanding and analysis. Use when users want to get a sum
 
 # Unity Perception Skills
 
+Use this module for read-only scene and project analysis. It is available in Semi-Auto by default.
+
 ## Guardrails
 
-**Mode**: Semi-Auto (available by default)
+**Mode**: Semi-Auto
 
 **DO NOT** (common hallucinations):
-- `perception_analyze` does not exist → use `scene_summarize` or `script_analyze`
-- `perception_scan` / `perception_describe` do not exist
-- `scene_context` ≠ `editor_get_context`: `scene_context` exports full hierarchy+components, `editor_get_context` returns current selection+editor state
+- `perception_analyze`, `perception_scan`, and `perception_describe` do not exist
+- `scene_context` is not `editor_get_context`: it exports hierarchy/components/references, while editor context focuses on current editor state
+- `scene_analyze`, `scene_health_check`, `scene_contract_validate`, `scene_component_stats`, `scene_find_hotspots`, and `project_stack_detect` belong to this module even if the prefix looks like `scene_*` or `project_*`
 
 **Routing**:
-- For current editor state (selection, play mode) → use `editor` module's `editor_get_context`
-- For object search → use `scene_find_objects` (scene module) or `gameobject_find` (gameobject module, Full-Auto)
-- For script dependency analysis → `script_dependency_graph` (this module)
+- Current selection/play-mode/editor state -> `editor_get_context`
+- Object search by name/path -> `scene_find_objects` or `gameobject_find`
+- Script dependency closure -> `script_dependency_graph`
 
 ## Skills
 
-### scene_summarize
-Get a structured summary of the current scene.
+### Scene Health and Summary
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `includeComponentStats` | bool | No | true | Count component types |
-| `topComponentsLimit` | int | No | 10 | Max components to list |
+| Skill | Use | Key parameters |
+|-------|-----|----------------|
+| `scene_analyze` | Combined scene + project analysis | `topComponentsLimit?`, `issueLimit?`, `deepHierarchyThreshold?`, `largeChildCountThreshold?` |
+| `scene_health_check` | Read-only health report | `issueLimit?`, `deepHierarchyThreshold?`, `largeChildCountThreshold?` |
+| `scene_summarize` | Structured scene summary | `includeComponentStats?`, `topComponentsLimit?` |
+| `scene_component_stats` | Component and facility stats | `topComponentsLimit?` |
+| `scene_find_hotspots` | Deep hierarchy / large group / empty node hotspots | thresholds + `maxResults?` |
+| `scene_tag_layer_stats` | Tag/layer usage | none |
+| `scene_performance_hints` | Prioritized optimization hints | none |
 
-**Returns**:
-```json
-{
-  "sceneName": "Main",
-  "stats": {
-    "totalObjects": 156,
-    "activeObjects": 142,
-    "rootObjects": 12,
-    "maxHierarchyDepth": 5,
-    "lights": 3,
-    "cameras": 2,
-    "canvases": 1
-  },
-  "topComponents": [{"component": "MeshRenderer", "count": 45}, ...]
-}
+### Scene Snapshots and Exports
+
+| Skill | Use | Key parameters |
+|-------|-----|----------------|
+| `scene_diff` | Capture or compare lightweight snapshots | `snapshotJson?` |
+| `hierarchy_describe` | Return text hierarchy tree | `maxDepth?`, `includeInactive?`, `maxItemsPerLevel?` |
+| `scene_context` | Export hierarchy, components, references | `maxDepth?`, `maxObjects?`, `rootPath?`, `includeValues?`, `includeReferences?`, `includeCodeDeps?` |
+| `scene_export_report` | Save markdown scene report | `savePath?`, `maxDepth?`, `maxObjects?` |
+| `scene_dependency_analyze` | Analyze impact / dependency graph in-scene | `targetPath?`, `savePath?` |
+
+### Project and Script Analysis
+
+| Skill | Use | Key parameters |
+|-------|-----|----------------|
+| `project_stack_detect` | Detect pipeline, input, UI, packages, tests, folders | none |
+| `script_analyze` | Analyze one MonoBehaviour / ScriptableObject / user class by class name | `scriptName`, `includePrivate?` |
+| `script_dependency_graph` | N-hop dependency closure for one script class name | `scriptName`, `maxHops?`, `includeDetails?` |
+
+### Spatial and Material Queries
+
+| Skill | Use | Key parameters |
+|-------|-----|----------------|
+| `scene_spatial_query` | Find objects near a point or object | `x/y/z?`, `radius?`, `nearObject?`, `componentFilter?`, `maxResults?` |
+| `scene_materials` | Summarize scene materials and shaders | `includeProperties?` |
+| `scene_contract_validate` | Validate default roots/tags/layers/UI EventSystem conventions | `requiredRootsJson?`, `requiredTagsJson?`, `requiredLayersJson?`, `requireEventSystemForUi?` |
+
+## High-Frequency Skill Differences
+
+### `scene_summarize` vs `scene_analyze` vs `scene_health_check`
+
+| Skill | Best for | Typical output focus |
+|-------|----------|----------------------|
+| `scene_summarize` | Fast overview | object counts, hierarchy depth, top components |
+| `scene_analyze` | Broad diagnosis | summary + findings + warnings + recommendations + next-skill hints |
+| `scene_health_check` | Hygiene / red flags | missing scripts, duplicate names, deep hierarchy, empty nodes, hotspot-style findings |
+
+### `scene_context` vs `hierarchy_describe`
+
+| Skill | Best for | Output style |
+|-------|----------|-------------|
+| `hierarchy_describe` | Human-readable tree | text tree, lightweight |
+| `scene_context` | AI coding context | structured hierarchy + components + references + optional code dependencies |
+
+### `scene_dependency_analyze` vs `script_dependency_graph`
+
+| Skill | Scope | Use when |
+|-------|-------|----------|
+| `scene_dependency_analyze` | Scene object references | ask "who depends on this object if I delete or disable it" |
+| `script_dependency_graph` | Script class dependency closure | ask "which scripts do I have to touch to change this feature" |
+
+## Key Return Shapes
+
+### `scene_summarize`
+
+Returns `sceneName`, `stats`, and optional `topComponents`.
+
+### `scene_analyze`
+
+Returns `summary`, `stats`, `findings`, `warnings`, `recommendations`, and `suggestedNextSkills`.
+
+### `scene_health_check`
+
+Returns `summary`, `findings`, `hotspots`, and `suggestedNextSkills`.
+
+### `scene_context`
+
+Returns a structured export with `objects`, `references`, and optional `codeDependencies`. Use it when another AI step needs full scene context, not just a human summary.
+
+High-frequency options:
+- `rootPath` to export only one subtree
+- `includeValues=true` when serialized field values matter
+- `includeCodeDeps=true` when AI needs a rough scene-to-code dependency picture
+
+### `scene_export_report`
+
+Writes a markdown artifact to disk and returns `savedTo`, object/script/reference counts, and success state. Prefer this when the user wants a durable report file.
+
+Defaults:
+- `savePath = "Assets/Docs/SceneReport.md"`
+- `maxDepth = 10`
+- `maxObjects = 500`
+
+## When to Use Which Skill
+
+| Need | Best first skill |
+|------|------------------|
+| Quick scene overview | `scene_summarize` |
+| Full diagnosis | `scene_analyze` |
+| Suspicious hierarchy or clutter | `scene_find_hotspots` |
+| Safe-to-delete / impact question | `scene_dependency_analyze` |
+| AI coding context export | `scene_context` |
+| Script reading order | `script_dependency_graph` |
+| Render/input/UI stack detection | `project_stack_detect` |
+
+## Minimal Example
+
+```python
+import unity_skills
+
+summary = unity_skills.call_skill("scene_summarize", includeComponentStats=True)
+health = unity_skills.call_skill("scene_health_check", issueLimit=50)
+context = unity_skills.call_skill("scene_context", maxDepth=6, maxObjects=120)
+report = unity_skills.call_skill("scene_export_report", savePath="Assets/Docs/SceneReport.md")
 ```
 
----
+## Exact Signatures
 
-### hierarchy_describe
-Get a text tree of the scene hierarchy.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `maxDepth` | int | No | 5 | Max tree depth |
-| `includeInactive` | bool | No | false | Include inactive objects |
-| `maxItemsPerLevel` | int | No | 20 | Limit per level |
-
-**Returns**:
-```
-Scene: Main
-────────────────────────────────────────
-► Main Camera 📷
-► Directional Light 💡
-► Environment
-  ├─ Ground ▣
-  ├─ Trees
-    ├─ Tree_001 ▣
-    ├─ Tree_002 ▣
-► Canvas 🖼
-  ├─ StartButton 🔘
-```
-
----
-
-### script_analyze
-Analyze a MonoBehaviour script's public API.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `scriptName` | string | Yes | - | Script class name |
-| `includePrivate` | bool | No | false | Include non-public members |
-
-**Returns**:
-```json
-{
-  "script": "PlayerController",
-  "fields": [{"name": "speed", "type": "float", "isSerializable": true}],
-  "properties": [{"name": "IsGrounded", "type": "bool", "canWrite": false}],
-  "methods": [{"name": "Jump", "returnType": "void", "parameters": ""}],
-  "unityCallbacks": ["Start", "Update", "OnCollisionEnter"]
-}
-```
-
----
-
-### scene_spatial_query
-Find objects within a radius of a point, or near another object.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `x` | float | No | 0 | Center X coordinate |
-| `y` | float | No | 0 | Center Y coordinate |
-| `z` | float | No | 0 | Center Z coordinate |
-| `radius` | float | No | 10 | Search radius |
-| `nearObject` | string | No | - | Find near this object instead of coordinates |
-| `componentFilter` | string | No | - | Only include objects with this component |
-| `maxResults` | int | No | 50 | Max results to return |
-
-**Returns**:
-```json
-{
-  "center": {"x": 0, "y": 0, "z": 0},
-  "radius": 10,
-  "totalFound": 5,
-  "results": [{"name": "Enemy", "path": "Enemies/Enemy", "distance": 3.2, "position": {"x": 1, "y": 0, "z": 3}}]
-}
-```
-
----
-
-### scene_materials
-Get an overview of all materials and shaders used in the current scene.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `includeProperties` | bool | No | false | Include shader property list |
-
-**Returns**:
-```json
-{
-  "totalMaterials": 12,
-  "totalShaders": 4,
-  "shaders": [{"shader": "Standard", "materialCount": 5, "materials": [{"name": "Ground", "userCount": 3}]}]
-}
-```
-
----
-
-### scene_context
-Generate a comprehensive scene snapshot for AI coding assistance (hierarchy, components, script fields, references, UI layout).
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `maxDepth` | int | No | 10 | Max hierarchy depth to traverse |
-| `maxObjects` | int | No | 200 | Max objects to export |
-| `rootPath` | string | No | - | Only export a subtree (e.g. "Canvas/MainPanel") |
-| `includeValues` | bool | No | false | Include serialized field values |
-| `includeReferences` | bool | No | true | Include cross-object references |
-| `includeCodeDeps` | bool | No | false | Include C# code-level dependency edges (regex-based) |
-
-**Returns**:
-```json
-{
-  "sceneName": "Main",
-  "totalObjects": 156,
-  "exportedObjects": 85,
-  "truncated": true,
-  "objects": [
-    {
-      "path": "Canvas/MainPanel/StartButton",
-      "name": "StartButton",
-      "active": true,
-      "tag": "Untagged",
-      "layer": "UI",
-      "components": [
-        {"type": "RectTransform", "props": {"anchoredPosition": "(120, -50)", "sizeDelta": "(200, 60)"}},
-        {"type": "Button", "props": {"interactable": true, "transition": "ColorTint"}},
-        {"type": "PlayerUIController", "kind": "MonoBehaviour", "fields": {"speed": {"type": "Float", "value": 5.5}, "target": {"type": "GameObject", "value": "Player/Body"}}}
-      ],
-      "children": ["Canvas/MainPanel/StartButton/Text"]
-    }
-  ],
-  "references": [
-    {"from": "Canvas/MainPanel/StartButton:PlayerUIController.target", "to": "Player/Body"}
-  ],
-  "codeDependencies": [
-    {"from": "PlayerUIController.Start", "to": "HealthSystem", "type": "GetComponent", "detail": "GetComponent<HealthSystem>()"}
-  ]
-}
-```
-
----
-
-### scene_export_report
-Export complete scene structure and script dependency report as markdown file. Includes: hierarchy tree (built-in components name only, user scripts marked with `*`), user script fields with values, deep C# code-level dependencies (10 patterns: `GetComponent<T>`, `FindObjectOfType<T>`, `SendMessage`, field references, Singleton access, static member access, `new T()`, generic type args, inheritance/interface, `typeof`/`is`/`as` type checks), and merged dependency graph with risk ratings.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `savePath` | string | No | "Assets/Docs/SceneReport.md" | Output file path |
-| `maxDepth` | int | No | 10 | Max hierarchy depth |
-| `maxObjects` | int | No | 500 | Max objects to export |
-
-**Returns**:
-```json
-{
-  "success": true,
-  "savedTo": "Assets/Docs/SceneReport.md",
-  "objectCount": 156,
-  "userScriptCount": 5,
-  "referenceCount": 12,
-  "codeReferenceCount": 4
-}
-```
-
-**Markdown output sections**:
-1. **Hierarchy** — tree with component names, user scripts marked `*`
-2. **Script Fields** — only user scripts (non-Unity namespace), with field values and reference targets
-3. **Code Dependencies** — C# source analysis (comments stripped): `GetComponent<T>`, `FindObjectOfType<T>`, `SendMessage`, field references, inheritance (multi-class), static access (PascalCase only). Method-level location in `From` column.
-4. **Dependency Graph** — table with columns: `From | To | Type | Source | Detail`. Source = `scene` (serialized reference) or `code` (source analysis). From shows `ClassName.MethodName` for code deps.
-
----
-
-### scene_dependency_analyze
-Analyze object dependency graph and impact of changes. Use ONLY when user explicitly asks about dependency/impact analysis, safe to delete/disable, refactoring impact, or reference checks.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `targetPath` | string | No | - | Analyze specific subtree (e.g. "Canvas/HUD") |
-| `savePath` | string | No | - | Save analysis as markdown (e.g. "Assets/Docs/deps.md") |
-
-**Returns**:
-```json
-{
-  "sceneName": "Main",
-  "totalReferences": 12,
-  "objectsAnalyzed": 5,
-  "analysis": [
-    {
-      "path": "Canvas/HUD/HealthBar",
-      "risk": "medium",
-      "dependedByCount": 3,
-      "dependedBy": [
-        {"source": "Player", "script": "PlayerController", "field": "healthUI", "fieldType": "Slider"}
-      ],
-      "dependsOnCount": 0,
-      "dependsOn": null
-    }
-  ],
-  "savedTo": "Assets/Docs/deps.md",
-  "markdown": null
-}
-```
-
----
-
-### script_dependency_graph
-Given an entry script, return its N-hop dependency closure as structured JSON. Shows which scripts to read to understand or safely modify a feature.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `scriptName` | string | Yes | - | Entry script class name |
-| `maxHops` | int | No | 2 | Dependency traversal hops (bidirectional) |
-| `includeDetails` | bool | No | true | Include fields and Unity callbacks per script |
-
-**Returns**:
-```json
-{
-  "success": true,
-  "entryScript": "PlayerController",
-  "totalScriptsReached": 5,
-  "maxHops": 2,
-  "scripts": [
-    {
-      "name": "PlayerController",
-      "hop": 0,
-      "kind": "MonoBehaviour",
-      "baseClass": "MonoBehaviour",
-      "filePath": "Assets/Scripts/PlayerController.cs",
-      "dependsOn": ["HealthSystem", "InputManager"],
-      "dependedBy": ["EnemyAI"],
-      "fields": [{"name": "health", "type": "HealthSystem", "serializable": true}],
-      "unityCallbacks": ["Start", "Update"]
-    }
-  ],
-  "edges": [
-    {"from": "PlayerController", "to": "HealthSystem", "type": "FieldReference", "detail": "field:HealthSystem"}
-  ],
-  "suggestedReadOrder": ["InputManager", "HealthSystem", "EnemyAI", "PlayerController"]
-}
-```
-
----
-
-### scene_tag_layer_stats
-Get Tag/Layer usage stats and find potential issues (untagged objects, unused layers).
-
-No parameters.
-
-**Returns**:
-```json
-{
-  "success": true,
-  "totalObjects": 156,
-  "untaggedCount": 120,
-  "tags": [{"tag": "Untagged", "count": 120}, {"tag": "Player", "count": 5}],
-  "layers": [{"layer": "Default", "count": 140}, {"layer": "UI", "count": 16}],
-  "emptyDefinedLayers": ["Water", "PostProcessing"]
-}
-```
-
----
-
-### scene_performance_hints
-Diagnose scene performance issues with prioritized actionable suggestions.
-
-No parameters.
-
-**Returns**:
-```json
-{
-  "success": true,
-  "hintCount": 2,
-  "hints": [
-    {"priority": 1, "category": "Lighting", "issue": "6 shadow-casting lights", "suggestion": "Reduce to ≤4 or use baked lighting", "fixSkill": "light_set_properties"},
-    {"priority": 2, "category": "Batching", "issue": "150 non-static renderers", "suggestion": "Mark static objects with optimize_set_static_flags", "fixSkill": "optimize_set_static_flags"}
-  ]
-}
-```
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

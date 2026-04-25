@@ -14,7 +14,7 @@ Work with shaders - create shader files, read source code, and list available sh
 **DO NOT** (common hallucinations):
 - `shader_set_property` does not exist → use `material_set_float`/`material_set_color`/etc. on the material, not the shader
 - `shader_apply` / `shader_assign` do not exist → use `material_set_shader` to change a material's shader
-- `shader_get_properties` does not exist → use `material_get_properties` on a material using the shader
+- `shader_get_properties` returns shader **property definitions** (name/type/range), not current values → for material instance values use `material_get_properties`
 - Shader names are case-sensitive and path-like: `"Standard"`, `"Universal Render Pipeline/Lit"`, not `"standard"` or `"URP Lit"`
 
 **Routing**:
@@ -82,7 +82,7 @@ Find a shader by name.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `shaderName` | string | Yes | Shader name to find |
+| `searchName` | string | Yes | Shader name to find |
 
 **Returns**: `{success, name, path, propertyCount}`
 
@@ -98,8 +98,7 @@ Get all properties defined in a shader.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `shaderName` | string | No* | Shader name |
-| `shaderPath` | string | No* | Shader asset path |
+| `shaderNameOrPath` | string | Yes | Shader name or shader asset path |
 
 **Returns**: `{success, properties: [{name, type, description}]}`
 
@@ -191,3 +190,8 @@ for shader in shaders['shaders']:
 3. Start with templates, modify as needed
 4. Test shaders in different lighting conditions
 5. Consider mobile compatibility for builds
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

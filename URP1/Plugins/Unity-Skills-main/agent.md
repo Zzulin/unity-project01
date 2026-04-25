@@ -1,10 +1,10 @@
 # UnitySkills — AI Agent 项目速览
 
-> 通过 REST API 让 AI 直接控制 Unity 编辑器。513 个 REST Skills + 14 个 Advisory 模块。
+> 通过 REST API 让 AI 直接控制 Unity 编辑器。713 个 REST Skills + 19 个 Advisory 模块。
 
 | 项目 | 值 |
 |------|----|
-| 版本 | 1.6.9 |
+| 版本 | 1.8.0 |
 | 技术栈 | C# (Unity Editor Plugin) + Python (Client) |
 | Unity | 2022.3+（已验证 Unity 6 / 6000.x） |
 | 协议 | MIT |
@@ -21,7 +21,7 @@ AI Agent ──HTTP──▶ unity_skills.py ──POST localhost:8090-8100─�
                                                         │
                                               SkillRouter (反射发现 [UnitySkill])
                                                         │
-                                              40 个 *Skills.cs (513 Skills)
+                                              50 个 *Skills.cs (713 Skills)
                                                         │
                                          WorkflowManager (持久化撤销/回滚)
                                          RegistryService (多实例发现)
@@ -35,10 +35,12 @@ AI Agent ──HTTP──▶ unity_skills.py ──POST localhost:8090-8100─�
 
 | 模式 | 默认 | Skills | 场景 |
 |------|:----:|:------:|------|
-| 半自动 | ✅ | ~80 | AI 写 C# 代码，少量 Skills 辅助 |
-| 全自动 | - | 513 | AI 直接操作编辑器 |
+| 半自动 | ✅ | 8 个 REST 分类（约 121 个入口）+ 19 advisory | AI 写 C# 代码，少量 Skills 辅助 |
+| 全自动 | - | 713 REST Skills | AI 直接操作编辑器 |
 
 切换：用户说 "全自动模式"/"full auto" 或 "半自动模式"/"semi-auto"。详见 `SkillsForUnity/unity-skills~/SKILL.md`。
+
+模式是 AI 路由策略，不是服务端权限门禁；REST API 仍通过 `/skills` 暴露全部 713 个 Skills。
 
 ---
 
@@ -48,7 +50,7 @@ AI Agent ──HTTP──▶ unity_skills.py ──POST localhost:8090-8100─�
 Unity-Skills/
 ├── SkillsForUnity/                     # UPM Package
 │   ├── package.json
-│   ├── Editor/Skills/                  # 55 个 C# 文件
+│   ├── Editor/Skills/                  # 61 个 C# 文件
 │   │   ├── SkillsHttpServer.cs         # HTTP 服务器 (Producer-Consumer)
 │   │   ├── SkillRouter.cs              # 反射路由 + 参数绑定
 │   │   ├── UnitySkillAttribute.cs      # [UnitySkill] 特性 (含 Category/Operation/Tags 元数据)
@@ -59,11 +61,11 @@ Unity-Skills/
 │   │   ├── SkillsLogger.cs             # 日志 + 版本常量源 (Version = "x.x.x")
 │   │   ├── UnitySkillsWindow.cs        # 编辑器窗口 UI
 │   │   ├── SkillInstaller.cs           # AI 工具一键安装
-│   │   └── *Skills.cs × 40             # 功能模块 (共 513 Skills)
+│   │   └── *Skills.cs × 50             # 功能模块 (共 713 Skills)
 │   └── unity-skills~/                  # AI Skill 模板 (波浪线隐藏, 随包分发)
 │       ├── SKILL.md                    # 主 Skill 文档 (AI 读取入口)
 │       ├── scripts/unity_skills.py     # Python 客户端
-│       ├── skills/                     # 50 个模块文档 (36 functional + 14 advisory)
+│       ├── skills/                     # 68 个模块文档 (49 REST/module docs + 19 advisory docs)
 │       └── references/                 # Unity 开发参考
 ├── .claude/commands/                   # 自定义命令
 │   ├── updateversion.md                # /updateversion — 版本号更新 + CHANGELOG 生成
@@ -98,30 +100,33 @@ public static object SkillName(string name, float x = 0) { ... }
 
 ---
 
-## Skills 模块 (40 个功能模块, 513 Skills)
+## Skills 模块 (50 个功能模块, 713 Skills)
 
 | 模块 | 数量 | 模块 | 数量 | 模块 | 数量 |
 |------|:----:|------|:----:|------|:----:|
-| UI | 26 | UIToolkit | 25 | Cinemachine | 23 |
-| Workflow | 22 | ProBuilder* | 22 | XR* | 22 |
-| Material | 21 | GameObject | 18 | Editor | 12 |
+| YooAsset* | 40 | Cinemachine | 34 | Netcode* | 33 |
+| UI | 26 | UIToolkit | 25 | ShaderGraph | 23 |
+| Workflow | 23 | ProBuilder* | 22 | XR* | 22 |
+| DOTween* | 21 | Material | 21 | Batch | 21 |
+| GameObject | 18 | Perception | 18 | Editor | 12 |
 | Script | 12 | Timeline | 12 | Physics | 12 |
 | Asset | 11 | AssetImport | 11 | Camera | 11 |
-| Package | 11 | Perception | 11 | Prefab | 11 |
-| Project | 11 | Shader | 11 | Scene | 10 |
-| Audio | 10 | Texture | 10 | Model | 10 |
-| Component | 10 | Terrain | 10 | NavMesh | 10 |
-| Cleaner | 10 | ScriptableObject | 10 | Console | 10 |
-| Debug | 10 | Event | 10 | Smart | 10 |
-| Test | 10 | Optimization | 10 | Profiler | 10 |
+| Package | 11 | Prefab | 11 | Shader | 11 |
+| Test | 11 | Graphics | 11 | PostProcess | 10 |
+| Scene | 10 | Audio | 10 | Texture | 10 |
+| Model | 10 | Component | 10 | Terrain | 10 |
+| NavMesh | 10 | Cleaner | 10 | ScriptableObject | 10 |
+| Console | 10 | Debug | 10 | Event | 10 |
+| Smart | 10 | Optimization | 10 | Profiler | 10 |
 | Light | 10 | Validation | 10 | Animator | 10 |
-| Sample | 8 | | | | |
+| Volume | 9 | Project | 9 | Sample | 8 |
+| Decal | 7 | URP | 7 | | |
 
-*ProBuilder 需 `com.unity.probuilder`，XR 需 `com.unity.xr.interaction.toolkit`
+*ProBuilder 需 `com.unity.probuilder`，XR 需 `com.unity.xr.interaction.toolkit`，Netcode 需 `com.unity.netcode.gameobjects`，YooAsset 需 `com.tuyoogame.yooasset (≥2.3.15)`，DOTween 需 `DG.Tweening`
 
 > 大部分模块支持 `*_batch` 批量操作，操作 2+ 物体时应优先使用。
 
-**Advisory 模块 (14)**：architecture, patterns, performance, asmdef, async, inspector, blueprints, adr, project-scout, scene-contracts, script-roles, scriptdesign, testability, xr — 纯架构/设计指导，无 REST Skills。
+**Advisory 模块 (19)**：architecture, patterns, performance, asmdef, async, inspector, blueprints, adr, project-scout, scene-contracts, script-roles, scriptdesign, testability, netcode-design, yooasset-design, addressables-design, unitask-design, dotween-design, shadergraph-design — 纯架构/设计指导，无 REST Skills。
 
 ---
 

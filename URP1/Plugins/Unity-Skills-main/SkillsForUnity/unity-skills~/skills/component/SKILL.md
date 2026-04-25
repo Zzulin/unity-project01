@@ -274,3 +274,8 @@ Enable or disable a component (Behaviour, Renderer, Collider, etc.).
 *At least one identifier required
 
 **Returns:** `{ success, gameObject, componentType, enabled }`
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

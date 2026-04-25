@@ -26,14 +26,14 @@ Inspect and modify UnityEvents (e.g. Button.onClick).
 ### `event_get_listeners`
 Get persistent listeners of a UnityEvent.
 **Parameters:**
-- `objectName` (string): GameObject name.
+- `name` / `instanceId` / `path`: Target GameObject locator.
 - `componentName` (string): Component name.
 - `eventName` (string): Event field name (e.g. "onClick").
 
 ### `event_add_listener`
 Add a persistent listener to a UnityEvent (Editor time).
 **Parameters:**
-- `objectName`, `componentName`, `eventName`: Target event.
+- `name` / `instanceId` / `path`, `componentName`, `eventName`: Target event.
 - `targetObjectName`, `targetComponentName`, `methodName`: Method to call.
 - `mode` (string, optional): "RuntimeOnly", "EditorAndRuntime", "Off".
 - `argType` (string, optional): "void", "int", "float", "string", "bool".
@@ -42,13 +42,13 @@ Add a persistent listener to a UnityEvent (Editor time).
 ### `event_remove_listener`
 Remove a persistent listener by index.
 **Parameters:**
-- `objectName`, `componentName`, `eventName`: Target event.
+- `name` / `instanceId` / `path`, `componentName`, `eventName`: Target event.
 - `index` (int): Listener index.
 
 ### `event_invoke`
 Invoke a UnityEvent explicitly (Runtime only).
 **Parameters:**
-- `objectName`, `componentName`, `eventName`: Target event.
+- `name` / `instanceId` / `path`, `componentName`, `eventName`: Target event.
 
 ### `event_clear_listeners`
 Remove all persistent listeners from a UnityEvent.
@@ -130,3 +130,8 @@ Get the number of persistent listeners on a UnityEvent.
 | eventName | string | No | null | Event field name |
 
 **Returns:** `{ success, count }`
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

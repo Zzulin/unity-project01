@@ -12,10 +12,8 @@ Control Unity's animation system - create controllers, manage parameters, and co
 **Mode**: Full-Auto required
 
 **DO NOT** (common hallucinations):
-- `animator_play` does not exist → use `animator_set_parameter` to trigger transitions, or `editor_play` for play mode
 - `animator_create_clip` / `animator_add_clip` do not exist → AnimationClips are created via Unity Editor or asset import
 - `animator_set_speed` does not exist → use `component_set_property` on Animator component with propertyName="speed"
-- `animator_get_info` does not exist → use `animator_get_parameters` or `animator_get_states`
 
 **Routing**:
 - For Timeline animation → use `timeline` module
@@ -58,7 +56,7 @@ Create a new Animator Controller.
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `name` | string | Yes | - | Controller name |
-| `folder` | string | No | "Assets" | Save folder |
+| `folder` | string | No | "Assets/Animations" | Save folder |
 
 **Returns**: `{success, name, path}`
 
@@ -70,7 +68,9 @@ Add a parameter to a controller.
 | `controllerPath` | string | Yes | - | Controller asset path |
 | `paramName` | string | Yes | - | Parameter name |
 | `paramType` | string | Yes | - | float/int/bool/trigger |
-| `defaultValue` | any | No | 0/false | Initial value |
+| `defaultFloat` | float | No | 0 | Initial float value |
+| `defaultInt` | int | No | 0 | Initial int value |
+| `defaultBool` | bool | No | false | Initial bool value |
 
 ### animator_get_parameters
 Get all parameters from a controller.
@@ -174,11 +174,11 @@ unity_skills.call_skill("animator_create_controller",
 # 2. Add parameters
 unity_skills.call_skill("animator_add_parameter",
     controllerPath="Assets/Animations/PlayerController.controller",
-    paramName="Speed", paramType="float", defaultValue=0
+    paramName="Speed", paramType="float", defaultFloat=0
 )
 unity_skills.call_skill("animator_add_parameter",
     controllerPath="Assets/Animations/PlayerController.controller",
-    paramName="IsGrounded", paramType="bool", defaultValue=True
+    paramName="IsGrounded", paramType="bool", defaultBool=True
 )
 unity_skills.call_skill("animator_add_parameter",
     controllerPath="Assets/Animations/PlayerController.controller",
@@ -213,3 +213,8 @@ unity_skills.call_skill("animator_play", name="Player", stateName="Idle")
 4. Set parameters before playing states
 5. Use layers for independent animations (body + face)
 6. States must exist in controller before playing
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

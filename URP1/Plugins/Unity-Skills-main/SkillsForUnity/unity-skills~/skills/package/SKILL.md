@@ -1,151 +1,123 @@
 ---
 name: unity-package
-description: "Unity Package Manager operations. Use when users want to install, remove, or list packages. Triggers: package, UPM, install, dependency, Cinemachine, TextMeshPro, 包管理, Unity安装, Unity依赖."
+description: "Unity Package Manager operations. Use when users want to install, remove, or inspect packages. Triggers: package, UPM, install, dependency, Cinemachine, TextMeshPro, 包管理, Unity安装, Unity依赖."
 ---
 
 # Package Skills
 
-Unity Package Manager 操作，支持包的安装、移除和 Cinemachine 自动配置。
+Manage installed Unity packages and package-related helper flows such as Cinemachine and Splines setup.
 
 ## Guardrails
 
 **Mode**: Full-Auto required
 
 **DO NOT** (common hallucinations):
-- `package_install_from_git` does not exist → use `package_add` with git URL
-- `package_update` does not exist → use `package_add` with the desired version
-- `package_get_info` does not exist → use `package_list` to see all installed packages
-- Package install/remove may trigger Domain Reload — server temporarily unavailable
+- `package_add` / `package_update` do not exist -> use `package_install`
+- `package_get_info` does not exist -> use `package_list`, `package_check`, `package_get_dependencies`, or `package_get_versions`
+- `package_search` searches the installed package cache only; it does not query the Unity Registry
+- `package_list`, `package_search`, `package_get_dependencies`, and `package_get_versions` can return "Package list not ready" until `package_refresh` completes
+- Package install/remove/refresh jobs can trigger package import and Domain Reload; expect transient server unavailability and use returned job IDs
 
 **Routing**:
-- For Cinemachine/ProBuilder/XR package → `package_add` with correct package name
-- For scripting define symbols after package install → use `debug_set_defines`
+- For Cinemachine quick setup -> use `package_install_cinemachine`
+- For Splines quick setup -> use `package_install_splines`
+- For project manifest inspection -> use `project_get_packages`
+- For define symbol changes after package installation -> use `debug_set_defines`
 
 ## Skills
 
 ### `package_list`
-列出所有已安装的包。
+List all installed packages currently cached by UnitySkills.
 **Parameters:** None.
 
-**Returns:**
-```json
-{
-  "success": true,
-  "count": 15,
-  "packages": [{"name": "com.unity.cinemachine", "version": "3.1.3", "displayName": "Cinemachine"}]
-}
-```
+**Returns:** `{ success, count, packages }`
 
 ### `package_check`
-检查包是否已安装。
-**Parameters:**
-- `packageId` (string, required): 包 ID，如 `com.unity.cinemachine`
+Check whether a package is installed.
 
-**Returns:**
-```json
-{"packageId": "com.unity.cinemachine", "installed": true, "version": "3.1.3"}
-```
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `packageId` | string | Yes | - | Package ID such as `com.unity.cinemachine` |
+
+**Returns:** `{ packageId, installed, version }`
 
 ### `package_install`
-安装指定包。
-**Parameters:**
-- `packageId` (string, required): 包 ID
-- `version` (string, optional): 版本号
+Install a package. Returns an async job when the request is accepted.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `packageId` | string | Yes | - | Package ID to install |
+| `version` | string | No | null | Optional explicit version |
+
+**Returns:** `{ success, status, jobId, message, serverAvailability }`
 
 ### `package_remove`
-移除已安装的包。
-**Parameters:**
-- `packageId` (string, required): 包 ID
+Remove an installed package. Returns an async job when the request is accepted.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `packageId` | string | Yes | - | Installed package ID to remove |
+
+**Returns:** `{ success, status, jobId, message, serverAvailability }`
 
 ### `package_refresh`
-刷新已安装包列表缓存。
+Refresh the installed package cache used by query skills.
 **Parameters:** None.
+
+**Returns:** `{ success, status, jobId, message }`
 
 ### `package_install_cinemachine`
-安装 Cinemachine，自动处理依赖。
-**Parameters:**
-- `version` (int, optional): 2 或 3，默认 3。CM3 自动安装 Splines 依赖。
+Install Cinemachine using the supported package/version strategy.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `version` | int | No | 3 | `2` for CM2, `3` for CM3 |
 
 **Notes:**
-- UnitySkills startup auto-install uses CM2 on Unity 2022 and CM3 on Unity 6.
-- If you explicitly install CM3 in Unity 2022, prefer stable `3.0.1+ / 3.1.x`. Early `3.0.0-pre.1/.2` previews used different core camera APIs and are outside the current support baseline.
+- CM3 auto-installs the Splines dependency.
+- If the requested line is already installed, this skill can return immediate success instead of a job.
 
-### `package_get_cinemachine_status`
-获取 Cinemachine 安装状态。
-**Parameters:** None.
-
-**Returns:**
-```json
-{
-  "cinemachine": {"installed": true, "version": "3.1.3", "isVersion3": true},
-  "splines": {"installed": true, "version": "2.8.0"}
-}
-```
+**Returns:** `{ success, status?, jobId?, message, serverAvailability? }`
 
 ### `package_install_splines`
-Install Unity Splines package. Auto-detects correct version for Unity 6 vs Unity 2022.
-
+Install or upgrade Unity Splines using the recommended version for the current Unity editor line.
 **Parameters:** None.
 
-**Returns:**
-```json
-{
-  "success": true,
-  "message": "Installing Splines 2.8.0...",
-  "async": true
-}
-```
+**Returns:** `{ success, status?, jobId?, message, serverAvailability? }`
+
+### `package_get_cinemachine_status`
+Get current Cinemachine and Splines installation status.
+**Parameters:** None.
+
+**Returns:** `{ cinemachine, splines }`
 
 ### `package_search`
-Search for packages in the Unity Registry.
+Search the installed package cache by package name or display name.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| query | string | Yes | - | 搜索关键词，匹配包名或显示名称 |
+| `query` | string | Yes | - | Search keyword |
 
-**Returns:**
-```json
-{
-  "success": true,
-  "query": "cinemachine",
-  "count": 1,
-  "packages": [{"name": "com.unity.cinemachine", "version": "3.1.3", "displayName": "Cinemachine"}]
-}
-```
+**Returns:** `{ success, query, count, packages }`
 
 ### `package_get_dependencies`
-Get dependency list for an installed package.
+Get dependency information for one installed package.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| packageId | string | Yes | - | 包 ID，如 `com.unity.cinemachine` |
+| `packageId` | string | Yes | - | Installed package ID |
 
-**Returns:**
-```json
-{
-  "success": true,
-  "packageId": "com.unity.cinemachine",
-  "version": "3.1.3",
-  "dependencyCount": 1,
-  "dependencies": [{"name": "com.unity.splines", "version": "2.8.0"}]
-}
-```
+**Returns:** `{ success, packageId, version, dependencyCount, dependencies }`
 
 ### `package_get_versions`
-Get all available versions for a package.
+Get available versions for one installed package.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| packageId | string | Yes | - | 包 ID，如 `com.unity.cinemachine` |
+| `packageId` | string | Yes | - | Installed package ID |
 
-**Returns:**
-```json
-{
-  "success": true,
-  "packageId": "com.unity.cinemachine",
-  "currentVersion": "3.1.3",
-  "compatibleVersion": "3.1.3",
-  "latestVersion": "3.1.3",
-  "allVersions": ["2.10.0", "3.0.0", "3.1.3"]
-}
-```
+**Returns:** `{ success, packageId, currentVersion, compatibleVersion, latestVersion, allVersions }`
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

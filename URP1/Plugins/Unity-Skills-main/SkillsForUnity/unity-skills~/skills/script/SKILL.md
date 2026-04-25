@@ -50,7 +50,7 @@ Create a C# script from template.
 | `scriptName` | string | Yes | - | Script class name |
 | `folder` | string | No | "Assets/Scripts" | Save folder |
 | `template` | string | No | "MonoBehaviour" | Template type |
-| `namespace` | string | No | null | Optional namespace |
+| `namespaceName` | string | No | null | Optional namespace |
 
 **Templates**: MonoBehaviour, ScriptableObject, Editor, EditorWindow
 
@@ -236,8 +236,13 @@ Move a script to a new folder.
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `scriptPath` | string | Yes | - | Script asset path |
-| `newFolder` | string | Yes | - | Destination folder |
+| `newFolder` | string | Yes | - | Destination folder. Must already exist. |
 | `checkCompile` | bool | No | true | Check compilation after move |
 | `diagnosticLimit` | int | No | 20 | Max compile diagnostics |
 
 **Returns:** `{ success, path, oldPath, newPath, compilation? }`
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

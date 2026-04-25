@@ -128,7 +128,7 @@ namespace UnitySkills
                                 hashGroups[hash].Add(path);
                             }
                         }
-                        catch { }
+                        catch (System.Exception ex) { SkillsLogger.LogVerbose($"Hash failed for {path}: {ex.Message}"); }
                     }
 
                     foreach (var hashGroup in hashGroups.Values.Where(g => g.Count > 1))
@@ -372,7 +372,7 @@ namespace UnitySkills
                 return new { success = false, error = $"Asset not found: {assetPath}" };
 
             var usedBy = new List<object>();
-            var allAssetGuids = AssetDatabase.FindAssets("t:Object");
+            var allAssetGuids = AssetDatabase.FindAssets("t:Object", new[] { "Assets" });
 
             foreach (var guid in allAssetGuids)
             {
@@ -506,7 +506,7 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object CleanerGetDependencyTree(string assetPath, bool recursive = true)
         {
-            if (!File.Exists(assetPath) && !Directory.Exists(assetPath))
+            if (!SkillsCommon.PathExists(assetPath))
                 return new { error = $"Asset not found: {assetPath}" };
             var deps = AssetDatabase.GetDependencies(assetPath, recursive)
                 .Where(d => d != assetPath)

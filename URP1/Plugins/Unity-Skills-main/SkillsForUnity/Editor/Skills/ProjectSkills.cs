@@ -266,31 +266,6 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_get_quality_settings", "Get current quality settings",
-            Category = SkillCategory.Project, Operation = SkillOperation.Query,
-            Tags = new[] { "project", "quality", "settings", "graphics" },
-            Outputs = new[] { "currentLevel", "currentName", "allLevels", "shadows", "antiAliasing" },
-            ReadOnly = true)]
-        public static object ProjectGetQualitySettings()
-        {
-            var qualityNames = QualitySettings.names;
-            var currentLevel = QualitySettings.GetQualityLevel();
-
-            return new
-            {
-                success = true,
-                currentLevel = currentLevel,
-                currentName = qualityNames[currentLevel],
-                allLevels = qualityNames.Select((name, index) => new { index, name }).ToList(),
-                shadows = QualitySettings.shadows.ToString(),
-                shadowResolution = QualitySettings.shadowResolution.ToString(),
-                antiAliasing = QualitySettings.antiAliasing,
-                vSyncCount = QualitySettings.vSyncCount,
-                lodBias = QualitySettings.lodBias,
-                maximumLODLevel = QualitySettings.maximumLODLevel
-            };
-        }
-
         [UnitySkill("project_get_build_settings", "Get build settings (platform, scenes)",
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "build", "platform", "scenes" },
@@ -388,24 +363,5 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("project_set_quality_level", "Switch quality level by index or name",
-            Category = SkillCategory.Project, Operation = SkillOperation.Modify,
-            Tags = new[] { "project", "quality", "level", "graphics" },
-            Outputs = new[] { "level", "name" },
-            TracksWorkflow = true)]
-        public static object ProjectSetQualityLevel(int level = -1, string levelName = null)
-        {
-            if (!string.IsNullOrEmpty(levelName))
-            {
-                var names = QualitySettings.names;
-                for (int i = 0; i < names.Length; i++)
-                    if (names[i] == levelName) { level = i; break; }
-                if (level < 0) return new { error = $"Quality level '{levelName}' not found" };
-            }
-            if (level < 0 || level >= QualitySettings.names.Length)
-                return new { error = $"Invalid quality level: {level}" };
-            QualitySettings.SetQualityLevel(level, true);
-            return new { success = true, level, name = QualitySettings.names[level] };
-        }
     }
 }

@@ -205,7 +205,8 @@ Duplicate a material asset.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `sourcePath` | string | Yes | Source material path |
-| `destPath` | string | Yes | Destination path |
+| `newName` | string | Yes | Name for the duplicated material |
+| `savePath` | string | No | Optional folder/path override for the duplicated material |
 
 ### material_set_shader
 Change the shader of a material.
@@ -253,7 +254,7 @@ Set material render queue.
 |-----------|------|----------|-------------|
 | `name` | string | No* | GameObject name |
 | `path` | string | No* | Material asset path |
-| `queue` | int | Yes | Render queue value |
+| `renderQueue` | int | Yes | Render queue value |
 
 ### material_set_gi_flags
 Set material global illumination flags.
@@ -311,3 +312,8 @@ Skills auto-detect and adapt to your render pipeline:
 3. Use material assets (by path) for persistent changes
 4. Check shader property names in Unity Inspector
 5. URP/HDRP have different property names than Standard
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

@@ -13,7 +13,6 @@ Raycasts, overlap checks, and gravity settings.
 
 **DO NOT** (common hallucinations):
 - `physics_add_rigidbody` / `physics_add_collider` do not exist → use `component_add` with componentType "Rigidbody"/"BoxCollider"/etc.
-- `physics_set_gravity` does not exist → use `project` module's `project_set_physics` or `component_set_property` on Rigidbody
 - `physics_simulate` does not exist → physics simulation runs during Play mode
 - Raycast results use world-space coordinates
 
@@ -162,3 +161,23 @@ Set whether two layers collide.
 | enableCollision | bool | No | true | Whether to enable collision |
 
 **Returns:** `{ success, layer1, layer2, collisionEnabled }`
+
+---
+## Minimal Example
+
+```python
+import unity_skills
+
+# Raycast from position downward, check for hits
+result = unity_skills.call_skill("physics_raycast",
+    originX=0, originY=5, originZ=0,
+    dirX=0, dirY=-1, dirZ=0,
+    maxDistance=10
+)
+if result.get("hit"):
+    print(f"Hit: {result['hitObjectName']} at distance {result['distance']}")
+```
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

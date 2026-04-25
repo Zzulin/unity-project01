@@ -1,8 +1,13 @@
-using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
-using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
 
 namespace UnitySkills
 {
@@ -11,90 +16,73 @@ namespace UnitySkills
     /// </summary>
     public static class TestSkills
     {
-        private static readonly Dictionary<string, TestRunInfo> _runningTests = new Dictionary<string, TestRunInfo>();
-        private static TestRunnerApi _api;
+        private const string TestDiscoveryMode = "source_scan_with_file_dependencies";
 
-        [InitializeOnLoadMethod]
-        static void CleanupOnDomainReload()
+        internal sealed class SmokeOutcome
         {
-            _api = null;
-            _runningTests.Clear();
+            public string Skill;
+            public string Category;
+            public string ProbeMode;
+            public string Status;
+            public bool? Valid;
+            public string Error;
+            public string[] MissingParams;
+            public string[] SemanticWarnings;
+            public string[] MetadataWarnings;
         }
 
-        private class TestRunInfo
-        {
-            public string JobId;
-            public string Status = "running";
-            public int TotalTests;
-            public int PassedTests;
-            public int FailedTests;
-            public List<string> FailedTestNames = new List<string>();
-            public System.DateTime StartTime;
-        }
-
-        [UnitySkill("test_run", "Run Unity tests asynchronously. Returns a jobId immediately — poll with test_get_result(jobId) to check status.",
+        [UnitySkill("test_run", "Run Unity tests asynchronously. Returns a platform jobId immediately. Poll with job_status/job_wait or test_get_result(jobId).",
             Category = SkillCategory.Test, Operation = SkillOperation.Execute,
-            Tags = new[] { "test", "run", "async", "editmode", "playmode" },
-            Outputs = new[] { "jobId", "testMode", "message" })]
+            Tags = new[] { "test", "run", "async", "editmode", "playmode", "job" },
+            Outputs = new[] { "jobId", "testMode", "message" },
+            SupportsDryRun = false)]
         public static object TestRun(string testMode = "EditMode", string filter = null)
         {
-            if (_api == null)
-                _api = ScriptableObject.CreateInstance<TestRunnerApi>();
+            if (!AsyncJobService.TryStartTestJob(testMode, filter, out var job, out var error))
+                return new { success = false, error };
 
-            var mode = testMode.ToLower() == "playmode" ? TestMode.PlayMode : TestMode.EditMode;
-            var jobId = System.Guid.NewGuid().ToString("N").Substring(0, 8);
-
-            var runInfo = new TestRunInfo
+            return new
             {
-                JobId = jobId,
-                StartTime = System.DateTime.Now
+                success = true,
+                status = "accepted",
+                jobId = job.jobId,
+                kind = job.kind,
+                testMode,
+                filter,
+                message = "Tests started. Use job_status/job_wait or test_get_result(jobId) to monitor progress."
             };
-            _runningTests[jobId] = runInfo;
+        }
 
-            var callbacks = new TestCallbacks(runInfo);
-            _api.RegisterCallbacks(callbacks);
+        [UnitySkill("test_get_result", "Get the result of a test run. Compatible wrapper over the unified job model.",
+            Category = SkillCategory.Test, Operation = SkillOperation.Query,
+            Tags = new[] { "test", "result", "status", "poll", "job" },
+            Outputs = new[] { "jobId", "status", "totalTests", "passedTests", "failedTests", "skippedTests", "inconclusiveTests", "otherTests", "failedTestNames" },
+            RequiresInput = new[] { "jobId" },
+            ReadOnly = true)]
+        public static object TestGetResult(string jobId)
+        {
+            if (Validate.Required(jobId, "jobId") is object err)
+                return err;
 
-            var filterObj = new Filter { testMode = mode };
-            if (!string.IsNullOrEmpty(filter))
-                filterObj.testNames = new[] { filter };
-
-            _api.Execute(new ExecutionSettings(filterObj));
+            var job = AsyncJobService.Get(jobId);
+            if (job == null || job.kind != "test")
+                return new { error = $"Test job not found: {jobId}" };
 
             return new
             {
                 success = true,
                 jobId,
-                testMode,
-                message = "Tests started. Use test_get_result to poll for results."
-            };
-        }
-
-        [UnitySkill("test_get_result", "Get the result of a test run. Requires the jobId returned by test_run or test_run_by_name.",
-            Category = SkillCategory.Test, Operation = SkillOperation.Query,
-            Tags = new[] { "test", "result", "status", "poll" },
-            Outputs = new[] { "jobId", "status", "totalTests", "passedTests", "failedTests", "failedTestNames" },
-            RequiresInput = new[] { "jobId" },
-            ReadOnly = true)]
-        public static object TestGetResult(string jobId)
-        {
-            // Clean stale entries older than 1 hour
-            var staleKeys = _runningTests
-                .Where(kv => (System.DateTime.Now - kv.Value.StartTime).TotalHours > 1)
-                .Select(kv => kv.Key).ToList();
-            foreach (var key in staleKeys) _runningTests.Remove(key);
-
-            if (!_runningTests.TryGetValue(jobId, out var runInfo))
-                return new { error = $"Test job not found: {jobId}" };
-
-            return new
-            {
-                jobId,
-                status = runInfo.Status,
-                totalTests = runInfo.TotalTests,
-                passedTests = runInfo.PassedTests,
-                failedTests = runInfo.FailedTests,
-                failedTestNames = runInfo.FailedTestNames.ToArray(),
-                elapsedSeconds = (System.DateTime.Now - runInfo.StartTime).TotalSeconds
+                status = job.status,
+                totalTests = GetResultInt(job, "totalTests"),
+                passedTests = GetResultInt(job, "passedTests"),
+                failedTests = GetResultInt(job, "failedTests"),
+                skippedTests = GetResultInt(job, "skippedTests"),
+                inconclusiveTests = GetResultInt(job, "inconclusiveTests"),
+                otherTests = GetResultInt(job, "otherTests"),
+                failedTestNames = GetResultStringList(job, "failedTestNames").ToArray(),
+                elapsedSeconds = System.Math.Max(0, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() - job.startedAt),
+                resultSummary = job.resultSummary,
+                error = job.error
             };
         }
 
@@ -105,44 +93,55 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object TestList(string testMode = "EditMode", int limit = 100)
         {
-            if (_api == null)
-                _api = ScriptableObject.CreateInstance<TestRunnerApi>();
+            var tests = DiscoverTests(testMode)
+                .Take(Mathf.Max(1, limit))
+                .Select(test => new
+                {
+                    name = test.Name,
+                    fullName = test.FullName,
+                    runState = test.RunState
+                })
+                .ToArray();
 
-            var mode = testMode.ToLower() == "playmode" ? TestMode.PlayMode : TestMode.EditMode;
-            var tests = new List<object>();
-
-            _api.RetrieveTestList(mode, (testRoot) =>
+            return new
             {
-                CollectTests(testRoot, tests, limit);
-            });
-
-            return new { testMode, count = tests.Count, tests };
+                success = true,
+                testMode,
+                count = tests.Length,
+                discoveryMode = TestDiscoveryMode,
+                tests
+            };
         }
 
-        [UnitySkill("test_cancel", "Cancel a running test",
+        [UnitySkill("test_cancel", "Cancel a running test job if supported. Unity TestRunner itself does not provide a hard cancel.",
             Category = SkillCategory.Test, Operation = SkillOperation.Execute,
-            Tags = new[] { "test", "cancel", "abort", "stop" },
+            Tags = new[] { "test", "cancel", "abort", "stop", "job" },
             Outputs = new[] { "cancelled" },
             RequiresInput = new[] { "jobId" })]
         public static object TestCancel(string jobId = null)
         {
-            if (_api == null)
-                return new { error = "No test runner available" };
+            if (Validate.Required(jobId, "jobId") is object err)
+                return err;
 
-            // Note: Unity's TestRunnerApi doesn't have a direct cancel method
-            // This is a placeholder that clears the job status
-            if (!string.IsNullOrEmpty(jobId) && _runningTests.ContainsKey(jobId))
+            var job = AsyncJobService.Cancel(jobId);
+            if (job == null || job.kind != "test")
+                return new { error = $"Test job not found: {jobId}" };
+
+            return new
             {
-                _runningTests[jobId].Status = "cancelled";
-                return new { success = true, cancelled = jobId, note = "Unity TestRunnerApi does not support direct cancellation. The test status has been marked but the runner may continue." };
-            }
-
-            return new { error = "Cannot cancel tests directly. Wait for completion." };
+                success = true,
+                jobId = job.jobId,
+                status = job.status,
+                cancelled = job.status == "cancelled",
+                note = "Unity TestRunnerApi does not support direct cancellation. The unified job layer only reports supported cancellation states.",
+                warnings = job.warnings
+            };
         }
 
         private static void CollectTests(ITestAdaptor test, List<object> tests, int limit)
         {
-            if (tests.Count >= limit) return;
+            if (tests.Count >= limit)
+                return;
 
             if (!test.HasChildren)
             {
@@ -152,87 +151,62 @@ namespace UnitySkills
                     fullName = test.FullName,
                     runState = test.RunState.ToString()
                 });
+                return;
             }
-            else
-            {
-                foreach (var child in test.Children)
-                {
-                    CollectTests(child, tests, limit);
-                }
-            }
+
+            foreach (var child in test.Children)
+                CollectTests(child, tests, limit);
         }
 
-        private class TestCallbacks : ICallbacks
-        {
-            private readonly TestRunInfo _runInfo;
-
-            public TestCallbacks(TestRunInfo runInfo)
-            {
-                _runInfo = runInfo;
-            }
-
-            public void RunStarted(ITestAdaptor testsToRun)
-            {
-                _runInfo.TotalTests = CountTests(testsToRun);
-            }
-
-            public void RunFinished(ITestResultAdaptor result)
-            {
-                if (_runInfo.Status != "cancelled")
-                    _runInfo.Status = "completed";
-                TestSkills._api?.UnregisterCallbacks(this);
-                // Keep entry for result polling but it will be cleaned by stale check after 1 hour
-            }
-
-            public void TestStarted(ITestAdaptor test) { }
-
-            public void TestFinished(ITestResultAdaptor result)
-            {
-                if (!result.Test.HasChildren)
-                {
-                    if (result.TestStatus == TestStatus.Passed)
-                        _runInfo.PassedTests++;
-                    else if (result.TestStatus == TestStatus.Failed)
-                    {
-                        _runInfo.FailedTests++;
-                        _runInfo.FailedTestNames.Add(result.Test.FullName);
-                    }
-                }
-            }
-
-            private int CountTests(ITestAdaptor test)
-            {
-                if (!test.HasChildren) return 1;
-                return test.Children.Sum(c => CountTests(c));
-            }
-        }
-
-        [UnitySkill("test_run_by_name", "Run specific tests by class or method name",
+        [UnitySkill("test_run_by_name", "Run specific tests by class or method name. Returns a unified jobId.",
             Category = SkillCategory.Test, Operation = SkillOperation.Execute,
-            Tags = new[] { "test", "run", "name", "specific" },
-            Outputs = new[] { "jobId", "testName", "testMode" })]
+            Tags = new[] { "test", "run", "name", "specific", "job" },
+            Outputs = new[] { "jobId", "testName", "testMode" },
+            SupportsDryRun = false)]
         public static object TestRunByName(string testName, string testMode = "EditMode")
         {
-            if (_api == null) _api = ScriptableObject.CreateInstance<TestRunnerApi>();
-            var mode = testMode.ToLower() == "playmode" ? TestMode.PlayMode : TestMode.EditMode;
-            var jobId = System.Guid.NewGuid().ToString("N").Substring(0, 8);
-            var runInfo = new TestRunInfo { JobId = jobId, StartTime = System.DateTime.Now };
-            _runningTests[jobId] = runInfo;
-            _api.RegisterCallbacks(new TestCallbacks(runInfo));
-            _api.Execute(new ExecutionSettings(new Filter { testMode = mode, testNames = new[] { testName } }));
-            return new { success = true, jobId, testName, testMode };
+            if (Validate.Required(testName, "testName") is object err)
+                return err;
+
+            if (!AsyncJobService.TryStartTestJob(testMode, testName, out var job, out var error))
+                return new { success = false, error };
+
+            return new
+            {
+                success = true,
+                status = "accepted",
+                jobId = job.jobId,
+                testName,
+                testMode
+            };
         }
 
         [UnitySkill("test_get_last_result", "Get the most recent test run result",
             Category = SkillCategory.Test, Operation = SkillOperation.Query,
             Tags = new[] { "test", "result", "last", "recent" },
-            Outputs = new[] { "jobId", "status", "total", "passed", "failed", "failedNames" },
+            Outputs = new[] { "jobId", "status", "total", "passed", "failed", "skipped", "inconclusive", "other", "failedNames" },
             ReadOnly = true)]
         public static object TestGetLastResult()
         {
-            if (_runningTests.Count == 0) return new { error = "No test runs found" };
-            var last = _runningTests.Values.OrderByDescending(r => r.StartTime).First();
-            return new { jobId = last.JobId, status = last.Status, total = last.TotalTests, passed = last.PassedTests, failed = last.FailedTests, failedNames = last.FailedTestNames.ToArray() };
+            var last = EnumerateRealTestRuns(100)
+                .OrderByDescending(job => job.startedAt)
+                .FirstOrDefault();
+            if (last == null)
+                return new { error = "No test runs found" };
+
+            return new
+            {
+                success = true,
+                jobId = last.jobId,
+                status = last.status,
+                total = GetResultInt(last, "totalTests"),
+                passed = GetResultInt(last, "passedTests"),
+                failed = GetResultInt(last, "failedTests"),
+                skipped = GetResultInt(last, "skippedTests"),
+                inconclusive = GetResultInt(last, "inconclusiveTests"),
+                other = GetResultInt(last, "otherTests"),
+                failedNames = GetResultStringList(last, "failedTestNames").ToArray()
+            };
         }
 
         [UnitySkill("test_list_categories", "List test categories",
@@ -242,25 +216,202 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object TestListCategories(string testMode = "EditMode")
         {
-            if (_api == null) _api = ScriptableObject.CreateInstance<TestRunnerApi>();
-            var mode = testMode.ToLower() == "playmode" ? TestMode.PlayMode : TestMode.EditMode;
-            var categories = new HashSet<string>();
-            _api.RetrieveTestList(mode, (testRoot) => CollectCategories(testRoot, categories));
-            return new { success = true, count = categories.Count, categories = categories.OrderBy(c => c).ToArray() };
+            var categories = DiscoverTests(testMode)
+                .SelectMany(test => test.Categories ?? Array.Empty<string>())
+                .Where(category => !string.IsNullOrWhiteSpace(category))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(category => category, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return new
+            {
+                success = true,
+                count = categories.Length,
+                categories,
+                discoveryMode = TestDiscoveryMode,
+                note = categories.Length == 0
+                    ? "No [Category] attributes were found in discovered tests."
+                    : null
+            };
+        }
+
+        [UnitySkill("test_smoke_skills", "Run a reusable smoke test across registered skills. Executes safe read-only skills and dry-runs the rest for broad regression coverage.",
+            Category = SkillCategory.Test, Operation = SkillOperation.Analyze,
+            Tags = new[] { "test", "smoke", "skills", "regression", "coverage" },
+            Outputs = new[] { "totalSkills", "executedCount", "dryRunCount", "failureCount", "results" },
+            ReadOnly = true)]
+        public static object TestSmokeSkills(
+            string category = null,
+            string nameContains = null,
+            string excludeNamesCsv = null,
+            bool executeReadOnly = true,
+            bool includeMutating = true,
+            int limit = 0,
+            bool runAsync = true,
+            int chunkSize = 25,
+            int failureItemLimit = 50)
+        {
+            var request = BuildSmokeRequest(category, nameContains, excludeNamesCsv, executeReadOnly, includeMutating, limit);
+
+            if (runAsync)
+            {
+                var job = AsyncJobService.StartSmokeJob(request.SelectedSkills, request.MetadataIssues, executeReadOnly, chunkSize, failureItemLimit);
+                return new
+                {
+                    success = true,
+                    status = "accepted",
+                    jobId = job.jobId,
+                    kind = job.kind,
+                    totalSkills = request.SelectedSkills.Length,
+                    filters = new
+                    {
+                        category,
+                        nameContains,
+                        excludeNames = request.ExcludedNames.OrderBy(name => name).ToArray(),
+                        executeReadOnly,
+                        includeMutating,
+                        limit,
+                        chunkSize,
+                        failureItemLimit
+                    },
+                    message = "Smoke test job created. Use job_status/job_wait to monitor progress."
+                };
+            }
+
+            var results = new List<object>(request.SelectedSkills.Length);
+            int executedCount = 0;
+            int dryRunCount = 0;
+            int skippedCount = 0;
+            int failureCount = 0;
+
+            foreach (var skill in request.SelectedSkills)
+            {
+                var outcome = EvaluateSmokeSkill(skill, request.MetadataIssues, executeReadOnly);
+                if (string.Equals(outcome.ProbeMode, "execute", StringComparison.OrdinalIgnoreCase))
+                    executedCount++;
+                else if (string.Equals(outcome.ProbeMode, "dryRun", StringComparison.OrdinalIgnoreCase))
+                    dryRunCount++;
+
+                if (string.Equals(outcome.Status, "error", StringComparison.OrdinalIgnoreCase))
+                    failureCount++;
+
+                if (string.Equals(outcome.Status, "skipped", StringComparison.OrdinalIgnoreCase) ||
+                    (string.Equals(outcome.Status, "dryRun", StringComparison.OrdinalIgnoreCase) && !outcome.Valid.GetValueOrDefault(true)))
+                {
+                    skippedCount++;
+                }
+
+                results.Add(new
+                {
+                    skill = outcome.Skill,
+                    category = outcome.Category,
+                    readOnly = skill.ReadOnly,
+                    riskLevel = skill.RiskLevel,
+                    probeMode = outcome.ProbeMode,
+                    status = outcome.Status,
+                    valid = outcome.Valid,
+                    missingParams = outcome.MissingParams ?? Array.Empty<string>(),
+                    semanticWarnings = outcome.SemanticWarnings ?? Array.Empty<string>(),
+                    metadataWarnings = outcome.MetadataWarnings ?? Array.Empty<string>(),
+                    error = outcome.Error
+                });
+            }
+
+            return new
+            {
+                success = failureCount == 0,
+                totalSkills = request.SelectedSkills.Length,
+                executedCount,
+                dryRunCount,
+                skippedCount,
+                failureCount,
+                filters = new
+                {
+                    category,
+                    nameContains,
+                    excludeNames = request.ExcludedNames.OrderBy(name => name).ToArray(),
+                    executeReadOnly,
+                    includeMutating,
+                    limit
+                },
+                note = "Read-only skills with no required inputs are executed directly; all other skills are smoke-tested via dryRun with empty arguments.",
+                results
+            };
+        }
+
+        internal static SmokeOutcome EvaluateSmokeSkill(SkillRouter.SkillInfo skill, string[] metadataIssues, bool executeReadOnly)
+        {
+            var validation = SkillRouter.ValidateParameters(skill, "{}");
+            var canExecuteReadOnly = executeReadOnly &&
+                                     skill.ReadOnly &&
+                                     validation.MissingParams.Count == 0 &&
+                                     validation.TypeErrors.Count == 0 &&
+                                     !skill.MayTriggerReload;
+
+            if (skill.MayTriggerReload)
+            {
+                return new SmokeOutcome
+                {
+                    Skill = skill.Name,
+                    Category = skill.Category != SkillCategory.Uncategorized ? skill.Category.ToString() : null,
+                    ProbeMode = "skipped",
+                    Status = "skipped",
+                    Valid = false,
+                    Error = "MayTriggerReload — executing would cause Domain Reload and break subsequent skills",
+                    MetadataWarnings = FindMetadataWarnings(metadataIssues, skill.Name)
+                };
+            }
+
+            var probeMode = canExecuteReadOnly ? "execute" : "dryRun";
+            JObject response;
+            try
+            {
+                response = probeMode == "execute"
+                    ? ExecuteSmokeProbe(skill, validation)
+                    : JObject.Parse(SkillRouter.DryRun(skill.Name, "{}"));
+            }
+            catch (Exception ex)
+            {
+                return new SmokeOutcome
+                {
+                    Skill = skill.Name,
+                    Category = skill.Category != SkillCategory.Uncategorized ? skill.Category.ToString() : null,
+                    ProbeMode = probeMode,
+                    Status = "error",
+                    Valid = false,
+                    Error = $"Smoke test produced non-JSON response: {ex.Message}",
+                    MetadataWarnings = FindMetadataWarnings(metadataIssues, skill.Name)
+                };
+            }
+
+            return new SmokeOutcome
+            {
+                Skill = skill.Name,
+                Category = skill.Category != SkillCategory.Uncategorized ? skill.Category.ToString() : null,
+                ProbeMode = probeMode,
+                Status = response["status"]?.ToString() ?? "unknown",
+                Valid = response["valid"]?.Value<bool?>(),
+                Error = response["error"]?.ToString(),
+                MissingParams = response["validation"]?["missingParams"]?.ToObject<string[]>() ?? Array.Empty<string>(),
+                SemanticWarnings = response["validation"]?["warnings"]?.ToObject<string[]>() ?? Array.Empty<string>(),
+                MetadataWarnings = FindMetadataWarnings(metadataIssues, skill.Name)
+            };
         }
 
         private static void CollectCategories(ITestAdaptor test, HashSet<string> categories)
         {
             if (test.Categories != null)
-                foreach (var cat in test.Categories) categories.Add(cat);
+                foreach (var cat in test.Categories)
+                    categories.Add(cat);
             if (test.HasChildren)
-                foreach (var child in test.Children) CollectCategories(child, categories);
+                foreach (var child in test.Children)
+                    CollectCategories(child, categories);
         }
 
-        [UnitySkill("test_create_editmode", "Create an EditMode test script template",
+        [UnitySkill("test_create_editmode", "Create an EditMode test script template and return a compile-monitor job.",
             Category = SkillCategory.Test, Operation = SkillOperation.Create,
-            Tags = new[] { "test", "create", "editmode", "template" },
-            Outputs = new[] { "path", "testName" })]
+            Tags = new[] { "test", "create", "editmode", "template", "job" },
+            Outputs = new[] { "path", "testName", "jobId" })]
         public static object TestCreateEditMode(string testName, string folder = "Assets/Tests/Editor")
         {
             if (Validate.Required(testName, "testName") is object nameErr) return nameErr;
@@ -283,23 +434,26 @@ public class {testName}
     }}
 }}
 ";
-            System.IO.File.WriteAllText(path, content, new System.Text.UTF8Encoding(false));
+            System.IO.File.WriteAllText(path, content, SkillsCommon.Utf8NoBom);
             AssetDatabase.ImportAsset(path);
+            var job = AsyncJobService.StartScriptMutationJob("test_create_editmode", path.Replace("\\", "/"), true, 20);
             return new
             {
                 success = true,
+                status = "accepted",
                 path,
                 testName,
+                jobId = job.jobId,
                 serverAvailability = ServerAvailabilityHelper.CreateTransientUnavailableNotice(
                     $"已创建测试脚本: {path}。Unity 可能短暂重载脚本域。",
                     alwaysInclude: true)
             };
         }
 
-        [UnitySkill("test_create_playmode", "Create a PlayMode test script template",
+        [UnitySkill("test_create_playmode", "Create a PlayMode test script template and return a compile-monitor job.",
             Category = SkillCategory.Test, Operation = SkillOperation.Create,
-            Tags = new[] { "test", "create", "playmode", "template" },
-            Outputs = new[] { "path", "testName" })]
+            Tags = new[] { "test", "create", "playmode", "template", "job" },
+            Outputs = new[] { "path", "testName", "jobId" })]
         public static object TestCreatePlayMode(string testName, string folder = "Assets/Tests/Runtime")
         {
             if (Validate.Required(testName, "testName") is object nameErr) return nameErr;
@@ -324,13 +478,16 @@ public class {testName}
     }}
 }}
 ";
-            System.IO.File.WriteAllText(path, content, new System.Text.UTF8Encoding(false));
+            System.IO.File.WriteAllText(path, content, SkillsCommon.Utf8NoBom);
             AssetDatabase.ImportAsset(path);
+            var job = AsyncJobService.StartScriptMutationJob("test_create_playmode", path.Replace("\\", "/"), true, 20);
             return new
             {
                 success = true,
+                status = "accepted",
                 path,
                 testName,
+                jobId = job.jobId,
                 serverAvailability = ServerAvailabilityHelper.CreateTransientUnavailableNotice(
                     $"已创建测试脚本: {path}。Unity 可能短暂重载脚本域。",
                     alwaysInclude: true)
@@ -340,19 +497,519 @@ public class {testName}
         [UnitySkill("test_get_summary", "Get aggregated test summary across all runs",
             Category = SkillCategory.Test, Operation = SkillOperation.Query,
             Tags = new[] { "test", "summary", "aggregate", "report" },
-            Outputs = new[] { "totalRuns", "completedRuns", "totalPassed", "totalFailed", "allFailedTests" },
+            Outputs = new[] { "totalRuns", "completedRuns", "totalPassed", "totalFailed", "totalSkipped", "totalInconclusive", "totalOther", "allFailedTests" },
             ReadOnly = true)]
         public static object TestGetSummary()
         {
-            var runs = _runningTests.Values.ToList();
+            var runs = EnumerateRealTestRuns(200).ToList();
             return new
             {
-                success = true, totalRuns = runs.Count,
-                completedRuns = runs.Count(r => r.Status == "completed"),
-                totalPassed = runs.Sum(r => r.PassedTests),
-                totalFailed = runs.Sum(r => r.FailedTests),
-                allFailedTests = runs.SelectMany(r => r.FailedTestNames).Distinct().ToArray()
+                success = true,
+                totalRuns = runs.Count,
+                completedRuns = runs.Count(r => r.status == "completed"),
+                totalPassed = runs.Sum(r => GetResultInt(r, "passedTests")),
+                totalFailed = runs.Sum(r => GetResultInt(r, "failedTests")),
+                totalSkipped = runs.Sum(r => GetResultInt(r, "skippedTests")),
+                totalInconclusive = runs.Sum(r => GetResultInt(r, "inconclusiveTests")),
+                totalOther = runs.Sum(r => GetResultInt(r, "otherTests")),
+                allFailedTests = runs
+                    .SelectMany(r => GetResultStringList(r, "failedTestNames"))
+                    .Distinct()
+                    .ToArray()
             };
+        }
+
+        private static JObject ExecuteSmokeProbe(SkillRouter.SkillInfo skill, SkillRouter.ParameterValidationResult validation)
+        {
+            using (BatchPersistence.BeginTransientScope())
+            {
+                if (validation.UnknownParams.Count > 0)
+                {
+                    return JObject.FromObject(new
+                    {
+                        status = "error",
+                        error = $"Unknown parameters: {validation.UnknownParams.Count}"
+                    });
+                }
+
+                if (validation.MissingParams.Count > 0)
+                {
+                    return JObject.FromObject(new
+                    {
+                        status = "dryRun",
+                        valid = false,
+                        validation = new
+                        {
+                            missingParams = validation.MissingParams.ToArray(),
+                            semanticErrors = validation.SemanticErrors.ToArray(),
+                            warnings = validation.Warnings.ToArray()
+                        }
+                    });
+                }
+
+                if (validation.TypeErrors.Count > 0 || validation.SemanticErrors.Count > 0)
+                {
+                    return JObject.FromObject(new
+                    {
+                        status = "dryRun",
+                        valid = false,
+                        validation = new
+                        {
+                            missingParams = validation.MissingParams.ToArray(),
+                            typeErrors = validation.TypeErrors.ToArray(),
+                            semanticErrors = validation.SemanticErrors.ToArray(),
+                            warnings = validation.Warnings.ToArray()
+                        }
+                    });
+                }
+
+                try
+                {
+                    var result = skill.Method.Invoke(null, validation.InvokeArgs);
+                    if (SkillResultHelper.TryGetError(result, out var errorText))
+                    {
+                        return JObject.FromObject(new
+                        {
+                            status = "error",
+                            error = errorText
+                        });
+                    }
+
+                    return JObject.FromObject(new
+                    {
+                        status = "success"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    var actual = ex is System.Reflection.TargetInvocationException tie && tie.InnerException != null
+                        ? tie.InnerException
+                        : ex;
+
+                    return JObject.FromObject(new
+                    {
+                        status = "error",
+                        error = actual.Message
+                    });
+                }
+            }
+        }
+
+        private static SmokeRequest BuildSmokeRequest(
+            string category,
+            string nameContains,
+            string excludeNamesCsv,
+            bool executeReadOnly,
+            bool includeMutating,
+            int limit)
+        {
+            SkillRouter.Initialize();
+
+            var excludedNames = ParseCsv(excludeNamesCsv);
+            var metadataIssues = SkillRouter.ValidateMetadata().ToArray();
+            IEnumerable<SkillRouter.SkillInfo> skills = SkillRouter.GetAllSkillsSnapshot();
+
+            if (!string.IsNullOrWhiteSpace(category) &&
+                Enum.TryParse(category, true, out SkillCategory parsedCategory))
+            {
+                skills = skills.Where(skill => skill.Category == parsedCategory);
+            }
+
+            if (!string.IsNullOrWhiteSpace(nameContains))
+            {
+                skills = skills.Where(skill =>
+                    skill.Name.IndexOf(nameContains, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+
+            if (excludedNames.Count > 0)
+            {
+                skills = skills.Where(skill => !excludedNames.Contains(skill.Name));
+            }
+
+            if (!includeMutating)
+            {
+                skills = skills.Where(skill => skill.ReadOnly);
+            }
+
+            if (limit > 0)
+                skills = skills.Take(limit);
+
+            return new SmokeRequest
+            {
+                SelectedSkills = skills.ToArray(),
+                MetadataIssues = metadataIssues,
+                ExcludedNames = excludedNames
+            };
+        }
+
+        private static IEnumerable<BatchJobRecord> EnumerateRealTestRuns(int limit)
+        {
+            return AsyncJobService.List(limit)
+                .Where(IsRealTestRun)
+                .ToArray();
+        }
+
+        private static bool IsRealTestRun(BatchJobRecord job)
+        {
+            if (job == null || !string.Equals(job.kind, "test", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (job.metadata != null &&
+                job.metadata.TryGetValue("synthetic", out var syntheticValue) &&
+                syntheticValue is bool synthetic &&
+                synthetic)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static string[] FindMetadataWarnings(IEnumerable<string> metadataIssues, string skillName)
+        {
+            var issueTag = $"] {skillName}: ";
+            return metadataIssues?
+                .Where(issue => issue.IndexOf(issueTag, StringComparison.Ordinal) >= 0)
+                .ToArray() ?? Array.Empty<string>();
+        }
+
+        private static IReadOnlyList<DiscoveredTestCase> DiscoverTests(string testMode)
+        {
+            var discovered = new List<DiscoveredTestCase>();
+            var includePlayMode = string.Equals(testMode, "PlayMode", StringComparison.OrdinalIgnoreCase);
+            foreach (var filePath in EnumerateTestSourceFiles(includePlayMode))
+                discovered.AddRange(DiscoverTestsFromSource(filePath, includePlayMode));
+
+            return discovered
+                .OrderBy(test => test.FullName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        internal static string[] ResolveExactTestNames(string testMode, string filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter))
+                return Array.Empty<string>();
+
+            return DiscoverTests(testMode)
+                .Where(test =>
+                    string.Equals(test.FullName, filter, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(test.Name, filter, StringComparison.OrdinalIgnoreCase))
+                .Select(test => test.FullName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        internal static bool MatchesDiscoveredTestGroup(string testMode, string filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter))
+                return false;
+
+            return DiscoverTests(testMode).Any(test =>
+                test.FullName.StartsWith(filter + ".", StringComparison.OrdinalIgnoreCase) ||
+                test.FullName.IndexOf("." + filter + ".", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        internal static string[] ResolveGroupedTestNames(string testMode, string filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter))
+                return Array.Empty<string>();
+
+            return DiscoverTests(testMode)
+                .Where(test =>
+                    test.FullName.StartsWith(filter + ".", StringComparison.OrdinalIgnoreCase) ||
+                    test.FullName.IndexOf("." + filter + ".", StringComparison.OrdinalIgnoreCase) >= 0)
+                .Select(test => test.FullName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        internal static string[] ResolveGroupAssemblyNames(string testMode, string filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter))
+                return Array.Empty<string>();
+
+            return DiscoverTests(testMode)
+                .Where(test =>
+                    test.FullName.StartsWith(filter + ".", StringComparison.OrdinalIgnoreCase) ||
+                    test.FullName.IndexOf("." + filter + ".", StringComparison.OrdinalIgnoreCase) >= 0)
+                .Select(test => test.AssemblyName)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static IEnumerable<string> EnumerateTestSourceFiles(bool includePlayMode)
+        {
+            var roots = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                Application.dataPath,
+                Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Packages"))
+            };
+
+            foreach (var fileDependencyRoot in EnumerateFileDependencyRoots())
+                roots.Add(fileDependencyRoot);
+
+            foreach (var root in roots.Where(Directory.Exists))
+            {
+                IEnumerable<string> files;
+                try
+                {
+                    files = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                foreach (var file in files)
+                {
+                    var normalized = file.Replace('\\', '/');
+                    if (normalized.IndexOf("/Tests/", StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+
+                    var isPlayModeFile = normalized.IndexOf("/Tests/Runtime/", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         normalized.IndexOf("/Tests/PlayMode/", StringComparison.OrdinalIgnoreCase) >= 0;
+                    var isEditModeFile = normalized.IndexOf("/Tests/Editor/", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         normalized.IndexOf("/Editor/Tests/", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    if (includePlayMode)
+                    {
+                        if (!isPlayModeFile)
+                            continue;
+                    }
+                    else if (isPlayModeFile && !isEditModeFile)
+                    {
+                        continue;
+                    }
+
+                    yield return file;
+                }
+            }
+        }
+
+        private static IEnumerable<string> EnumerateFileDependencyRoots()
+        {
+            var manifestPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Packages", "manifest.json"));
+            if (!File.Exists(manifestPath))
+                yield break;
+
+            JObject manifest;
+            try
+            {
+                manifest = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(manifestPath));
+            }
+            catch
+            {
+                yield break;
+            }
+
+            var dependencies = manifest?["dependencies"] as JObject;
+            if (dependencies == null)
+                yield break;
+
+            foreach (var property in dependencies.Properties())
+            {
+                var value = property.Value?.ToString();
+                if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var root = value.Substring("file:".Length).Replace('/', Path.DirectorySeparatorChar);
+                if (Path.IsPathRooted(root))
+                    yield return root;
+                else
+                    yield return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(manifestPath) ?? string.Empty, root));
+            }
+        }
+
+        private static IEnumerable<DiscoveredTestCase> DiscoverTestsFromSource(string filePath, bool includePlayMode)
+        {
+            string[] lines;
+            try
+            {
+                lines = File.ReadAllLines(filePath);
+            }
+            catch
+            {
+                yield break;
+            }
+
+            var assemblyName = ResolveAssemblyNameForSourceFile(filePath);
+            var namespaceName = string.Empty;
+            var currentClass = string.Empty;
+            var classCategories = Array.Empty<string>();
+            var pendingAttributes = new List<string>();
+
+            foreach (var rawLine in lines)
+            {
+                var line = rawLine.Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    pendingAttributes.Clear();
+                    continue;
+                }
+
+                if (line.StartsWith("[", StringComparison.Ordinal))
+                {
+                    pendingAttributes.Add(line);
+                    continue;
+                }
+
+                var namespaceMatch = Regex.Match(line, @"^namespace\s+(?<ns>[\w\.]+)");
+                if (namespaceMatch.Success)
+                {
+                    namespaceName = namespaceMatch.Groups["ns"].Value;
+                    pendingAttributes.Clear();
+                    continue;
+                }
+
+                var classMatch = Regex.Match(line, @"^(?:public|internal|private|protected|sealed|abstract|static|partial|\s)*class\s+(?<name>\w+)");
+                if (classMatch.Success)
+                {
+                    currentClass = classMatch.Groups["name"].Value;
+                    classCategories = ExtractCategoryNames(pendingAttributes).ToArray();
+                    pendingAttributes.Clear();
+                    continue;
+                }
+
+                var methodMatch = Regex.Match(line, @"^(?:public|internal|private|protected|static|virtual|override|sealed|async|\s)+[\w<>\[\],\.\s]+\s+(?<name>\w+)\s*\(");
+                if (!methodMatch.Success)
+                {
+                    pendingAttributes.Clear();
+                    continue;
+                }
+
+                var isUnityTest = ContainsAttribute(pendingAttributes, "UnityTest");
+                var isTest = ContainsAttribute(pendingAttributes, "Test") ||
+                             ContainsAttribute(pendingAttributes, "TestCase") ||
+                             isUnityTest;
+                if (!isTest || string.IsNullOrWhiteSpace(currentClass))
+                {
+                    pendingAttributes.Clear();
+                    continue;
+                }
+
+                var categories = classCategories
+                    .Concat(ExtractCategoryNames(pendingAttributes))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                var methodName = methodMatch.Groups["name"].Value;
+                yield return new DiscoveredTestCase
+                {
+                    Name = methodName,
+                    FullName = string.IsNullOrWhiteSpace(namespaceName)
+                        ? $"{currentClass}.{methodName}"
+                        : $"{namespaceName}.{currentClass}.{methodName}",
+                    AssemblyName = assemblyName,
+                    RunState = ContainsAttribute(pendingAttributes, "Ignore") ? "Ignored" :
+                               ContainsAttribute(pendingAttributes, "Explicit") ? "Explicit" : "Runnable",
+                    Categories = categories
+                };
+
+                pendingAttributes.Clear();
+            }
+        }
+
+        private static bool ContainsAttribute(IEnumerable<string> attributes, string attributeName)
+        {
+            return attributes.Any(attribute =>
+                attribute.IndexOf($"[{attributeName}", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                attribute.IndexOf($"[{attributeName}Attribute", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static IEnumerable<string> ExtractCategoryNames(IEnumerable<string> attributes)
+        {
+            foreach (var attribute in attributes)
+            {
+                foreach (Match match in Regex.Matches(attribute, @"Category(?:Attribute)?\s*\(\s*""(?<name>[^""]+)""\s*\)", RegexOptions.IgnoreCase))
+                {
+                    var category = match.Groups["name"].Value;
+                    if (!string.IsNullOrWhiteSpace(category))
+                        yield return category;
+                }
+            }
+        }
+
+        private static string ResolveAssemblyNameForSourceFile(string filePath)
+        {
+            try
+            {
+                var directory = Path.GetDirectoryName(filePath);
+                while (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+                {
+                    var asmdefPath = Directory.EnumerateFiles(directory, "*.asmdef", SearchOption.TopDirectoryOnly)
+                        .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                        .FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(asmdefPath))
+                    {
+                        var asmdefJson = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(asmdefPath));
+                        var assemblyName = asmdefJson?["name"]?.ToString();
+                        if (!string.IsNullOrWhiteSpace(assemblyName))
+                            return assemblyName;
+                    }
+
+                    directory = Path.GetDirectoryName(directory);
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
+        private static int GetResultInt(BatchJobRecord job, string key)
+        {
+            if (job?.resultData == null || !job.resultData.TryGetValue(key, out var value) || value == null)
+                return 0;
+
+            if (value is int intValue)
+                return intValue;
+            if (value is long longValue)
+                return (int)longValue;
+            return int.TryParse(value.ToString(), out var parsed) ? parsed : 0;
+        }
+
+        private static IEnumerable<string> GetResultStringList(BatchJobRecord job, string key)
+        {
+            if (job?.resultData == null || !job.resultData.TryGetValue(key, out var value) || value == null)
+                return Enumerable.Empty<string>();
+
+            if (value is IEnumerable<string> stringList)
+                return stringList;
+
+            if (value is IEnumerable<object> objectList)
+                return objectList.Select(item => item?.ToString()).Where(item => !string.IsNullOrEmpty(item));
+
+            return Enumerable.Empty<string>();
+        }
+
+        private static HashSet<string> ParseCsv(string csv)
+        {
+            if (string.IsNullOrWhiteSpace(csv))
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            return csv
+                .Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(item => item.Trim())
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private sealed class SmokeRequest
+        {
+            public SkillRouter.SkillInfo[] SelectedSkills;
+            public string[] MetadataIssues;
+            public HashSet<string> ExcludedNames;
+        }
+
+        private sealed class DiscoveredTestCase
+        {
+            public string Name;
+            public string FullName;
+            public string AssemblyName;
+            public string RunState;
+            public string[] Categories;
         }
     }
 }

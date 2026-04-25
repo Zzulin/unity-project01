@@ -133,7 +133,7 @@ namespace UnitySkills
                 var mf = r.GetComponent<MeshFilter>();
                 if (mf != null && mf.sharedMesh != null)
                 {
-                    int tris = mf.sharedMesh.triangles.Length / 3;
+                    int tris = SkillsCommon.GetTriangleCount(mf.sharedMesh);
                     totalTris += tris;
                     if (tris > polyThreshold)
                         issues.Add(new { type = "HighPoly", gameObject = r.name, path = GameObjectFinder.GetPath(r.gameObject), triangles = tris });

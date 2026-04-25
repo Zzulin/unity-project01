@@ -12,8 +12,7 @@ Create and modify Unity Timelines.
 **Mode**: Full-Auto required
 
 **DO NOT** (common hallucinations):
-- `timeline_create_animation` does not exist → use `timeline_add_track` with track type "AnimationTrack"
-- `timeline_play` does not exist → use `timeline_set_time` for scrubbing, or `editor_play` for runtime playback
+- `timeline_create_animation` / `timeline_add_track` do not exist → use the typed track skills: `timeline_add_animation_track`, `timeline_add_audio_track`, `timeline_add_activation_track`, `timeline_add_control_track`, `timeline_add_signal_track`
 - `timeline_add_keyframe` does not exist → Timeline uses clips, not direct keyframes; use `timeline_add_clip`
 - `timeline_set_duration` sets the Timeline asset duration, not individual clip duration
 
@@ -102,7 +101,7 @@ Remove a track by name from a Timeline.
 | name | string | No | - | GameObject name with PlayableDirector |
 | instanceId | int | No | 0 | GameObject instance ID |
 | path | string | No | - | GameObject hierarchy path |
-| trackName | string | Yes | - | Name of the track to remove |
+| trackName | string | No | - | Name of the track to remove |
 
 **Returns:** `{ success, removed }`
 
@@ -125,7 +124,7 @@ Add a clip to a track by track name.
 | name | string | No | - | GameObject name with PlayableDirector |
 | instanceId | int | No | 0 | GameObject instance ID |
 | path | string | No | - | GameObject hierarchy path |
-| trackName | string | Yes | - | Name of the target track |
+| trackName | string | No | - | Name of the target track |
 | start | double | No | 0 | Clip start time in seconds |
 | duration | double | No | 1 | Clip duration in seconds |
 
@@ -164,7 +163,11 @@ Set the binding object for a track.
 | name | string | No | - | GameObject name with PlayableDirector |
 | instanceId | int | No | 0 | GameObject instance ID |
 | path | string | No | - | GameObject hierarchy path |
-| trackName | string | Yes | - | Name of the track |
-| bindingObjectName | string | Yes | - | Name of the object to bind |
+| trackName | string | No | - | Name of the track |
+| bindingObjectName | string | No | - | Name of the object to bind |
 
 **Returns:** `{ success, trackName, boundTo }`
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

@@ -15,7 +15,8 @@ namespace UnitySkills
             Tags = new[] { "prefab", "asset", "save", "create" },
             Outputs = new[] { "prefabPath", "name" },
             RequiresInput = new[] { "gameObject" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesScene = true, MutatesAssets = true, RiskLevel = "medium")]
         public static object PrefabCreate(string name = null, int instanceId = 0, string path = null, string savePath = null)
         {
             if (Validate.Required(savePath, "savePath") is object reqErr) return reqErr;
@@ -167,7 +168,8 @@ namespace UnitySkills
             Tags = new[] { "prefab", "apply", "overrides", "save" },
             Outputs = new[] { "appliedTo" },
             RequiresInput = new[] { "prefabInstance" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesScene = true, MutatesAssets = true, RiskLevel = "medium")]
         public static object PrefabApply(string name = null, int instanceId = 0, string path = null)
         {
             var (go, goErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -189,7 +191,8 @@ namespace UnitySkills
             Tags = new[] { "prefab", "unpack", "disconnect", "instance" },
             Outputs = new[] { "unpacked" },
             RequiresInput = new[] { "prefabInstance" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesScene = true, RiskLevel = "medium")]
         public static object PrefabUnpack(string name = null, int instanceId = 0, string path = null, bool completely = false)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);

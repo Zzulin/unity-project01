@@ -39,6 +39,33 @@ When using this skill, structure the advice as:
 - Keep dependencies explicit. Avoid hidden global state unless the project size clearly justifies a small service layer.
 - Favor simple module boundaries over framework-heavy architecture.
 
+## Explicit Execution Order and Entry Guards
+
+Most "random" gameplay bugs trace back to two silent assumptions: that scripts run in a predictable order, and that `Update` runs only when its data is ready. Neither is true unless you make them so.
+
+### Make startup order explicit
+
+Do not rely on Script Execution Order panels or accidental `Awake` ordering. Prefer these patterns in order of preference:
+
+- **One Bootstrap script** as the single entry point. It owns the initialization sequence and calls `sub.Init()` on the managers it creates. Only this one script has `[DefaultExecutionOrder(-10000)]`.
+- **Pull, don't push**: a subscriber that needs data calls `source.GetValue()` on demand or subscribes to an event. A publisher that pushes into others during its own `Awake` creates hidden order dependencies.
+- **Reserve `[DefaultExecutionOrder(n)]`** for load-bearing singletons only (Bootstrap, InputRouter, SceneController). If more than 3-4 scripts need it, the architecture is wrong, not the ordering.
+
+The analogous ECS pattern — `[UpdateBefore(typeof(BarSystem))]` / `[UpdateAfter]` — works because the framework validates contradictions at sort time. In MonoBehaviour code the compiler won't catch them; be conservative. *Source: `EntitiesSamples/Docs/systems.md:32` — "if the ordering attributes of a group's children create a contradiction, an exception is thrown".*
+
+### Make update preconditions explicit
+
+Every `Update` / `LateUpdate` / `FixedUpdate` should open with guard clauses that early-return when the system is not ready. Prefer the cheapest check first:
+```csharp
+void Update() {
+    if (!_isInitialized) return;       // construction-time
+    if (_dataSource == null) return;   // dependency-level
+    if (_paused) return;               // gameplay-state
+    // real work here
+}
+```
+A missing guard is the difference between "doesn't run yet" (safe) and "runs with stale/null data and silently corrupts state" (debug nightmare). The ECS equivalent is `state.RequireForUpdate<Config>()` in `OnCreate`, which turns the precondition into a system-level invariant. *Source: `Dots101/Entities101/Assets/HelloCube/3. Prefabs/SpawnSystem.cs:17-19` — the system does not update unless a `Spawner` entity exists.*
+
 ## Guardrails
 
 **Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills

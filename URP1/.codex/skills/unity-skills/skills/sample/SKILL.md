@@ -36,7 +36,7 @@ Delete object by name.
 
 ### `find_objects_by_name`
 Find objects containing string.
-**Parameters:** `nameContains`
+**Parameters:** `nameContains` (`name` is also accepted as a compatibility alias)
 
 ### `set_object_position`
 Set object position.
@@ -53,3 +53,8 @@ Set object scale.
 ### `get_scene_info`
 Get current scene information.
 **Parameters:** None.
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

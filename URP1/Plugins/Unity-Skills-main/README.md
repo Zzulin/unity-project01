@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Unity-2022.3%2B-black?style=for-the-badge&logo=unity" alt="Unity">
-  <img src="https://img.shields.io/badge/Skills-513-green?style=for-the-badge" alt="Skills">
+  <img src="https://img.shields.io/badge/Skills-713-green?style=for-the-badge" alt="Skills">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-orange?style=for-the-badge" alt="License"></a>
   <a href="README_CN.md"><img src="https://img.shields.io/badge/README-中文-blue?style=for-the-badge" alt="中文"></a>
 </p>
@@ -30,8 +30,8 @@ This project is a deep refactoring and feature extension based on the excellent 
 
 ## 🚀 Core Features
 
-- 🛠️ **513 REST Skills Comprehensive Toolkit**: Includes 14 advisory design modules with Batch operations for multi-object control.
-- 🎛️ **Dual-Mode Flexibility**: Switch between Semi-Auto (code-first) and Full-Auto (direct manipulation) for different workflows.
+- 🛠️ **713 REST Skills Comprehensive Toolkit**: Includes 50 functional source modules plus 19 advisory design modules, with Batch operations for multi-object control.
+- 🎛️ **Dual-Mode Flexibility**: Use Semi-Auto (code-first routing) or Full-Auto (direct manipulation routing) for different workflows.
 - 🤖 **4 Major IDEs Native Support**: Claude Code / Antigravity / Gemini CLI / Codex — one-click install and use.
 - 🛡️ **Transactional Atomicity**: Failed operations auto-rollback, leaving scenes clean and safe.
 - 🌍 **Multi-Instance Simultaneous Control**: Automatic port discovery and global registry for controlling multiple Unity projects at once.
@@ -42,16 +42,18 @@ This project is a deep refactoring and feature extension based on the excellent 
 
 ## 🎛️ Operating Modes
 
-| Mode | Default | Available Skills | Use Case |
+| Mode | Default | AI Routing Scope | Use Case |
 |:-----|:-------:|:----------------:|:---------|
-| **Semi-Auto** | ✅ | ~80 | AI writes C# code + light Skills assist (script, perception, scene, editor, asset, workflow, debug) |
-| **Full-Auto** | — | All 513 | AI directly manipulates Unity (create objects, configure materials/lights/UI, build scenes) |
+| **Semi-Auto** | ✅ | 8 REST categories (~121 entries) + 19 advisory modules | AI writes C# code + light Skills assist (script, perception, scene, editor, asset, workflow, debug, console) |
+| **Full-Auto** | — | All 713 REST Skills | AI directly manipulates Unity (create objects, configure materials/lights/UI, build scenes) |
 
 **How to switch**:
 - → Full-Auto: `"full auto"` / `"full-auto mode"` / `"build the scene for me"` / `"directly manipulate Unity"`
 - → Semi-Auto: `"semi-auto"` / `"code-first"` — each new session defaults to Semi-Auto
 
-> 14 advisory design modules (architecture, performance, design patterns, testability, etc.) are available in both modes and loaded on demand.
+> 19 advisory design modules (architecture, performance, design patterns, testability, package-specific source rules, etc.) are available in both modes and loaded on demand.
+>
+> Modes are AI routing rules, not a server-side permission system. The REST API still exposes all skills through `/skills`; agents should follow the mode policy when choosing what to call.
 
 ---
 
@@ -162,52 +164,63 @@ If you're using other tools that support Skills, install according to the Skills
 ---
 
 <details>
-<summary><h2>📦 Skills Category Overview (513)</h2></summary>
+<summary><h2>📦 Skills Category Overview (713)</h2></summary>
 
 | Category | Count | Core Functions |
 | :--- | :---: | :--- |
-| **Cinemachine** | 23 | 2.x/3.x dual version auto-install/MixingCamera/ClearShot/TargetGroup/Spline |
-| **Workflow** | 22 | Persistent history/Task snapshots/Session-level undo/Rollback/Bookmarks |
+| **YooAsset** | 40 | Hot-update bundle builds/Collector full CRUD/BuildReport asset and dependency analysis/PlayMode runtime validation/Reporter-Debugger-AssetArtScanner tools |
+| **Workflow** | 23 | Persistent history/Task snapshots/Session-level undo/Rollback/Bookmarks/Batch query-preview-execute jobs |
+| **Cinemachine** | 34 | 2.x/3.x dual version auto-install/MixingCamera/ClearShot/TargetGroup/Spline |
+| **Netcode** | 33 | Netcode for GameObjects setup/prefabs/lifecycle/host-server-client workflows |
+| **UI** | 26 | Canvas/Button/Text/InputField/Dropdown/ScrollView/Layout/Alignment/Image and selectable utilities |
+| **UI Toolkit** | 25 | UXML/USS file management/UIDocument/PanelSettings full property read-write/Template generation/Structure inspection/Batch create |
+| **ShaderGraph** | 23 | Shader Graph create/inspect/blackboard edit/constrained node editing |
+| **ProBuilder** | 22 | ProBuilder shape creation/face-edge operations/UV tools/pivot edits/batch creation/mesh combination |
+| **XR** | 22 | XR rig setup/interactors/interactables/teleportation/continuous move/UI/haptics/interaction layers |
 | **Material** | 21 | Batch material property modification/HDR/PBR/Emission/Keywords/Render queue |
+| **PostProcess** | 10 | SRP post-processing effect management |
 | **GameObject** | 18 | Create/Find/Transform sync/Batch operations/Hierarchy management/Rename/Duplicate |
-| **Scene** | 10 | Multi-scene load/Unload/Activate/Screenshot/Context/Dependency analysis/Report export |
-| **UI System** | 16 | Canvas/Button/Text/Slider/Toggle/Anchors/Layout/Alignment/Distribution |
-| **UI Toolkit** | 15 | UXML/USS file management/UIDocument/PanelSettings full property read-write/Template generation/Structure inspection/Batch create |
-| **Asset** | 11 | Asset import/Delete/Move/Copy/Search/Folders/Batch operations/Refresh |
+| **Perception** | 18 | Scene summary/health checks/stack detection/context export/dependency analysis/hotspots/diff/tag-layer stats/performance hints |
+| **Volume** | 9 | VolumeProfile/Volume/VolumeComponent creation and parameter editing |
+| **Validation** | 10 | Project validation/Empty folder cleanup/Reference detection/Mesh collider/Shader errors |
+| **URP** | 7 | URP asset/renderer/renderer feature inspection and edits |
+| **Decal** | 7 | URP Decal Projector create/inspect/configure/delete workflows |
+| **DOTween** | 21 | DOTweenAnimation editor-time setup and tuning |
 | **Editor** | 12 | Play mode/Selection/Undo-Redo/Context retrieval/Menu execution |
-| **Timeline** | 12 | Track create/Delete/Clip management/Playback control/Binding/Duration |
 | **Physics** | 12 | Raycast/SphereCast/BoxCast/Physics materials/Layer collision matrix |
-| **Audio** | 10 | Audio import settings/AudioSource/AudioClip/AudioMixer/Batch |
-| **Texture** | 10 | Texture import settings/Platform settings/Sprite/Type/Size search/Batch |
-| **Model** | 10 | Model import settings/Mesh info/Material mapping/Animation/Skeleton/Batch |
 | **Script** | 12 | C# script create/Read/Replace/List/Info/Rename/Move/Analyze |
-| **Package** | 11 | Package management/Install/Remove/Search/Versions/Dependencies/Cinemachine/Splines |
+| **Timeline** | 12 | Track create/Delete/Clip management/Playback control/Binding/Duration |
+| **Asset** | 11 | Asset import/Delete/Move/Copy/Search/Folders/Batch operations/Refresh |
 | **AssetImport** | 11 | Texture/Model/Audio/Sprite import settings/Label management/Reimport |
-| **Project** | 11 | Render pipeline/Build settings/Package management/Layer/Tag/PlayerSettings/Quality |
-| **Shader** | 11 | Shader create/URP templates/Compile check/Keywords/Variant analysis/Global keywords |
 | **Camera** | 11 | Scene View control/Game Camera create/Properties/Screenshot/Orthographic toggle/List |
-| **Terrain** | 10 | Terrain create/Heightmap/Perlin noise/Smooth/Flatten/Texture painting |
-| **NavMesh** | 10 | Bake/Path calculation/Agent/Obstacle/Sampling/Area cost |
+| **Graphics** | 11 | GraphicsSettings/QualitySettings/SRP asset operations |
+| **Package** | 11 | Package management/Install/Remove/Search/Versions/Dependencies/Cinemachine/Splines |
+| **Prefab** | 11 | Create/Instantiate/Override apply & revert/Batch instantiate/Variants/Find instances/Asset property editing |
+| **Shader** | 11 | Shader create/URP templates/Compile check/Keywords/Variant analysis/Global keywords |
+| **Test** | 11 | Test run/Run by name/Categories/Template create/Summary statistics |
+| **Animator** | 10 | Animation controller/Parameters/State machine/Transitions/Assign/Play |
+| **Audio** | 10 | Audio import settings/AudioSource/AudioClip/AudioMixer/Batch |
 | **Cleaner** | 10 | Unused assets/Duplicate files/Empty folders/Missing script fix/Dependency tree |
-| **ScriptableObject** | 10 | Create/Read-Write/Batch set/Delete/Find/JSON import-export |
+| **Component** | 10 | Add/Remove/Property config/Batch operations/Copy/Enable-Disable |
 | **Console** | 10 | Log capture/Clear/Export/Statistics/Pause control/Collapse/Clear on play |
 | **Debug** | 10 | Error logs/Compile check/Stack trace/Assemblies/Define symbols/Memory info |
 | **Event** | 10 | UnityEvent listener management/Batch add/Copy/State control/List |
-| **Smart** | 10 | Scene SQL query/Spatial query/Auto layout/Snap to ground/Grid snap/Randomize/Replace |
-| **Test** | 10 | Test run/Run by name/Categories/Template create/Summary statistics |
-| **Prefab** | 11 | Create/Instantiate/Override apply & revert/Batch instantiate/Variants/Find instances/Asset property editing |
-| **Component** | 10 | Add/Remove/Property config/Batch operations/Copy/Enable-Disable |
+| **Light** | 10 | Light create/Type config/Intensity-Color/Batch toggle/Probe groups/Reflection probes/Lightmaps |
+| **Model** | 10 | Model import settings/Mesh info/Material mapping/Animation/Skeleton/Batch |
+| **NavMesh** | 10 | Bake/Path calculation/Agent/Obstacle/Sampling/Area cost |
 | **Optimization** | 10 | Texture compression/Mesh compression/Audio compression/Scene analysis/Static flags/LOD/Duplicate materials/Overdraw |
 | **Profiler** | 10 | FPS/Memory/Texture/Mesh/Material/Audio/Rendering stats/Object count/AssetBundle |
-| **Light** | 10 | Light create/Type config/Intensity-Color/Batch toggle/Probe groups/Reflection probes/Lightmaps |
-| **Validation** | 10 | Project validation/Empty folder cleanup/Reference detection/Mesh collider/Shader errors |
-| **Animator** | 10 | Animation controller/Parameters/State machine/Transitions/Assign/Play |
-| **Perception** | 11 | Scene summary/Hierarchy tree/Script analysis/Spatial query/Material overview/Scene snapshot/Dependency analysis/Report export/Performance hints/Script dependency graph |
+| **Scene** | 10 | Multi-scene load/Unload/Activate/Screenshot/Context/Dependency analysis/Report export |
+| **ScriptableObject** | 10 | Create/Read-Write/Batch set/Delete/Find/JSON import-export |
+| **Smart** | 10 | Scene SQL query/Spatial query/Auto layout/Snap to ground/Grid snap/Randomize/Replace |
+| **Terrain** | 10 | Terrain create/Heightmap/Perlin noise/Smooth/Flatten/Texture painting |
+| **Texture** | 10 | Texture import settings/Platform settings/Sprite/Type/Size search/Batch |
+| **Project** | 9 | Render pipeline/Build settings/Package management/Layer/Tag/PlayerSettings/Quality |
 | **Sample** | 8 | Basic examples: Create/Delete/Transform/Scene info |
 
 > ⚠️ Most modules support `*_batch` batch operations. When operating on multiple objects, prioritize batch Skills for better performance.
 >
-> 🧠 `unity-skills/skills/` also includes **14 advisory design modules** for architecture, script design, performance, maintainability, and Inspector guidance.
+> 🧠 `unity-skills/skills/` also includes **19 advisory design modules** for architecture, script design, performance, maintainability, Inspector guidance, and package-specific source rules.
 
 </details>
 
@@ -223,9 +236,9 @@ If you're using other tools that support Skills, install according to the Skills
 │   │   ├── SKILL.md                # Main Skill Definitions (AI-readable)
 │   │   ├── scripts/
 │   │   │   └── unity_skills.py     # Python Client Library
-│   │   ├── skills/                 # Modular Skill Documentation + 13 advisory modules
+│   │   ├── skills/                 # 68 module docs (49 REST/module docs + 19 advisory docs)
 │   │   └── references/             # Unity Development References
-│   └── Editor/Skills/              # Core Skill Logic (40 *Skills.cs files, 513 Skills)
+│   └── Editor/Skills/              # Core Skill Logic (50 *Skills.cs files, 713 Skills)
 │       ├── SkillsHttpServer.cs     # HTTP Server Core (Producer-Consumer)
 │       ├── SkillRouter.cs          # Request Routing & Reflection-based Skill Discovery
 │       ├── WorkflowManager.cs      # Persistent Workflow (Task/Session/Snapshot)
@@ -234,10 +247,10 @@ If you're using other tools that support Skills, install according to the Skills
 │       ├── BatchExecutor.cs        # Generic Batch Processing Framework
 │       ├── GameObjectSkills.cs     # GameObject Operations (18 skills)
 │       ├── MaterialSkills.cs       # Material Operations (21 skills)
-│       ├── CinemachineSkills.cs    # Cinemachine 2.x/3.x (23 skills)
-│       ├── WorkflowSkills.cs       # Workflow Undo/Rollback (22 skills)
-│       ├── PerceptionSkills.cs     # Scene Understanding (11 skills)
-│       └── ...                     # 513 Skills source code
+│       ├── CinemachineSkills.cs    # Cinemachine 2.x/3.x (34 skills)
+│       ├── WorkflowSkills.cs       # Workflow Undo/Rollback (23 skills)
+│       ├── PerceptionSkills.cs     # Scene Understanding (18 skills)
+│       └── ...                     # 713 Skills source code
 ├── docs/
 │   └── SETUP_GUIDE.md              # Complete Setup & Usage Guide
 ├── CHANGELOG.md                    # Version Update Log
@@ -246,9 +259,15 @@ If you're using other tools that support Skills, install according to the Skills
 
 ---
 
-## ⭐ Star History
+## ⭐Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Besty0728/Unity-Skills&type=Date)](https://star-history.com/#Besty0728/Unity-Skills&Date)
+<a href="https://www.star-history.com/?type=date&repos=Besty0728%2FUnity-Skills">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Besty0728/Unity-Skills&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Besty0728/Unity-Skills&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Besty0728/Unity-Skills&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ---
 

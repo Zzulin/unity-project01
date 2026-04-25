@@ -158,7 +158,7 @@ namespace UnitySkills
             {
                 long size = Profiler.GetRuntimeMemorySizeLong(m);
                 total += size;
-                items.Add((size, new { name = m.name, sizeKB = size / 1024f, vertices = m.vertexCount, triangles = m.triangles.Length / 3 }));
+                items.Add((size, new { name = m.name, sizeKB = size / 1024f, vertices = m.vertexCount, triangles = SkillsCommon.GetTriangleCount(m) }));
             }
             return new { success = true, totalCount = meshes.Length, totalMB = total / (1024f * 1024f),
                 topMeshes = items.OrderByDescending(i => i.size).Take(limit).Select(i => i.info).ToArray() };

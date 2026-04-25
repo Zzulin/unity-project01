@@ -583,7 +583,7 @@ namespace UnitySkills
 
             if (!string.IsNullOrEmpty(name))
             {
-                var go = GameObject.Find(name);
+                var go = GameObjectFinder.Find(name: name);
                 return go?.GetComponent<Terrain>();
             }
 

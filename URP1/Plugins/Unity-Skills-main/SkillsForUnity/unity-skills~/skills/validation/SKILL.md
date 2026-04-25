@@ -12,7 +12,8 @@ Maintain project health - find problems, clean up, and validate your Unity proje
 **Mode**: Full-Auto required
 
 **DO NOT** (common hallucinations):
-- `validation_run` / `validation_check` do not exist → use specific skills: `validation_check_project`, `validation_find_missing_refs`, etc.
+- Validation skill routes use the `validate_*` prefix, not `validation_*`
+- `validation_run` / `validation_check` do not exist → use specific skills such as `validate_scene`, `validate_project_structure`, `validate_missing_references`
 - `validation_fix` does not exist → validation skills report issues; use other modules to fix them
 - `validation_clean` does not exist → use `cleaner` module for cleanup operations
 
@@ -187,3 +188,8 @@ for asset in unused['unusedAssets']:
 4. Keep texture sizes appropriate for target platform
 5. Fix missing scripts before they cause runtime errors
 6. Regular cleanup prevents project bloat
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

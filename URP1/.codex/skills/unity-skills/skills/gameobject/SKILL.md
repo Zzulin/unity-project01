@@ -51,7 +51,7 @@ Create a new GameObject (primitive or empty).
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `name` | string | No | "GameObject" | Object name |
+| `name` | string | Yes | - | Object name |
 | `primitiveType` | string | No | null | Cube/Sphere/Capsule/Cylinder/Plane/Quad (null=Empty) |
 | `x`, `y`, `z` | float | No | 0 | Local position (relative to parent if set) |
 | `parentName` | string | No | null | Parent object name |
@@ -100,10 +100,10 @@ Find GameObjects matching criteria.
 |-----------|------|----------|---------|-------------|
 | `name` | string | No | null | Name filter |
 | `tag` | string | No | null | Tag filter |
-| `layer` | int | No | -1 | Layer filter |
+| `layer` | string | No | null | Layer filter |
 | `component` | string | No | null | Component type filter |
 | `useRegex` | bool | No | false | Use regex for name |
-| `limit` | int | No | 100 | Max results |
+| `limit` | int | No | 50 | Max results |
 
 **Returns**: `{count, objects: [{name, instanceId, path, tag, layer}]}`
 
@@ -268,8 +268,8 @@ Set layer for multiple objects.
 
 ```python
 unity_skills.call_skill("gameobject_set_layer_batch", items=[
-    {"name": "Enemy1", "layer": 8},
-    {"name": "Enemy2", "layer": 8}
+    {"name": "Enemy1", "layer": "Water"},
+    {"name": "Enemy2", "layer": "Water"}
 ])
 ```
 
@@ -287,20 +287,12 @@ unity_skills.call_skill("gameobject_set_tag_batch", items=[
 
 ---
 
-## Example: Efficient Scene Setup
+## Minimal Example
 
 ```python
 import unity_skills
 
-# BAD: 6 API calls
-unity_skills.call_skill("gameobject_create", name="Floor", primitiveType="Plane")
-unity_skills.call_skill("gameobject_create", name="Wall1", primitiveType="Cube")
-unity_skills.call_skill("gameobject_create", name="Wall2", primitiveType="Cube")
-unity_skills.call_skill("gameobject_set_transform", name="Wall1", posX=-5, scaleY=3)
-unity_skills.call_skill("gameobject_set_transform", name="Wall2", posX=5, scaleY=3)
-unity_skills.call_skill("gameobject_set_tag_batch", items=[{"name": "Wall1", "tag": "Wall"}, {"name": "Wall2", "tag": "Wall"}])
-
-# GOOD: 3 API calls
+# GOOD: 3 API calls instead of 6
 unity_skills.call_skill("gameobject_create_batch", items=[
     {"name": "Floor", "primitiveType": "Plane"},
     {"name": "Wall1", "primitiveType": "Cube"},
@@ -315,3 +307,8 @@ unity_skills.call_skill("gameobject_set_tag_batch", items=[
     {"name": "Wall2", "tag": "Wall"}
 ])
 ```
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

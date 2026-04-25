@@ -265,13 +265,10 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object AudioGetSourceInfo(string name = null, int instanceId = 0, string path = null)
         {
-            var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (source, error) = GameObjectFinder.FindComponentOrError<AudioSource>(name, instanceId, path);
             if (error != null) return error;
 
-            var source = go.GetComponent<AudioSource>();
-            if (source == null) return new { error = $"No AudioSource on {go.name}" };
-
-            return new { success = true, gameObject = go.name, clip = source.clip != null ? source.clip.name : "null",
+            return new { success = true, gameObject = source.gameObject.name, clip = source.clip != null ? source.clip.name : "null",
                 volume = source.volume, pitch = source.pitch, loop = source.loop, playOnAwake = source.playOnAwake,
                 mute = source.mute, spatialBlend = source.spatialBlend, minDistance = source.minDistance,
                 maxDistance = source.maxDistance, priority = source.priority };
@@ -286,11 +283,8 @@ namespace UnitySkills
         public static object AudioSetSourceProperties(string name = null, int instanceId = 0, string path = null, string clipPath = null,
             float? volume = null, float? pitch = null, bool? loop = null, bool? playOnAwake = null, bool? mute = null, float? spatialBlend = null, int? priority = null)
         {
-            var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (source, error) = GameObjectFinder.FindComponentOrError<AudioSource>(name, instanceId, path);
             if (error != null) return error;
-
-            var source = go.GetComponent<AudioSource>();
-            if (source == null) return new { error = $"No AudioSource on {go.name}" };
 
             Undo.RecordObject(source, "Set AudioSource Properties");
             if (!string.IsNullOrEmpty(clipPath)) { var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(clipPath); if (clip != null) source.clip = clip; }
@@ -302,7 +296,7 @@ namespace UnitySkills
             if (spatialBlend.HasValue) source.spatialBlend = spatialBlend.Value;
             if (priority.HasValue) source.priority = priority.Value;
 
-            return new { success = true, gameObject = go.name };
+            return new { success = true, gameObject = source.gameObject.name };
         }
 
         [UnitySkill("audio_find_sources_in_scene", "Find all AudioSource components in the current scene",

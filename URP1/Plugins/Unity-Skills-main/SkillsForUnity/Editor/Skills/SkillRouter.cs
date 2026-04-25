@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -13,13 +14,138 @@ namespace UnitySkills
     /// </summary>
     public static class SkillRouter
     {
+        internal const int SkillSchemaVersion = 2;
+
+        internal enum RequestMode
+        {
+            Execute,
+            DryRun,
+            Plan
+        }
+
+        internal sealed class ParameterValidationResult
+        {
+            public JObject Args { get; set; }
+            public object[] InvokeArgs { get; set; }
+            public List<string> MissingParams { get; } = new List<string>();
+            public List<object> UnknownParams { get; } = new List<object>();
+            public List<object> TypeErrors { get; } = new List<object>();
+            public List<object> SemanticErrors { get; } = new List<object>();
+            public List<string> Warnings { get; } = new List<string>();
+            public List<object> ParameterDetails { get; } = new List<object>();
+            public bool Valid => MissingParams.Count == 0 && UnknownParams.Count == 0 && TypeErrors.Count == 0 && SemanticErrors.Count == 0;
+        }
+
+        internal sealed class SkillInfo
+        {
+            public string Name;
+            public string Description;
+            public MethodInfo Method;
+            public ParameterInfo[] Parameters;
+            public bool TracksWorkflow;
+            // Intent-level metadata (v1.7)
+            public SkillCategory Category;
+            public SkillOperation Operation;
+            public string[] Tags;
+            public string[] Outputs;
+            public string[] RequiresInput;
+            public bool ReadOnly;
+            // Risk & impact metadata
+            public bool MutatesScene;
+            public bool MutatesAssets;
+            public bool MayTriggerReload;
+            public bool MayEnterPlayMode;
+            public bool SupportsDryRun;
+            public string RiskLevel;
+            public string[] RequiresPackages;
+            // Cached to avoid repeated allocations per Execute/DryRun call
+            public string[] ParameterNames;
+            public HashSet<string> AllowedParameterSet;
+            // Pre-computed lowercase for filtering/search (avoids per-query ToLowerInvariant)
+            public string NameLower;
+            public string DescriptionLower;
+            public string[] TagsLower;
+        }
+
         private static volatile Dictionary<string, SkillInfo> _skills;
         private static volatile bool _initialized;
         private static string _cachedManifest;
+        private static string _cachedSchema;
         private static Dictionary<string, List<SkillInfo>> _outputIndex;
+
+        /// <summary>Number of registered skills. Avoids parsing manifest just for a count.</summary>
+        public static int SkillCount
+        {
+            get
+            {
+                Initialize();
+                return _skills.Count;
+            }
+        }
         private static readonly object _initLock = new object();
 
         private static HashSet<string> _workflowTrackedSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> _reservedBodyParameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "verbose"
+        };
+
+        private static readonly HashSet<string> _transactionlessSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "editor_undo",
+            "editor_redo",
+            "gameobject_create",
+            "history_undo",
+            "history_redo",
+            "workflow_undo_task",
+            "workflow_redo_task",
+            "workflow_revert_task",
+            "workflow_session_undo"
+        };
+
+        private static readonly Dictionary<string, Dictionary<string, string[]>> _commonParameterSuggestions =
+            new Dictionary<string, Dictionary<string, string[]>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["gameobject_set_transform"] = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["x"] = new[] { "posX" },
+                ["y"] = new[] { "posY" },
+                ["z"] = new[] { "posZ" }
+            },
+            ["shader_find"] = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["shaderName"] = new[] { "searchName" }
+            },
+            ["shader_check_errors"] = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["shaderName"] = new[] { "shaderNameOrPath" }
+            },
+            ["shader_get_keywords"] = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["shaderName"] = new[] { "shaderNameOrPath" }
+            },
+            ["camera_look_at"] = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["targetName"] = new[] { "x", "y", "z" }
+            },
+            ["cinemachine_set_vcam_property"] = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["name"] = new[] { "vcamName" }
+            }
+        };
+
+        private static readonly Dictionary<string, Dictionary<string, string>> _commonParameterHints =
+            new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["camera_look_at"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["targetName"] = "camera_look_at 只接受世界坐标 x/y/z，不支持对象名。"
+            },
+            ["timeline_list_tracks"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["path"] = "timeline_list_tracks 的 path 是场景层级路径，不是 Assets 资源路径。"
+            }
+        };
 
         // ========== Intent Synonym Maps ==========
 
@@ -105,6 +231,7 @@ namespace UnitySkills
             {"audio", SkillCategory.Audio}, {"音频", SkillCategory.Audio}, {"声音", SkillCategory.Audio},
             {"texture", SkillCategory.Texture}, {"贴图", SkillCategory.Texture},
             {"shader", SkillCategory.Shader}, {"着色器", SkillCategory.Shader},
+            {"shadergraph", SkillCategory.ShaderGraph}, {"subgraph", SkillCategory.ShaderGraph}, {"着色图", SkillCategory.ShaderGraph}, {"子图", SkillCategory.ShaderGraph},
             {"terrain", SkillCategory.Terrain}, {"地形", SkillCategory.Terrain},
             {"navmesh", SkillCategory.NavMesh}, {"导航", SkillCategory.NavMesh},
             {"model", SkillCategory.Model}, {"模型", SkillCategory.Model},
@@ -158,27 +285,8 @@ namespace UnitySkills
 
         private static HashSet<SkillCategory> ExtractCategories(string[] keywords)
             => MatchKeywords(keywords, _categoryKeywords);
-        // Keep Unicode readable in JSON responses instead of forcing escaped sequences.
-        private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
-        {
-            StringEscapeHandling = StringEscapeHandling.Default
-        };
-
-        private class SkillInfo
-        {
-            public string Name;
-            public string Description;
-            public MethodInfo Method;
-            public ParameterInfo[] Parameters;
-            public bool TracksWorkflow;
-            // Intent-level metadata (v1.7)
-            public SkillCategory Category;
-            public SkillOperation Operation;
-            public string[] Tags;
-            public string[] Outputs;
-            public string[] RequiresInput;
-            public bool ReadOnly;
-        }
+        // Shared JSON settings from SkillsCommon (single definition, no duplication)
+        private static readonly JsonSerializerSettings _jsonSettings = SkillsCommon.JsonSettings;
 
         public static void Initialize()
         {
@@ -190,9 +298,7 @@ namespace UnitySkills
                 var skills = new Dictionary<string, SkillInfo>(StringComparer.OrdinalIgnoreCase);
                 var trackedSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                var allTypes = AppDomain.CurrentDomain.GetAssemblies()
-                    .Where(a => !a.IsDynamic)
-                    .SelectMany(a => { try { return a.GetTypes(); } catch { return new Type[0]; } });
+                var allTypes = SkillsCommon.GetAllLoadedTypes();
 
                 foreach (var type in allTypes)
                 {
@@ -204,19 +310,35 @@ namespace UnitySkills
                         if (attr != null)
                         {
                             var name = attr.Name ?? ToSnakeCase(method.Name);
+                            var parameters = method.GetParameters();
+                            var parameterNames = parameters.Select(p => p.Name).ToArray();
+                            var allowedSet = new HashSet<string>(parameterNames, StringComparer.OrdinalIgnoreCase);
+                            allowedSet.UnionWith(_reservedBodyParameters);
                             skills[name] = new SkillInfo
                             {
                                 Name = name,
                                 Description = attr.Description ?? "",
                                 Method = method,
-                                Parameters = method.GetParameters(),
+                                Parameters = parameters,
                                 TracksWorkflow = attr.TracksWorkflow,
                                 Category = attr.Category,
                                 Operation = attr.Operation,
                                 Tags = attr.Tags,
                                 Outputs = attr.Outputs,
                                 RequiresInput = attr.RequiresInput,
-                                ReadOnly = attr.ReadOnly
+                                ReadOnly = attr.ReadOnly,
+                                MutatesScene = attr.MutatesScene,
+                                MutatesAssets = attr.MutatesAssets,
+                                MayTriggerReload = attr.MayTriggerReload,
+                                MayEnterPlayMode = attr.MayEnterPlayMode,
+                                SupportsDryRun = attr.SupportsDryRun,
+                                RiskLevel = attr.RiskLevel ?? "low",
+                                RequiresPackages = attr.RequiresPackages,
+                                ParameterNames = parameterNames,
+                                AllowedParameterSet = allowedSet,
+                                NameLower = name.ToLowerInvariant(),
+                                DescriptionLower = (attr.Description ?? "").ToLowerInvariant(),
+                                TagsLower = attr.Tags?.Select(t => t.ToLowerInvariant()).ToArray()
                             };
                             if (attr.TracksWorkflow)
                                 trackedSkills.Add(name);
@@ -259,37 +381,33 @@ namespace UnitySkills
             {
                 if (_cachedManifest != null) return _cachedManifest;
 
-                var manifest = new
-                {
-                    version = SkillsLogger.Version,
-                    unityVersion = Application.unityVersion,
-                    totalSkills = _skills.Count,
-                    categories = Enum.GetNames(typeof(SkillCategory)).Where(c => c != "Uncategorized").ToArray(),
-                    operationTypes = Enum.GetNames(typeof(SkillOperation)),
-                    workflowTrackedSkills = _workflowTrackedSkills.OrderBy(name => name).ToArray(),
-                    skills = _skills.Values.Select(s => new
-                    {
-                        name = s.Name,
-                        description = s.Description,
-                        category = s.Category != SkillCategory.Uncategorized ? s.Category.ToString() : null,
-                        operation = FormatOperation(s.Operation),
-                        tags = s.Tags,
-                        outputs = s.Outputs,
-                        requiresInput = s.RequiresInput,
-                        readOnly = s.ReadOnly,
-                        tracksWorkflow = s.TracksWorkflow,
-                        parameters = s.Parameters.Select(p => new
-                        {
-                            name = p.Name,
-                            type = GetJsonType(p.ParameterType),
-                            required = IsParameterRequired(p),
-                            defaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
-                        })
-                    })
-                };
+                var manifest = BuildManifest(_skills.Values, filtered: false, filters: null, manifestType: "manifest");
                 _cachedManifest = JsonConvert.SerializeObject(manifest, Formatting.Indented, _jsonSettings);
                 return _cachedManifest;
             }
+        }
+
+        public static string GetSchema()
+        {
+            Initialize();
+            var cached = _cachedSchema;
+            if (cached != null) return cached;
+
+            lock (_initLock)
+            {
+                if (_cachedSchema != null) return _cachedSchema;
+
+                var schema = BuildManifest(_skills.Values, filtered: false, filters: null, manifestType: "schema");
+                _cachedSchema = JsonConvert.SerializeObject(schema, Formatting.Indented, _jsonSettings);
+                return _cachedSchema;
+            }
+        }
+
+        /// <summary>Returns true if a skill with the given name is registered.</summary>
+        public static bool HasSkill(string name)
+        {
+            Initialize();
+            return !string.IsNullOrEmpty(name) && _skills.ContainsKey(name);
         }
 
         public static string Execute(string name, string json)
@@ -297,51 +415,68 @@ namespace UnitySkills
             Initialize();
             if (!_skills.TryGetValue(name, out var skill))
             {
-                return JsonConvert.SerializeObject(new
-                {
-                    status = "error",
-                    error = $"Skill '{name}' not found",
-                    availableSkills = _skills.Keys.Take(20).ToArray()
-                }, _jsonSettings);
+                return ResolveSkillNotFound(name);
             }
 
             bool autoStartedWorkflow = false;
+            var wrapWithUndoTransaction = !skill.ReadOnly && !_transactionlessSkills.Contains(name);
+            int undoGroup = -1;
             try
             {
-                var args = string.IsNullOrEmpty(json) ? new JObject() : JObject.Parse(json);
-                var ps = skill.Parameters;
-                var invoke = new object[ps.Length];
-
-                for (int i = 0; i < ps.Length; i++)
+                var validation = ValidateParameters(skill, json);
+                if (validation.UnknownParams.Count > 0)
                 {
-                    var p = ps[i];
-                    if (args.TryGetValue(p.Name, StringComparison.OrdinalIgnoreCase, out var token))
+                    return JsonConvert.SerializeObject(new
                     {
-                        invoke[i] = token.ToObject(p.ParameterType);
-                    }
-                    else if (p.HasDefaultValue)
-                    {
-                        invoke[i] = p.DefaultValue;
-                    }
-                    else if (!IsParameterRequired(p))
-                    {
-                        invoke[i] = null;
-                    }
-                    else
-                    {
-                        return JsonConvert.SerializeObject(new
-                        {
-                            status = "error",
-                            error = $"Missing required parameter: {p.Name}"
-                        }, _jsonSettings);
-                    }
+                        status = "error",
+                        error = $"Unknown parameters: {string.Join(", ", ExtractValidationParameterNames(validation.UnknownParams))}",
+                        unknownParams = validation.UnknownParams.ToArray(),
+                        allowedParams = skill.ParameterNames
+                    }, _jsonSettings);
                 }
 
+                if (validation.MissingParams.Count > 0)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        status = "error",
+                        error = $"Missing required parameter: {validation.MissingParams[0]}"
+                    }, _jsonSettings);
+                }
 
-                // Transactional Support: Start Undo Group
-                UnityEditor.Undo.IncrementCurrentGroup();
-                UnityEditor.Undo.SetCurrentGroupName($"Skill: {name}");
-                int undoGroup = UnityEditor.Undo.GetCurrentGroup();
+                if (validation.TypeErrors.Count > 0)
+                {
+                    var firstTypeError = validation.TypeErrors[0];
+                    var message = SkillResultHelper.TryGetMemberValue(firstTypeError, "error", out var errorValue) && errorValue != null
+                        ? errorValue.ToString()
+                        : "Parameter type mismatch";
+                    return JsonConvert.SerializeObject(new
+                    {
+                        status = "error",
+                        error = message
+                    }, _jsonSettings);
+                }
+
+                if (validation.SemanticErrors.Count > 0)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        status = "error",
+                        error = ExtractValidationMessage(validation.SemanticErrors[0], "Semantic validation failed"),
+                        semanticErrors = validation.SemanticErrors.ToArray(),
+                        warnings = validation.Warnings.Count > 0 ? validation.Warnings.ToArray() : null
+                    }, _jsonSettings);
+                }
+
+                var args = validation.Args;
+                var invoke = validation.InvokeArgs;
+
+                if (wrapWithUndoTransaction)
+                {
+                    UnityEditor.Undo.IncrementCurrentGroup();
+                    UnityEditor.Undo.SetCurrentGroupName($"Skill: {name}");
+                    undoGroup = UnityEditor.Undo.GetCurrentGroup();
+                }
 
                 // ========== AUTO WORKFLOW RECORDING ==========
                 if (skill.TracksWorkflow && !WorkflowManager.IsRecording)
@@ -365,8 +500,11 @@ namespace UnitySkills
                     verbose = verboseToken.ToObject<bool>();
                     args.Remove("verbose");
                 }
-                
+
                 var result = skill.Method.Invoke(null, invoke);
+
+                if (!skill.ReadOnly)
+                    UnityEditor.Undo.FlushUndoRecordObjects();
 
                 // ========== AUTO WORKFLOW END ==========
                 if (autoStartedWorkflow)
@@ -380,8 +518,17 @@ namespace UnitySkills
                 }
                 // ========================================
 
-                // Commit transaction
-                UnityEditor.Undo.CollapseUndoOperations(undoGroup);
+                if (wrapWithUndoTransaction)
+                {
+                    // Commit transaction
+                    UnityEditor.Undo.CollapseUndoOperations(undoGroup);
+
+                    // REST-invoked skills do not run through the usual menu/mouse event
+                    // boundaries that advance Unity's undo stack. Move to the next group
+                    // explicitly so editor_undo/editor_redo target the completed mutation.
+                    if (!skill.ReadOnly)
+                        UnityEditor.Undo.IncrementCurrentGroup();
+                }
 
                 // Return a normalized error payload when a skill reports a logical failure.
                 if (SkillResultHelper.TryGetError(result, out string errorText))
@@ -400,13 +547,13 @@ namespace UnitySkills
                     // "Summary Mode" Logic
                     // 1. Convert result to JToken to inspect it
                     var jsonResult = JToken.FromObject(result);
-                    
+
                     // 2. Check if it's a large Array (> 10 items)
                     if (jsonResult is JArray arr && arr.Count > 10)
                     {
                         var truncatedItems = new JArray();
-                        for(int i=0; i<5; i++) truncatedItems.Add(arr[i]);
-                        
+                        for (int i = 0; i < 5; i++) truncatedItems.Add(arr[i]);
+
                         // Return a wrapper object instead of the list
                         // This keeps 'items' clean (same type) while providing meta info
                         var wrapper = new JObject
@@ -417,11 +564,11 @@ namespace UnitySkills
                             ["items"] = truncatedItems,
                             ["hint"] = "Result is truncated. To see all items, pass 'verbose=true' parameter."
                         };
-                        
+
                         return SerializeSuccessResponse(wrapper);
                     }
                 }
-                
+
                 // Full Mode (verbose=true OR small result) - Return original result as is
                 return SerializeSuccessResponse(result);
             }
@@ -431,8 +578,11 @@ namespace UnitySkills
                 if (autoStartedWorkflow && WorkflowManager.IsRecording)
                     WorkflowManager.EndTask();
 
-                // Revert transaction
-                UnityEditor.Undo.RevertAllInCurrentGroup();
+                if (undoGroup >= 0)
+                {
+                    // Revert transaction
+                    UnityEditor.Undo.RevertAllInCurrentGroup();
+                }
 
                 var inner = ex.InnerException ?? ex;
                 return JsonConvert.SerializeObject(new
@@ -447,12 +597,84 @@ namespace UnitySkills
                 if (autoStartedWorkflow && WorkflowManager.IsRecording)
                     WorkflowManager.EndTask();
 
-                // Revert transaction
-                UnityEditor.Undo.RevertAllInCurrentGroup();
-                
-                return JsonConvert.SerializeObject(new { 
-                    status = "error", 
-                    error = $"[Transactional Revert] {ex.Message}" 
+                if (undoGroup >= 0)
+                {
+                    // Revert transaction
+                    UnityEditor.Undo.RevertAllInCurrentGroup();
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    status = "error",
+                    error = $"[Transactional Revert] {ex.Message}"
+                }, _jsonSettings);
+            }
+        }
+
+        public static string DryRun(string name, string json)
+        {
+            Initialize();
+            if (!_skills.TryGetValue(name, out var skill))
+                return ResolveSkillNotFound(name);
+
+            try
+            {
+                var validation = ValidateParameters(skill, json);
+                var planData = SkillPlanningService.BuildPlanData(skill, validation);
+                return JsonConvert.SerializeObject(new
+                {
+                    status = "dryRun",
+                    valid = validation.Valid,
+                    skill = new
+                    {
+                        name = skill.Name,
+                        description = skill.Description,
+                        category = skill.Category != SkillCategory.Uncategorized ? skill.Category.ToString() : null,
+                        operation = FormatOperation(skill.Operation),
+                        tags = skill.Tags,
+                        outputs = skill.Outputs,
+                        requiresInput = skill.RequiresInput,
+                        readOnly = skill.ReadOnly,
+                        tracksWorkflow = skill.TracksWorkflow,
+                        mutatesScene = skill.MutatesScene,
+                        mutatesAssets = skill.MutatesAssets,
+                        mayTriggerReload = skill.MayTriggerReload,
+                        mayEnterPlayMode = skill.MayEnterPlayMode,
+                        supportsDryRun = skill.SupportsDryRun,
+                        riskLevel = skill.RiskLevel,
+                        requiresPackages = skill.RequiresPackages
+                    },
+                    parameters = validation.ParameterDetails,
+                    validation = new
+                    {
+                        missingParams = validation.MissingParams.Count > 0 ? validation.MissingParams.ToArray() : null,
+                        unknownParams = validation.UnknownParams.Count > 0 ? validation.UnknownParams.ToArray() : null,
+                        typeErrors = validation.TypeErrors.Count > 0 ? validation.TypeErrors.ToArray() : null,
+                        semanticErrors = validation.SemanticErrors.Count > 0 ? validation.SemanticErrors.ToArray() : null,
+                        warnings = validation.Warnings.Count > 0 ? validation.Warnings.ToArray() : null
+                    },
+                    impact = new
+                    {
+                        readOnly = skill.ReadOnly,
+                        tracksWorkflow = skill.TracksWorkflow,
+                        operation = FormatOperation(skill.Operation),
+                        mutatesScene = skill.MutatesScene,
+                        mutatesAssets = skill.MutatesAssets,
+                        mayTriggerReload = skill.MayTriggerReload,
+                        mayEnterPlayMode = skill.MayEnterPlayMode,
+                        riskLevel = skill.RiskLevel
+                    },
+                    steps = planData?["steps"],
+                    changes = planData?["changes"],
+                    note = "No execution performed"
+                }, Formatting.Indented, _jsonSettings);
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    status = "error",
+                    error = $"Invalid JSON: {ex.Message}"
                 }, _jsonSettings);
             }
         }
@@ -476,7 +698,7 @@ namespace UnitySkills
                         }
                     }
                 }
-                catch { /* 注入失败不影响正常返回 */ }
+                catch { }
             }
             return JsonConvert.SerializeObject(new { status = "success", result }, _jsonSettings);
         }
@@ -488,6 +710,7 @@ namespace UnitySkills
                 _initialized = false;
                 _skills = null;
                 _cachedManifest = null;
+                _cachedSchema = null;
                 _outputIndex = null;
                 _workflowTrackedSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             }
@@ -562,20 +785,36 @@ namespace UnitySkills
             {
                 var keywords = q.ToLowerInvariant().Split(new[] { ' ', '+' }, StringSplitOptions.RemoveEmptyEntries);
                 filtered = filtered.Where(s => keywords.Any(kw =>
-                    s.Name.ToLowerInvariant().Contains(kw) ||
-                    (s.Description != null && s.Description.ToLowerInvariant().Contains(kw)) ||
-                    (s.Tags != null && s.Tags.Any(t => t.ToLowerInvariant().Contains(kw)))));
+                    s.NameLower.Contains(kw) ||
+                    s.DescriptionLower.Contains(kw) ||
+                    (s.TagsLower != null && s.TagsLower.Any(t => t.Contains(kw)))));
             }
 
             var results = filtered.ToList();
-            var manifest = new
+            var manifest = BuildManifest(results, filtered: true, filters, manifestType: "manifest");
+            return JsonConvert.SerializeObject(manifest, Formatting.Indented, _jsonSettings);
+        }
+
+        private static object BuildManifest(IEnumerable<SkillInfo> skills, bool filtered, Dictionary<string, string> filters, string manifestType)
+        {
+            var skillArray = skills
+                .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return new
             {
+                manifestType,
+                schemaVersion = SkillSchemaVersion,
                 version = SkillsLogger.Version,
                 unityVersion = Application.unityVersion,
-                totalSkills = results.Count,
-                filtered = true,
+                totalSkills = skillArray.Length,
+                filtered,
                 filters,
-                skills = results.Select(s => new
+                categories = Enum.GetNames(typeof(SkillCategory)).Where(c => c != "Uncategorized").ToArray(),
+                operationTypes = Enum.GetNames(typeof(SkillOperation)),
+                reservedBodyParameters = _reservedBodyParameters.OrderBy(x => x).ToArray(),
+                workflowTrackedSkills = _workflowTrackedSkills.OrderBy(name => name).ToArray(),
+                skills = skillArray.Select(s => new
                 {
                     name = s.Name,
                     description = s.Description,
@@ -586,16 +825,22 @@ namespace UnitySkills
                     requiresInput = s.RequiresInput,
                     readOnly = s.ReadOnly,
                     tracksWorkflow = s.TracksWorkflow,
+                    mutatesScene = s.MutatesScene,
+                    mutatesAssets = s.MutatesAssets,
+                    mayTriggerReload = s.MayTriggerReload,
+                    mayEnterPlayMode = s.MayEnterPlayMode,
+                    supportsDryRun = s.SupportsDryRun,
+                    riskLevel = s.RiskLevel,
+                    requiresPackages = s.RequiresPackages,
                     parameters = s.Parameters.Select(p => new
                     {
                         name = p.Name,
                         type = GetJsonType(p.ParameterType),
-                        required = !p.HasDefaultValue,
+                        required = IsParameterRequired(p),
                         defaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
                     })
                 })
             };
-            return JsonConvert.SerializeObject(manifest, Formatting.Indented, _jsonSettings);
         }
 
         // ========== Skill Recommendations ==========
@@ -635,8 +880,8 @@ namespace UnitySkills
             {
                 int score = 0;
                 var matchedOn = new List<string>();
-                var nameLower = s.Name.ToLowerInvariant();
-                var descLower = s.Description?.ToLowerInvariant() ?? "";
+                var nameLower = s.NameLower;
+                var descLower = s.DescriptionLower;
 
                 foreach (var kw in keywords)
                 {
@@ -645,7 +890,7 @@ namespace UnitySkills
                         score += 3;
                         matchedOn.Add($"name:{kw}");
                     }
-                    if (s.Tags != null && s.Tags.Any(t => t.ToLowerInvariant().Contains(kw)))
+                    if (s.TagsLower != null && s.TagsLower.Any(t => t.Contains(kw)))
                     {
                         score += 2;
                         matchedOn.Add($"tag:{kw}");
@@ -780,65 +1025,221 @@ namespace UnitySkills
             }, Formatting.Indented, _jsonSettings);
         }
 
-        // ========== Dry-Run Validation ==========
+        internal static string[] FormatOperationForPlanning(SkillOperation op)
+        {
+            return FormatOperation(op);
+        }
 
-        /// <summary>
-        /// Validates parameters without executing the skill.
-        /// Returns skill metadata and parameter validation results.
-        /// </summary>
-        public static string DryRun(string name, string json)
+        internal static string ResolveSkillNotFound(string name)
+        {
+            return JsonConvert.SerializeObject(new
+            {
+                status = "error",
+                error = $"Skill '{name}' not found",
+                availableSkills = _skills.Keys.Take(20).ToArray()
+            }, _jsonSettings);
+        }
+
+        internal static bool TryGetSkill(string name, out SkillInfo skill)
+        {
+            Initialize();
+            return _skills.TryGetValue(name, out skill);
+        }
+
+        internal static SkillInfo[] GetAllSkillsSnapshot()
+        {
+            Initialize();
+            return _skills.Values
+                .OrderBy(skill => skill.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        internal static ParameterValidationResult ValidateParameters(SkillInfo skill, string json)
+        {
+            var validation = new ParameterValidationResult
+            {
+                Args = string.IsNullOrEmpty(json) ? new JObject() : JObject.Parse(json)
+            };
+
+            var ps = skill.Parameters;
+            CollectUnknownParameters(skill, validation);
+            var invoke = new object[ps.Length];
+            for (int i = 0; i < ps.Length; i++)
+            {
+                var p = ps[i];
+                bool provided = validation.Args.TryGetValue(p.Name, StringComparison.OrdinalIgnoreCase, out var token);
+
+                if (provided)
+                {
+                    try
+                    {
+                        invoke[i] = token.ToObject(p.ParameterType);
+                    }
+                    catch (Exception ex)
+                    {
+                        validation.TypeErrors.Add(new { parameter = p.Name, expectedType = GetJsonType(p.ParameterType), error = ex.Message });
+                    }
+                }
+                else if (p.HasDefaultValue)
+                {
+                    invoke[i] = p.DefaultValue;
+                }
+                else if (!IsParameterRequired(p))
+                {
+                    invoke[i] = null;
+                }
+                else
+                {
+                    validation.MissingParams.Add(p.Name);
+                }
+
+                validation.ParameterDetails.Add(new
+                {
+                    name = p.Name,
+                    type = GetJsonType(p.ParameterType),
+                    required = IsParameterRequired(p),
+                    provided,
+                    defaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
+                });
+            }
+
+            validation.InvokeArgs = invoke;
+            SkillPlanningService.ApplySemanticValidation(skill, validation);
+            return validation;
+        }
+
+        private static void CollectUnknownParameters(SkillInfo skill, ParameterValidationResult validation)
+        {
+            if (validation?.Args == null)
+                return;
+
+            var allowed = skill.AllowedParameterSet;
+            var parameterNames = skill.ParameterNames;
+
+            foreach (var property in validation.Args.Properties())
+            {
+                if (allowed.Contains(property.Name))
+                    continue;
+
+                var suggestions = SuggestParameters(skill.Name, property.Name, parameterNames);
+                var entry = new Dictionary<string, object>
+                {
+                    ["parameter"] = property.Name
+                };
+
+                if (suggestions.Length > 0)
+                    entry["suggestions"] = suggestions;
+
+                var hint = GetParameterHint(skill.Name, property.Name);
+                if (!string.IsNullOrWhiteSpace(hint))
+                    entry["hint"] = hint;
+
+                validation.UnknownParams.Add(entry);
+            }
+        }
+
+        private static string[] SuggestParameters(string skillName, string unknownParameter, string[] allowedParameterNames)
+        {
+            if (_commonParameterSuggestions.TryGetValue(skillName, out var skillSuggestions) &&
+                skillSuggestions.TryGetValue(unknownParameter, out var directSuggestions) &&
+                directSuggestions?.Length > 0)
+            {
+                return directSuggestions;
+            }
+
+            return allowedParameterNames
+                .Select(name => new
+                {
+                    Name = name,
+                    Distance = ComputeLevenshteinDistance(unknownParameter, name)
+                })
+                .Where(x =>
+                    x.Distance <= 3 ||
+                    x.Name.IndexOf(unknownParameter, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    unknownParameter.IndexOf(x.Name, StringComparison.OrdinalIgnoreCase) >= 0)
+                .OrderBy(x => x.Distance)
+                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(3)
+                .Select(x => x.Name)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static string GetParameterHint(string skillName, string parameterName)
+        {
+            if (_commonParameterHints.TryGetValue(skillName, out var hints) &&
+                hints.TryGetValue(parameterName, out var hint))
+            {
+                return hint;
+            }
+
+            return null;
+        }
+
+        private static int ComputeLevenshteinDistance(string left, string right)
+        {
+            if (string.IsNullOrEmpty(left))
+                return string.IsNullOrEmpty(right) ? 0 : right.Length;
+            if (string.IsNullOrEmpty(right))
+                return left.Length;
+
+            var matrix = new int[left.Length + 1, right.Length + 1];
+            for (int i = 0; i <= left.Length; i++)
+                matrix[i, 0] = i;
+            for (int j = 0; j <= right.Length; j++)
+                matrix[0, j] = j;
+
+            for (int i = 1; i <= left.Length; i++)
+            {
+                for (int j = 1; j <= right.Length; j++)
+                {
+                    int cost = char.ToUpperInvariant(left[i - 1]) == char.ToUpperInvariant(right[j - 1]) ? 0 : 1;
+                    matrix[i, j] = Math.Min(
+                        Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
+                        matrix[i - 1, j - 1] + cost);
+                }
+            }
+
+            return matrix[left.Length, right.Length];
+        }
+
+        private static string[] ExtractValidationParameterNames(IEnumerable<object> validationEntries)
+        {
+            if (validationEntries == null)
+                return Array.Empty<string>();
+
+            return validationEntries
+                .Select(entry => TryGetValidationEntryField(entry, "parameter"))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static string ExtractValidationMessage(object validationEntry, string fallback)
+        {
+            return SkillResultHelper.TryGetMemberValue(validationEntry, "error", out var errorValue) && errorValue != null
+                ? errorValue.ToString()
+                : fallback;
+        }
+
+        private static string TryGetValidationEntryField(object validationEntry, string fieldName)
+        {
+            return SkillResultHelper.TryGetMemberValue(validationEntry, fieldName, out var value) && value != null
+                ? value.ToString()
+                : null;
+        }
+
+        public static string Plan(string name, string json)
         {
             Initialize();
             if (!_skills.TryGetValue(name, out var skill))
-            {
-                return JsonConvert.SerializeObject(new
-                {
-                    status = "error",
-                    error = $"Skill '{name}' not found",
-                    availableSkills = _skills.Keys.Take(20).ToArray()
-                }, _jsonSettings);
-            }
-
-            var missingParams = new List<string>();
-            var typeErrors = new List<object>();
-            var paramDetails = new List<object>();
+                return ResolveSkillNotFound(name);
 
             try
             {
-                var args = string.IsNullOrEmpty(json) ? new JObject() : JObject.Parse(json);
-                var ps = skill.Parameters;
-
-                for (int i = 0; i < ps.Length; i++)
-                {
-                    var p = ps[i];
-                    bool provided = args.TryGetValue(p.Name, StringComparison.OrdinalIgnoreCase, out var token);
-
-                    if (provided)
-                    {
-                        // Validate type conversion
-                        try
-                        {
-                            token.ToObject(p.ParameterType);
-                        }
-                        catch (Exception ex)
-                        {
-                            typeErrors.Add(new { parameter = p.Name, expectedType = GetJsonType(p.ParameterType), error = ex.Message });
-                        }
-                    }
-                    else if (IsParameterRequired(p))
-                    {
-                        missingParams.Add(p.Name);
-                    }
-
-                    paramDetails.Add(new
-                    {
-                        name = p.Name,
-                        type = GetJsonType(p.ParameterType),
-                        required = IsParameterRequired(p),
-                        provided,
-                        defaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
-                    });
-                }
+                var validation = ValidateParameters(skill, json);
+                var plan = SkillPlanningService.BuildPlan(skill, validation);
+                return JsonConvert.SerializeObject(plan, Formatting.Indented, _jsonSettings);
             }
             catch (Exception ex)
             {
@@ -848,34 +1249,9 @@ namespace UnitySkills
                     error = $"Invalid JSON: {ex.Message}"
                 }, _jsonSettings);
             }
-
-            bool valid = missingParams.Count == 0 && typeErrors.Count == 0;
-            return JsonConvert.SerializeObject(new
-            {
-                status = "dryRun",
-                valid,
-                skill = new
-                {
-                    name = skill.Name,
-                    description = skill.Description,
-                    category = skill.Category != SkillCategory.Uncategorized ? skill.Category.ToString() : null,
-                    operation = FormatOperation(skill.Operation),
-                    tags = skill.Tags,
-                    outputs = skill.Outputs,
-                    requiresInput = skill.RequiresInput,
-                    readOnly = skill.ReadOnly
-                },
-                parameters = paramDetails,
-                validation = new
-                {
-                    missingParams = missingParams.Count > 0 ? missingParams.ToArray() : null,
-                    typeErrors = typeErrors.Count > 0 ? typeErrors.ToArray() : null
-                },
-                note = "No execution performed"
-            }, Formatting.Indented, _jsonSettings);
         }
 
-        // ========== Metadata Validation ==========
+
 
         /// <summary>
         /// Validates metadata completeness and consistency across all discovered skills.
@@ -908,6 +1284,12 @@ namespace UnitySkills
                     if (s.RequiresInput == null || s.RequiresInput.Length == 0)
                         issues.Add($"[WARN] {s.Name}: Delete/Modify operation but RequiresInput is empty");
                 }
+
+                if (s.MayEnterPlayMode && s.ReadOnly)
+                    issues.Add($"[WARN] {s.Name}: MayEnterPlayMode=true but ReadOnly=true seems inconsistent");
+
+                if (!s.SupportsDryRun && s.ReadOnly)
+                    issues.Add($"[WARN] {s.Name}: SupportsDryRun=false but ReadOnly=true — read-only skills should support dry run");
             }
 
             return issues;

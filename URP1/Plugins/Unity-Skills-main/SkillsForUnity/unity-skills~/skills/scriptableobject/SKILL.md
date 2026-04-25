@@ -13,8 +13,8 @@ Create and manage ScriptableObject assets.
 
 **DO NOT** (common hallucinations):
 - `scriptableobject_create_type` does not exist → create SO scripts via `script_create` with template "ScriptableObject"
-- `scriptableobject_get_properties` does not exist → use `scriptableobject_read`
-- `scriptableobject_set_property` does not exist → use `scriptableobject_set_field`
+- `scriptableobject_get_properties` / `scriptableobject_read` do not exist → use `scriptableobject_get`
+- `scriptableobject_set_property` / `scriptableobject_set_field` do not exist → use `scriptableobject_set` (single field) or `scriptableobject_set_batch` (multiple fields)
 - `scriptableobject_save` does not exist → changes are auto-saved to the asset
 
 **Routing**:
@@ -49,8 +49,7 @@ List available ScriptableObject types in the project.
 ### `scriptableobject_duplicate`
 Duplicate a ScriptableObject asset.
 **Parameters:**
-- `sourcePath` (string): Source asset path.
-- `destPath` (string): Destination path.
+- `assetPath` (string): Source asset path to duplicate.
 
 ### `scriptableobject_set_batch`
 Set multiple fields on a ScriptableObject at once. fields: JSON object {fieldName: value, ...}
@@ -102,3 +101,8 @@ Import JSON data into a ScriptableObject.
 | jsonFilePath | string | No | `null` | Path to a JSON file to read and import |
 
 **Returns:** `{ success, assetPath }`
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

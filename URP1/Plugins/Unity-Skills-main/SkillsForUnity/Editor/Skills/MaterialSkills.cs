@@ -103,7 +103,8 @@ namespace UnitySkills
             Category = SkillCategory.Material, Operation = SkillOperation.Create,
             Tags = new[] { "material", "shader", "pipeline", "asset" },
             Outputs = new[] { "name", "shader", "path", "renderPipeline", "instanceId" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesAssets = true)]
         public static object MaterialCreate(string name, string shaderName = null, string savePath = null)
         {
             if (!string.IsNullOrEmpty(savePath) && Validate.SafePath(savePath, "savePath") is object pathErr) return pathErr;
@@ -305,7 +306,8 @@ namespace UnitySkills
             Tags = new[] { "color", "hdr", "emission", "rendering" },
             Outputs = new[] { "color", "propertyUsed", "intensity", "hdrEnabled" },
             RequiresInput = new[] { "gameObject|materialPath" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesAssets = true)]
         public static object MaterialSetColor(string name = null, int instanceId = 0, string path = null, 
             float r = 1, float g = 1, float b = 1, float a = 1, 
             string propertyName = null, float intensity = 1.0f)

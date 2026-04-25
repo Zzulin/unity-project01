@@ -7,22 +7,28 @@ description: "Unity Editor automation via REST API — create scripts, analyze s
 
 Use this skill when the user wants to automate the Unity Editor through the local UnitySkills REST server.
 
-Current package snapshot:
+## Canonical Schema First
 
-- `513` REST skills
-- `14` advisory design modules
-- Unity maintenance baseline: `2022.3+`
-- Default request timeout: `15 minutes`
+For exact skill names, parameters, defaults, and returns, query schema first:
+- `unity_skills.get_skill_schema()`
+- `GET /skills/schema`
+- `GET /skills?category=<Category>`
 
-## ⚙ Operating Mode
+Use module `SKILL.md` files for routing guidance, guardrails, and minimal examples, not as the canonical source of exact signatures.
 
-> **Default: SEMI-AUTO** — Only script, perception, scene management, editor context,
-> asset basics, workflow, debug/console, and advisory modules are active.
-> All other skills (gameobject_create, component_add, material_*, light_*, etc.) are OFF.
+Current snapshot: `713` REST skills, `50` functional source modules, `68` module documentation directories (`49` REST/module docs + `19` advisory docs), Unity `2022.3+`, default timeout `15 minutes`.
+
+Python helper: `unity-skills/scripts/unity_skills.py`
+
+## Operating Mode
+
+Operating modes are an **AI routing policy**, not a server-side permission gate. The REST server still exposes all `713` skills through `/skills` and `/skills/schema`; the mode rules control which modules the agent should choose by default.
+
+> **Default: SEMI-AUTO**. Prefer only `script`, `perception`, `scene`, `editor`, `asset`, `workflow`, `debug`, `console`, and advisory modules. Hold back object creation/configuration modules until the user clearly requests direct Unity manipulation.
 
 ### Switch to Full-Auto
 
-Activate ALL 513 skills when user explicitly says:
+Use Full-Auto routing when user explicitly says:
 - "全自动模式" / "full auto" / "full-auto mode"
 - "自动开发" / "自动化构建" / "auto build"
 - "帮我搭建场景" / "build the scene for me"
@@ -34,110 +40,33 @@ Activate ALL 513 skills when user explicitly says:
 - "半自动模式" / "semi-auto" / "代码优先" / "code-first"
 - Session start always defaults to Semi-Auto
 
-### Semi-Auto Active Categories
+### Semi-Auto Routing Scope
+
+The current Semi-Auto REST scope is about `121` REST entries across these categories, plus `19` advisory modules. Treat the category list as the routing rule; use schema queries for exact callable counts and signatures.
 
 | Category | Modules | Representative Skills |
 |----------|---------|----------------------|
 | Script | script | script_create, script_read, script_replace, script_append |
-| Perception | perception | scene_summarize, hierarchy_describe, script_analyze |
+| Perception | perception | scene_analyze, scene_health_check, project_stack_detect |
 | Scene Mgmt | scene | scene_save, scene_load, scene_context, scene_find_objects |
 | Editor | editor | editor_get_context, editor_undo, editor_redo |
 | Asset Basic | asset | asset_refresh, asset_find, asset_get_info |
-| Workflow | workflow | workflow_task_start/end, workflow_undo_task |
+| Workflow | workflow | workflow_task_start/end, workflow_undo_task; use workflow/batch helpers for planning, preview, jobs, and rollback, not free-form scene construction |
 | Debug | debug, console | debug_check_compilation, console_get_logs |
-| Advisory | 14 modules | All advisory modules (no REST skills) |
+| Advisory | 19 modules | Design-only guidance modules (no REST skills) |
 
 ## Core Rules
 
-1. When the user mentions a specific Unity version, route first:
+1. If the user specifies a Unity version or editor line, set instance/version routing first with `unity_skills.set_unity_version(...)`.
+2. In Full-Auto mode, prefer `*_batch` skills whenever the task touches `2+` objects.
+3. For multi-step editor mutations, prefer workflow wrappers instead of free-form mutation sequences.
+4. Script edits, define changes, package changes, some imports, and test template creation can trigger compilation or Domain Reload. Wait and retry on transient unavailability.
+5. `test_*` skills are async. They return a `jobId` and must be polled with `test_get_result(jobId)`.
 
-```python
-import unity_skills
-unity_skills.set_unity_version("2022.3")
-```
+## Route
 
-2. [Full-Auto] When the task touches `2+` objects, prefer `*_batch` skills instead of looping single-item skills.
+- Module index: `unity-skills/skills/SKILL.md`
+- Script guidance: `unity-skills/skills/script/SKILL.md`
+- Advisory guidance: load advisory modules on demand from the module index
 
-3. When the task spans multiple editor mutations, prefer a workflow wrapper:
-
-```python
-import unity_skills
-
-# Full-Auto mode example
-with unity_skills.workflow_context("build_scene", "Create player and camera"):
-    unity_skills.call_skill("gameobject_create", name="Player", primitiveType="Capsule")
-    unity_skills.call_skill("camera_create", name="MainCamera", x=0, y=2, z=-6)
-```
-
-4. Script creation, script edits, define changes, package changes, some asset reimports, and test-template creation may trigger compilation or Domain Reload. During those windows the server can be temporarily unavailable. Wait and retry instead of assuming a fatal failure.
-
-5. The `test_*` skills wrap Unity Test Runner async jobs inside the current editor instance. They return a `jobId` that should be polled with `test_get_result(jobId)`.
-
-## Python Helper
-
-Main helper file:
-
-```text
-unity-skills/scripts/unity_skills.py
-```
-
-Common helpers:
-
-```python
-import unity_skills
-
-# Full-Auto mode example
-unity_skills.call_skill("gameobject_create", name="Cube", primitiveType="Cube")
-unity_skills.call_skill_with_retry("asset_refresh")
-unity_skills.wait_for_unity(timeout=10)
-print(unity_skills.list_instances())
-print(unity_skills.get_server_status())
-```
-
-Script workflow helper:
-
-```python
-import unity_skills
-
-result = unity_skills.create_script("PlayerController")
-if result.get("success"):
-    print(result.get("compilation"))
-```
-
-## Advisory Design Modules
-
-These modules are **available in both Semi-Auto and Full-Auto modes**. They contain no REST skills — only architecture and design guidance.
-Load them **on demand** when the user asks for architecture guidance, script design advice, refactoring, coupling reduction, performance review, pattern selection, or XR/VR/AR development.
-
-- `skills/project-scout/SKILL.md`
-- `skills/architecture/SKILL.md`
-- `skills/adr/SKILL.md`
-- `skills/performance/SKILL.md`
-- `skills/asmdef/SKILL.md`
-- `skills/blueprints/SKILL.md`
-- `skills/script-roles/SKILL.md`
-- `skills/scene-contracts/SKILL.md`
-- `skills/testability/SKILL.md`
-- `skills/patterns/SKILL.md`
-- `skills/async/SKILL.md`
-- `skills/inspector/SKILL.md`
-- `skills/scriptdesign/SKILL.md`
-- `skills/xr/SKILL.md`
-
-Use them on demand. Do not default to giant architecture dumps, forced UniTask adoption, or a global event bus unless the project context clearly justifies it.
-
-> **XR/VR rule**: Before calling any `xr_*` skill for the first time in a session, **always load `skills/xr/SKILL.md` first**. It contains verified API property names, Collider configuration rules, and anti-hallucination guardrails that prevent common setup errors. Skipping this step risks silent configuration failures.
-
-## Module Index
-
-For module-by-module documentation, open:
-
-```text
-unity-skills/skills/SKILL.md
-```
-
-For script-specific guidance, open:
-
-```text
-unity-skills/skills/script/SKILL.md
-```
+> **XR rule**: Before calling any `xr_*` skill in a session, load `skills/xr/SKILL.md` first. XR is reflection-based; wrong property names can fail silently.

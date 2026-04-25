@@ -232,3 +232,8 @@ unity_skills.call_skill("prefab_instantiate_batch", items=[
 3. Apply changes to update all instances
 4. Unpack only when unique modifications needed
 5. Use batch instantiation for level generation
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

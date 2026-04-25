@@ -89,6 +89,42 @@ No parameters.
 
 **Returns:** `{ success, currentGroup, groupIndex }`
 
+## Planning And Batch Governance
+
+### `workflow_plan`
+Generate a combined execution plan for multiple skills on the server side.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `skillsJson` | string | Yes | - | JSON array of `{ "name": "...", "params": { ... } }` entries |
+
+**Returns:** `{ totalSteps, totalRisk, steps, dependencies, warnings, mayDisconnect }`
+
+### `batch_query_assets`
+Query project assets with filters that are useful before batch cleanup or migration work.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `searchFilter` | string | No | - | Extra `AssetDatabase.FindAssets` filter text |
+| `folder` | string | No | `Assets` | Search root |
+| `typeFilter` | string | No | - | Asset type filter such as `t:Material` or `Prefab` |
+| `namePattern` | string | No | - | Regex applied to file name without extension |
+| `labelFilter` | string | No | - | Asset label filter such as `l:Addressable` |
+| `maxResults` | int | No | `200` | Max assets returned |
+
+**Returns:** `{ count, totalMatched, summary, assets }`
+
+### `batch_retry_failed`
+Retry only the failed items from an earlier batch execution report. This now reuses the original operation context stored in the report.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `reportId` | string | Yes | - | Source report ID from `batch_report_get` / `batch_report_list` |
+| `runAsync` | bool | No | `true` | Return a `jobId` immediately or wait for completion |
+| `chunkSize` | int | No | `100` | Chunk size for retry execution |
+
+**Returns:** `{ status, jobId?, retryCount, originalReportId, reportId? }`
+
 ## Session Management (Conversation-Level Undo)
 
 ### `workflow_session_start`
@@ -223,43 +259,19 @@ Delete a task from history (does not revert changes, just removes the record).
 
 **Returns:** `{ success, deletedId }`
 
-## Recommended Usage Pattern
-
-### Session-Level (Conversation Undo)
+## Minimal Example
 
 ```python
-# At the START of each conversation
-unity_skills.call_skill("workflow_session_start", tag="Build Player Character")
+import unity_skills
 
-# ... perform multiple operations ...
+# Session-level: wrap entire conversation for bulk undo
+unity_skills.call_skill("workflow_session_start", tag="Build Player")
 unity_skills.call_skill("gameobject_create", name="Player", primitiveType="Capsule")
 unity_skills.call_skill("component_add", name="Player", componentType="Rigidbody")
-unity_skills.call_skill("component_add", name="Player", componentType="CapsuleCollider")
-unity_skills.call_skill("material_create", name="PlayerMaterial", shaderName="Standard")
-
-# At the END of the conversation
 unity_skills.call_skill("workflow_session_end")
-
-# Later: Undo the ENTIRE conversation
-result = unity_skills.call_skill("workflow_session_list")
-session_id = result['sessions'][0]['sessionId']
-unity_skills.call_skill("workflow_session_undo", sessionId=session_id)
-```
-
-### Task-Level (Fine-Grained Undo)
-
-```python
-# 1. Start Task
-unity_skills.call_skill("workflow_task_start", tag="Adjust Player Speed", description="Set speed to 10")
-
-# 2. Snapshot target object(s) before modification
-unity_skills.call_skill("workflow_snapshot_object", name="Player")
-
-# 3. Perform modifications
-unity_skills.call_skill("component_set_property", name="Player", componentType="PlayerController", propertyName="speed", value=10)
-
-# 4. End Task
-unity_skills.call_skill("workflow_task_end")
+# Later: undo entire session
+sessions = unity_skills.call_skill("workflow_session_list")
+unity_skills.call_skill("workflow_session_undo", sessionId=sessions["sessions"][0]["sessionId"])
 ```
 
 ## Auto-Tracked Operations
@@ -277,3 +289,7 @@ The following operations are **automatically tracked** for undo when a session/t
 - `cinemachine_create_vcam`
 
 For **modification operations**, the system auto-snapshots target objects before changes when possible.
+
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

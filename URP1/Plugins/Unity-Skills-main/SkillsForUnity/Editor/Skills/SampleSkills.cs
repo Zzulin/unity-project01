@@ -111,15 +111,19 @@ namespace UnitySkills
             return new { success = true, name = objectName, scale = new { x, y, z }, message = $"Set {objectName} scale to ({x},{y},{z})" };
         }
 
-        [UnitySkill("find_objects_by_name", "Find all GameObjects containing a name (param: nameContains)",
+        [UnitySkill("find_objects_by_name", "Find all GameObjects containing a name (supports nameContains/name alias)",
             Category = SkillCategory.Sample, Operation = SkillOperation.Query,
             Tags = new[] { "find", "search", "name", "quick" },
             Outputs = new[] { "query", "count", "objects" },
             ReadOnly = true)]
-        public static object FindObjectsByName(string nameContains)
+        public static object FindObjectsByName(string nameContains = null, string name = null)
         {
+            nameContains = nameContains ?? name;
+            if (Validate.Required(nameContains, "nameContains") is object err) return err;
+
             var allObjects = FindHelper.FindAll<GameObject>();
-            var matches = System.Array.FindAll(allObjects, go => go.name.Contains(nameContains));
+            var matches = System.Array.FindAll(allObjects,
+                go => go != null && go.name.IndexOf(nameContains, System.StringComparison.OrdinalIgnoreCase) >= 0);
             return new
             {
                 query = nameContains,

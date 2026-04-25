@@ -74,7 +74,7 @@ namespace UnitySkills
             return new { error = "No active Scene View found" };
         }
         
-        [UnitySkill("camera_look_at", "Focus Scene View camera on a point.",
+        [UnitySkill("camera_look_at", "Focus Scene View camera on a world-space point (x/y/z only, not object name).",
             Category = SkillCategory.Camera, Operation = SkillOperation.Execute,
             Tags = new[] { "scene-view", "look-at", "focus", "navigate" },
             Outputs = new[] { "success" })]
@@ -113,13 +113,11 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object CameraGetProperties(string name = null, int instanceId = 0, string path = null)
         {
-            var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (cam, err) = GameObjectFinder.FindComponentOrError<Camera>(name, instanceId, path);
             if (err != null) return err;
-            var cam = go.GetComponent<Camera>();
-            if (cam == null) return new { error = $"No Camera component on {go.name}" };
             return new
             {
-                success = true, name = go.name,
+                success = true, name = cam.gameObject.name,
                 fieldOfView = cam.fieldOfView, nearClipPlane = cam.nearClipPlane, farClipPlane = cam.farClipPlane,
                 orthographic = cam.orthographic, orthographicSize = cam.orthographicSize,
                 depth = cam.depth, cullingMask = cam.cullingMask,
@@ -141,10 +139,8 @@ namespace UnitySkills
             float? depth = null, string clearFlags = null,
             float? bgR = null, float? bgG = null, float? bgB = null)
         {
-            var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (cam, err) = GameObjectFinder.FindComponentOrError<Camera>(name, instanceId, path);
             if (err != null) return err;
-            var cam = go.GetComponent<Camera>();
-            if (cam == null) return new { error = $"No Camera component on {go.name}" };
             WorkflowManager.SnapshotObject(cam);
             Undo.RecordObject(cam, "Set Camera Properties");
             if (fieldOfView.HasValue) cam.fieldOfView = fieldOfView.Value;
@@ -157,7 +153,7 @@ namespace UnitySkills
                 var c = cam.backgroundColor;
                 cam.backgroundColor = new Color(bgR ?? c.r, bgG ?? c.g, bgB ?? c.b, c.a);
             }
-            return new { success = true, name = go.name };
+            return new { success = true, name = cam.gameObject.name };
         }
 
         [UnitySkill("camera_set_culling_mask", "Set Game Camera culling mask by layer names (comma-separated)",
@@ -168,10 +164,8 @@ namespace UnitySkills
             TracksWorkflow = true)]
         public static object CameraSetCullingMask(string layerNames, string name = null, int instanceId = 0, string path = null)
         {
-            var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (cam, err) = GameObjectFinder.FindComponentOrError<Camera>(name, instanceId, path);
             if (err != null) return err;
-            var cam = go.GetComponent<Camera>();
-            if (cam == null) return new { error = $"No Camera component on {go.name}" };
             WorkflowManager.SnapshotObject(cam);
             Undo.RecordObject(cam, "Set Culling Mask");
             int mask = 0;
@@ -191,10 +185,8 @@ namespace UnitySkills
             RequiresInput = new[] { "gameObject" })]
         public static object CameraScreenshot(string savePath = "Assets/screenshot.png", int width = 1920, int height = 1080, string name = null, int instanceId = 0, string path = null)
         {
-            var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (cam, err) = GameObjectFinder.FindComponentOrError<Camera>(name, instanceId, path);
             if (err != null) return err;
-            var cam = go.GetComponent<Camera>();
-            if (cam == null) return new { error = $"No Camera component on {go.name}" };
             if (Validate.SafePath(savePath, "savePath") is object pathErr) return pathErr;
             if (!savePath.EndsWith(".png")) savePath += ".png";
             var dir = System.IO.Path.GetDirectoryName(savePath);
@@ -231,10 +223,8 @@ namespace UnitySkills
             TracksWorkflow = true)]
         public static object CameraSetOrthographic(bool orthographic, float? orthographicSize = null, string name = null, int instanceId = 0, string path = null)
         {
-            var (go, err) = GameObjectFinder.FindOrError(name, instanceId, path);
+            var (cam, err) = GameObjectFinder.FindComponentOrError<Camera>(name, instanceId, path);
             if (err != null) return err;
-            var cam = go.GetComponent<Camera>();
-            if (cam == null) return new { error = $"No Camera component on {go.name}" };
             WorkflowManager.SnapshotObject(cam);
             Undo.RecordObject(cam, "Set Orthographic");
             cam.orthographic = orthographic;

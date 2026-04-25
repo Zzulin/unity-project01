@@ -343,7 +343,7 @@ namespace UnitySkills
             }
             if (mesh == null) return new { error = "No mesh found" };
 
-            return new { success = true, name = mesh.name, vertexCount = mesh.vertexCount, triangles = mesh.triangles.Length / 3,
+            return new { success = true, name = mesh.name, vertexCount = mesh.vertexCount, triangles = SkillsCommon.GetTriangleCount(mesh),
                 subMeshCount = mesh.subMeshCount, bounds = new { center = $"{mesh.bounds.center}", size = $"{mesh.bounds.size}" },
                 hasNormals = mesh.normals.Length > 0, hasTangents = mesh.tangents.Length > 0, hasUV = mesh.uv.Length > 0, hasUV2 = mesh.uv2.Length > 0,
                 hasColors = mesh.colors.Length > 0, blendShapeCount = mesh.blendShapeCount, isReadable = mesh.isReadable };
@@ -363,7 +363,7 @@ namespace UnitySkills
 
             var allAssets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
             var materials = allAssets.OfType<Material>().Select(m => new { name = m.name, shader = m.shader != null ? m.shader.name : "null" }).ToArray();
-            var meshes = allAssets.OfType<Mesh>().Select(m => new { name = m.name, vertices = m.vertexCount, triangles = m.triangles.Length / 3 }).ToArray();
+            var meshes = allAssets.OfType<Mesh>().Select(m => new { name = m.name, vertices = m.vertexCount, triangles = SkillsCommon.GetTriangleCount(m) }).ToArray();
 
             return new { success = true, path = assetPath, materialCount = materials.Length, materials, meshCount = meshes.Length, meshes };
         }

@@ -9,7 +9,6 @@ namespace UnitySkills
 {
     public static class WorkflowManager
     {
-        private static readonly System.Text.UTF8Encoding Utf8NoBom = new System.Text.UTF8Encoding(false);
         private static WorkflowHistoryData _history;
         private static WorkflowTask _currentTask;
         private static string _currentSessionId;
@@ -90,7 +89,7 @@ namespace UnitySkills
 
                 string json = JsonUtility.ToJson(_history, true);
                 string tmpPath = HistoryFilePath + ".tmp";
-                File.WriteAllText(tmpPath, json, Utf8NoBom);
+                File.WriteAllText(tmpPath, json, SkillsCommon.Utf8NoBom);
                 if (File.Exists(HistoryFilePath))
                     File.Delete(HistoryFilePath);
                 File.Move(tmpPath, HistoryFilePath);

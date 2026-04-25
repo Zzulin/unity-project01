@@ -59,7 +59,8 @@ namespace UnitySkills
             Tags = new[] { "add", "attach", "behaviour" },
             Outputs = new[] { "gameObject", "instanceId", "component", "fullTypeName" },
             RequiresInput = new[] { "gameObject" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesScene = true)]
         public static object ComponentAdd(string name = null, int instanceId = 0, string path = null, string componentType = null)
         {
             if (Validate.Required(componentType, "componentType") is object err) return err;
@@ -149,7 +150,8 @@ namespace UnitySkills
             Tags = new[] { "remove", "detach", "destroy" },
             Outputs = new[] { "gameObject", "removed" },
             RequiresInput = new[] { "gameObject", "component" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true,
+            MutatesScene = true)]
         public static object ComponentRemove(string name = null, int instanceId = 0, string path = null, string componentType = null, int componentIndex = 0)
         {
             if (Validate.Required(componentType, "componentType") is object err) return err;
@@ -469,7 +471,7 @@ namespace UnitySkills
                 {
                     try 
                     { 
-                        var val = p.GetValue(comp);
+                        var val = ReadPropertyValueSafely(comp, p);
                         return new { 
                             name = p.Name, 
                             type = p.PropertyType.Name, 
@@ -507,6 +509,19 @@ namespace UnitySkills
                 properties = props,
                 fields = fields
             };
+        }
+
+        private static object ReadPropertyValueSafely(Component comp, PropertyInfo property)
+        {
+            if (comp is Renderer renderer)
+            {
+                if (property.Name == "material")
+                    return renderer.sharedMaterial;
+                if (property.Name == "materials")
+                    return renderer.sharedMaterials;
+            }
+
+            return property.GetValue(comp);
         }
 
         #region Type Finding (Enhanced for Third-Party)
@@ -550,11 +565,10 @@ namespace UnitySkills
             }
             
             // 4. Search all loaded assemblies by simple name (slowest but most comprehensive)
-            result = System.AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new System.Type[0]; } })
-                .FirstOrDefault(t => 
-                    (t.Name.Equals(simpleName, System.StringComparison.OrdinalIgnoreCase) || 
-                     t.FullName == name) && 
+            result = SkillsCommon.GetAllLoadedTypes()
+                .FirstOrDefault(t =>
+                    (t.Name.Equals(simpleName, System.StringComparison.OrdinalIgnoreCase) ||
+                     t.FullName == name) &&
                     typeof(Component).IsAssignableFrom(t));
 
             if (result != null)
@@ -597,9 +611,8 @@ namespace UnitySkills
         {
             var simpleName = searchTerm.Contains(".") ? searchTerm.Substring(searchTerm.LastIndexOf('.') + 1) : searchTerm;
             
-            return System.AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new System.Type[0]; } })
-                .Where(t => typeof(Component).IsAssignableFrom(t) && 
+            return SkillsCommon.GetAllLoadedTypes()
+                .Where(t => typeof(Component).IsAssignableFrom(t) &&
                            t.Name.IndexOf(simpleName, System.StringComparison.OrdinalIgnoreCase) >= 0)
                 .Take(10)
                 .Select(t => t.FullName)

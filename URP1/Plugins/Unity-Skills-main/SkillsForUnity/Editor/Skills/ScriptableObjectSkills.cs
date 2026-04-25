@@ -128,8 +128,7 @@ namespace UnitySkills
             ReadOnly = true)]
         public static object ScriptableObjectListTypes(string filter = null, int limit = 50)
         {
-            var types = System.AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new System.Type[0]; } })
+            var types = SkillsCommon.GetAllLoadedTypes()
                 .Where(t => t.IsSubclassOf(typeof(ScriptableObject)) && !t.IsAbstract)
                 .Where(t => string.IsNullOrEmpty(filter) || t.Name.Contains(filter))
                 .Take(limit)
@@ -234,7 +233,7 @@ namespace UnitySkills
             if (!string.IsNullOrEmpty(savePath))
             {
                 if (Validate.SafePath(savePath, "savePath") is object pathErr) return pathErr;
-                File.WriteAllText(savePath, json, new System.Text.UTF8Encoding(false));
+                File.WriteAllText(savePath, json, SkillsCommon.Utf8NoBom);
                 return new { success = true, path = savePath };
             }
             return new { success = true, json };
@@ -267,8 +266,7 @@ namespace UnitySkills
 
         private static System.Type FindScriptableObjectType(string name)
         {
-            return System.AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return new System.Type[0]; } })
+            return SkillsCommon.GetAllLoadedTypes()
                 .FirstOrDefault(t => string.Equals(t.Name, name, System.StringComparison.OrdinalIgnoreCase) && t.IsSubclassOf(typeof(ScriptableObject)));
         }
 

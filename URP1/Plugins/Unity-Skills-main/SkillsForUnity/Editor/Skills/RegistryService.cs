@@ -98,10 +98,54 @@ namespace UnitySkills
             }
         }
 
+        private static int _heartbeatCount = 0;
+
         public static void Heartbeat(int port)
         {
-             // Re-register which updates the timestamp
-             Register(port);
+            try
+            {
+                _heartbeatCount++;
+                bool doStaleCleanup = _heartbeatCount % 5 == 0;
+
+                AtomicReadModifyWrite(registry =>
+                {
+                    if (registry.TryGetValue(ProjectPath, out var existing))
+                    {
+                        existing.last_active = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        existing.port = port;
+                    }
+                    else
+                    {
+                        // First heartbeat before Register — write full entry
+                        registry[ProjectPath] = new InstanceInfo
+                        {
+                            id = InstanceId,
+                            name = ProjectName,
+                            path = ProjectPath,
+                            port = port,
+                            pid = System.Diagnostics.Process.GetCurrentProcess().Id,
+                            last_active = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                            unityVersion = Application.unityVersion
+                        };
+                    }
+
+                    if (doStaleCleanup)
+                    {
+                        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        var myPid = System.Diagnostics.Process.GetCurrentProcess().Id;
+                        var keysToRemove = registry
+                            .Where(k => k.Value.pid != myPid &&
+                                (now - k.Value.last_active > 120 || !IsProcessAlive(k.Value.pid)))
+                            .Select(k => k.Key).ToList();
+                        foreach (var key in keysToRemove)
+                            registry.Remove(key);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                SkillsLogger.LogWarning($"Failed to heartbeat: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -192,7 +236,11 @@ namespace UnitySkills
 
         private static bool IsProcessAlive(int pid)
         {
-            try { return System.Diagnostics.Process.GetProcessById(pid) != null; }
+            try
+            {
+                using (var proc = System.Diagnostics.Process.GetProcessById(pid))
+                    return proc != null;
+            }
             catch { return false; }
         }
 

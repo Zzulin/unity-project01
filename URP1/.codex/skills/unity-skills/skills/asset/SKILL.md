@@ -54,13 +54,17 @@ Import an external file into the project.
 ### asset_import_batch
 Import multiple external files.
 
+`items` currently expects a JSON string, not a native array.
+
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, sourcePath, destinationPath}]}`
 
 ```python
-unity_skills.call_skill("asset_import_batch", items=[
+import json
+
+unity_skills.call_skill("asset_import_batch", items=json.dumps([
     {"sourcePath": "C:/Downloads/tex1.png", "destinationPath": "Assets/Textures/tex1.png"},
     {"sourcePath": "C:/Downloads/tex2.png", "destinationPath": "Assets/Textures/tex2.png"}
-])
+]))
 ```
 
 ### asset_delete
@@ -73,13 +77,17 @@ Delete an asset from the project.
 ### asset_delete_batch
 Delete multiple assets.
 
+`items` currently expects a JSON string, not a native array.
+
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, path}]}`
 
 ```python
-unity_skills.call_skill("asset_delete_batch", items=[
+import json
+
+unity_skills.call_skill("asset_delete_batch", items=json.dumps([
     {"path": "Assets/Textures/old1.png"},
     {"path": "Assets/Textures/old2.png"}
-])
+]))
 ```
 
 ### asset_move
@@ -93,13 +101,17 @@ Move or rename an asset.
 ### asset_move_batch
 Move multiple assets.
 
+`items` currently expects a JSON string, not a native array.
+
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, sourcePath, destinationPath}]}`
 
 ```python
-unity_skills.call_skill("asset_move_batch", items=[
+import json
+
+unity_skills.call_skill("asset_move_batch", items=json.dumps([
     {"sourcePath": "Assets/Old/mat1.mat", "destinationPath": "Assets/New/mat1.mat"},
     {"sourcePath": "Assets/Old/mat2.mat", "destinationPath": "Assets/New/mat2.mat"}
-])
+]))
 ```
 
 ### asset_duplicate
@@ -115,7 +127,7 @@ Find assets by search filter.
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `searchFilter` | string | Yes | - | Search query |
-| `searchInFolders` | string | No | "Assets" | Folder to search |
+| `limit` | int | No | 50 | Max results to return |
 | `limit` | int | No | 100 | Max results |
 
 **Search Filter Syntax**:
@@ -159,22 +171,37 @@ Reimport multiple assets matching a pattern.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `pattern` | string | Yes | Search pattern (e.g., "Assets/Textures/*.png") |
+| `searchFilter` | string | No | AssetDatabase search filter (default `*`) |
+| `folder` | string | No | Folder root to search (default `Assets`) |
+| `limit` | int | No | Max assets to reimport (default `100`) |
+
+### asset_set_labels
+Set labels on an asset (overwrites existing labels).
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `assetPath` | string | Yes | Asset path |
+| `labels` | string | Yes | Comma-separated labels (e.g. `"ui,icon,hud"`). Empty entries are dropped |
+
+**Returns**: `{success, assetPath, labels: [...]}`
+
+### asset_get_labels
+Get the labels currently attached to an asset.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `assetPath` | string | Yes | Asset path |
+
+**Returns**: `{success, assetPath, labels: [...]}`
 
 ---
 
-## Example: Efficient Asset Organization
+## Minimal Example
 
 ```python
 import unity_skills
 
-# BAD: 4 API calls
-unity_skills.call_skill("asset_move", sourcePath="Assets/tex1.png", destinationPath="Assets/Textures/tex1.png")
-unity_skills.call_skill("asset_move", sourcePath="Assets/tex2.png", destinationPath="Assets/Textures/tex2.png")
-unity_skills.call_skill("asset_move", sourcePath="Assets/tex3.png", destinationPath="Assets/Textures/tex3.png")
-unity_skills.call_skill("asset_move", sourcePath="Assets/tex4.png", destinationPath="Assets/Textures/tex4.png")
-
-# GOOD: 1 API call
+# GOOD: 1 API call instead of 4
 unity_skills.call_skill("asset_move_batch", items=[
     {"sourcePath": "Assets/tex1.png", "destinationPath": "Assets/Textures/tex1.png"},
     {"sourcePath": "Assets/tex2.png", "destinationPath": "Assets/Textures/tex2.png"},
@@ -190,3 +217,8 @@ unity_skills.call_skill("asset_move_batch", items=[
 3. Refresh after external file changes
 4. Use search filters for efficiency
 5. Backup before bulk delete operations
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

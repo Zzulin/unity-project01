@@ -1,7 +1,10 @@
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace UnitySkills
 {
@@ -35,7 +38,7 @@ namespace UnitySkills
 
             var bookmark = new BookmarkData
             {
-                selectedInstanceIds = Selection.instanceIDs,
+                selectedInstanceIds = Selection.instanceIDs ?? Array.Empty<int>(),
                 note = note,
                 createdAt = System.DateTime.Now
             };
@@ -72,7 +75,7 @@ namespace UnitySkills
                 return new { success = false, error = $"Bookmark '{bookmarkName}' not found" };
 
             // Restore selection
-            var validIds = bookmark.selectedInstanceIds
+            var validIds = (bookmark.selectedInstanceIds ?? Array.Empty<int>())
                 .Where(id => EditorUtility.InstanceIDToObject(id) != null)
                 .ToArray();
             Selection.instanceIDs = validIds;
@@ -111,7 +114,7 @@ namespace UnitySkills
             var list = _bookmarks.Select(kv => new
             {
                 name = kv.Key,
-                selectedCount = kv.Value.selectedInstanceIds.Length,
+                selectedCount = (kv.Value.selectedInstanceIds ?? Array.Empty<int>()).Length,
                 hasSceneView = kv.Value.sceneViewPosition.HasValue,
                 note = kv.Value.note,
                 createdAt = kv.Value.createdAt.ToString("HH:mm:ss")
@@ -140,10 +143,13 @@ namespace UnitySkills
         {
             if (steps < 1)
                 return new { success = false, error = "steps must be >= 1" };
+            Undo.FlushUndoRecordObjects();
+            Undo.IncrementCurrentGroup();
             for (int i = 0; i < steps; i++)
             {
                 Undo.PerformUndo();
             }
+            Undo.FlushUndoRecordObjects();
             return new { success = true, undoneSteps = steps };
         }
 
@@ -155,10 +161,13 @@ namespace UnitySkills
         {
             if (steps < 1)
                 return new { success = false, error = "steps must be >= 1" };
+            Undo.FlushUndoRecordObjects();
+            Undo.IncrementCurrentGroup();
             for (int i = 0; i < steps; i++)
             {
                 Undo.PerformRedo();
             }
+            Undo.FlushUndoRecordObjects();
             return new { success = true, redoneSteps = steps };
         }
 
@@ -461,6 +470,171 @@ namespace UnitySkills
                 currentTaskDescription = WorkflowManager.CurrentTask?.description,
                 snapshotCount = WorkflowManager.CurrentTask?.snapshots.Count ?? 0
             };
+        }
+
+        [UnitySkill("workflow_plan", "Generate a combined execution plan for multiple skills. Returns aggregated risk, dependencies, and per-step plans.",
+            Category = SkillCategory.Workflow, Operation = SkillOperation.Analyze,
+            Tags = new[] { "workflow", "plan", "preview", "multi-skill", "aggregate" },
+            Outputs = new[] { "totalSteps", "totalRisk", "steps", "dependencies", "warnings" },
+            ReadOnly = true)]
+        public static object WorkflowPlan(string skillsJson)
+        {
+            if (string.IsNullOrWhiteSpace(skillsJson))
+                return new { error = "skillsJson is required. Provide a JSON array of {name, params} objects." };
+
+            JArray skillsArray;
+            try { skillsArray = JArray.Parse(skillsJson); }
+            catch (Exception ex) { return new { error = $"Invalid skillsJson: {ex.Message}" }; }
+
+            if (skillsArray.Count == 0)
+                return new { error = "skillsJson array is empty." };
+
+            var steps = new List<object>();
+            var allWarnings = new List<string>();
+            var dependencies = new List<object>();
+            var highestRisk = "low";
+            var mayDisconnect = false;
+            var createdNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < skillsArray.Count; i++)
+            {
+                var entry = skillsArray[i] as JObject;
+                if (entry == null)
+                {
+                    allWarnings.Add($"Step {i}: invalid entry (not a JSON object).");
+                    continue;
+                }
+
+                var skillName = entry["name"]?.ToString();
+                if (string.IsNullOrWhiteSpace(skillName))
+                {
+                    allWarnings.Add($"Step {i}: missing 'name' field.");
+                    continue;
+                }
+
+                if (!SkillRouter.HasSkill(skillName))
+                {
+                    allWarnings.Add($"Step {i}: skill '{skillName}' not found.");
+                    steps.Add(new Dictionary<string, object>
+                    {
+                        ["index"] = i,
+                        ["skill"] = skillName,
+                        ["error"] = "Skill not found"
+                    });
+                    continue;
+                }
+
+                var paramsObj = entry["params"] as JObject ?? new JObject();
+                var planJson = SkillRouter.Plan(skillName, paramsObj.ToString());
+                var planResult = JObject.Parse(planJson);
+
+                // Extract risk level from plan
+                var stepRisk = planResult.SelectToken("skill.riskLevel")?.ToString()
+                               ?? planResult.SelectToken("impact.riskLevel")?.ToString()
+                               ?? "low";
+                highestRisk = MaxRisk(highestRisk, stepRisk);
+
+                // Check serverAvailability
+                if (planResult["serverAvailability"] != null)
+                    mayDisconnect = true;
+
+                // Detect dependencies: if this step uses a name that a previous step creates
+                var targetName = GetTargetFromPlan(planResult);
+                if (!string.IsNullOrEmpty(targetName) && createdNames.Contains(targetName))
+                {
+                    dependencies.Add(new Dictionary<string, object>
+                    {
+                        ["step"] = i,
+                        ["dependsOn"] = FindCreatorStep(steps, targetName),
+                        ["reason"] = $"'{skillName}' targets '{targetName}' which is created by an earlier step"
+                    });
+                }
+
+                // Track created names for dependency detection
+                TrackCreatedNames(planResult, createdNames);
+
+                // Collect warnings from individual plan
+                if (planResult["validation"] is JObject valJObj)
+                {
+                    var warnings = valJObj["warnings"] as JArray;
+                    if (warnings != null)
+                    {
+                        foreach (var w in warnings)
+                            allWarnings.Add($"Step {i} ({skillName}): {w}");
+                    }
+                }
+
+                steps.Add(new Dictionary<string, object>
+                {
+                    ["index"] = i,
+                    ["skill"] = skillName,
+                    ["plan"] = planResult
+                });
+            }
+
+            var result = new Dictionary<string, object>
+            {
+                ["status"] = "plan",
+                ["totalSteps"] = skillsArray.Count,
+                ["totalRisk"] = highestRisk,
+                ["estimatedDuration"] = mayDisconnect ? "may_include_reload" : "instant",
+                ["serverAvailability"] = mayDisconnect ? "may_disconnect" : "unaffected",
+                ["steps"] = steps.ToArray(),
+                ["dependencies"] = dependencies.ToArray(),
+                ["warnings"] = allWarnings.ToArray()
+            };
+
+            return result;
+        }
+
+        private static string MaxRisk(string a, string b)
+        {
+            int Score(string r) => r == "high" ? 3 : r == "medium" ? 2 : 1;
+            return Score(a) >= Score(b) ? a : b;
+        }
+
+        private static string GetTargetFromPlan(JObject plan)
+        {
+            var steps = plan["steps"] as JArray;
+            if (steps == null || steps.Count == 0) return null;
+            return steps[0]?["target"]?.ToString();
+        }
+
+        private static int FindCreatorStep(List<object> steps, string name)
+        {
+            for (int i = steps.Count - 1; i >= 0; i--)
+            {
+                if (steps[i] is Dictionary<string, object> step &&
+                    step.TryGetValue("plan", out var planObj) &&
+                    planObj is JObject plan)
+                {
+                    var changes = plan["changes"] as JObject;
+                    if (changes == null) continue;
+                    var creates = changes["create"] as JArray;
+                    if (creates != null)
+                    {
+                        foreach (var c in creates)
+                        {
+                            if (c?["name"]?.ToString()?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)
+                                return (int)(step.TryGetValue("index", out var idx) ? idx : i);
+                        }
+                    }
+                }
+            }
+            return -1;
+        }
+
+        private static void TrackCreatedNames(JObject plan, HashSet<string> names)
+        {
+            var changes = plan["changes"] as JObject;
+            if (changes == null) return;
+            var creates = changes["create"] as JArray;
+            if (creates == null) return;
+            foreach (var c in creates)
+            {
+                var n = c?["name"]?.ToString();
+                if (!string.IsNullOrEmpty(n)) names.Add(n);
+            }
         }
     }
 }
