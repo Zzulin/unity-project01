@@ -291,7 +291,7 @@ Material:
     - _IgnoreLightY: 0
     - _IsConvertFaceCoord: 0
     - _IsFace: 0
-    - _IsNight: 0
+    - _IsNight: 1
     - _LightThreshold: 0.5
     - _MentelRamp: 1
     - _Metal: 1
