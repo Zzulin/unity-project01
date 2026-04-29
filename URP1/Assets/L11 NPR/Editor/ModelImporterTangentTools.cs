@@ -18,34 +18,6 @@ public static class ModelImporterTangentTools
         ReportModelTangents(assetPath);
     }
 
-    [MenuItem("Tools/NPR/模型/强制所选模型切线为 Calculate Mikk")]
-    private static void ForceSelectedModelTangentsCalculateMikk()
-    {
-        var assetPath = GetSelectedModelAssetPath();
-        if (string.IsNullOrEmpty(assetPath))
-        {
-            Debug.LogWarning("请先在 Project 里选中一个 FBX/OBJ 模型资源。");
-            return;
-        }
-
-        var importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
-        if (importer == null)
-        {
-            Debug.LogWarning($"不是模型资源: {assetPath}");
-            return;
-        }
-
-        var before = importer.importTangents;
-        importer.importTangents = ModelImporterTangents.CalculateMikk;
-        importer.SaveAndReimport();
-
-        importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
-        var after = importer != null ? importer.importTangents : before;
-
-        Debug.Log($"[TangentTools] {assetPath}\nTangents: {before} -> {after}");
-        ReportModelTangents(assetPath);
-    }
-
     [MenuItem("Tools/NPR/模型/导出所选模型 Mesh 为 .asset 并重算切线")]
     private static void ExportSelectedModelMeshesWithRecalculatedTangents()
     {
