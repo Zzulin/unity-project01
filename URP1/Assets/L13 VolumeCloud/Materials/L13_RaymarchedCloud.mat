@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: L13_RaymarchedCloud
+  m_Shader: {fileID: 4800000, guid: cf7ea813227ea491b806588589f56825, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3020
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _DetailNoise:
+        m_Texture: {fileID: 11700000, guid: 1a11a327b689c4f32851b16ace973f35, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ShapeNoise:
+        m_Texture: {fileID: 11700000, guid: 196cee4f917fb45ba9e66b66827fc4b3, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WeatherMap:
+        m_Texture: {fileID: 2800000, guid: 23849b56ef45a491d90d9b6b9d1eccf9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Absorption: 2.6
+    - _AnvilBias: 0.62
+    - _BottomSoftness: 0.18
+    - _Coverage: 0.6
+    - _Density: 3.2
+    - _DetailScale: 38
+    - _DetailStrength: 0.42
+    - _LightAbsorption: 2.9
+    - _LightStepCount: 4
+    - _Opacity: 0.92
+    - _PhaseBackward: -0.28
+    - _PhaseForward: 0.58
+    - _PowderStrength: 1.15
+    - _ShapeScale: 10.5
+    - _SilverIntensity: 1.65
+    - _StepCount: 48
+    - _TopSoftness: 0.22
+    - _WeatherStrength: 0.72
+    - _WindSpeed: 7
+    m_Colors:
+    - _AmbientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
+    - _CloudColor: {r: 1, g: 0.9130435, b: 0.75, a: 1}
+    - _ShadowColor: {r: 0.48, g: 0.56, b: 0.68, a: 1}
+    - _WindDirection: {r: 1, g: 0, b: 0.25, a: 0}
+  m_BuildTextureStacks: []

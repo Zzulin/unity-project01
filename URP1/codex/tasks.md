@@ -1,10 +1,20 @@
 # 当前任务（精简）
 
 ## 当前主线
+- `Assets/L13 VolumeCloud/L13.unity` 已作为光线步进体积云 Demo 场景落地，当前可进入 Play Mode 验证。
+- `Assets/L12 grass/L12.unity` 已作为大规模可交互草地 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L10.9 learnNPR/L10.9.unity` 已作为当前可演示 Demo 场景推进：角色展示、运行时相机漫游、近距离镜头消隐已跑通。
 - `Assets/L11 NPR/L11.unity` 的 StarRail NPR 完整链路仍作为后续任务保留，暂不继续沿旧的一周冲刺计划推进。
 
 ## 已完成结论
+- L13 体积云示例已完成：体积盒 Ray March、预生成 3D Shape/Detail 噪声贴图、WeatherMap、低成本光照步进阴影、Henyey-Greenstein 相位、银边/粉末感和风场动画。
+- L13 场景包含云体积盒、低角度太阳、远景地貌、后处理 Volume、相机控制和 HUD 预设；构建器菜单为 `Tools/Volume Cloud/Build L13 Raymarched Volume Cloud Demo`。
+- L13 噪声资源位于 `Assets/L13 VolumeCloud/Textures`；可通过 `Tools/Volume Cloud/Regenerate L13 Noise Textures` 重建。
+- L13 已优化默认性能档：48 view steps / 4 light steps，光照阴影采样使用简化密度，编辑器非播放状态不再每帧写云材质。
+- 当前验证：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Unity Console Error 为 0。
+- L12 草地示例已完成：GPU Instancing 绘制约 90k 草簇，Shader 内支持风场和最多 8 个交互体弯折。
+- L12 场景包含 `Player Grass Interactor`、两个自动交互体、跟随相机和 HUD；构建器菜单为 `Tools/Grass/Build L12 Interactive Grass Demo`。
+- 当前验证：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Play Mode 短跑后 L12 相关 Console Error 为 0。
 - `Main Camera` 已挂 `Assets/Scripts/SimpleCameraController.cs`，运行后支持 WASD 移动、右键旋转视角、中键拖拽平移、滚轮前后推拉、Shift 加速、Q/E 升降。
 - `Assets/L10.9 learnNPR/shader advance/Toonshader advanced2.shader` 已加入近距离屏幕抖动溶解，用于替代摄像机贴近角色时的 near clip 硬切。
 - Nilou 材质 `Body 1.mat`、`Body 2.mat`、`Hair 1.mat`、`Face and face_eye.mat` 已启用近距离溶解并完成一版演示参数。
@@ -12,6 +22,17 @@
 - 当前验证：Play 模式贴近角色可见柔性颗粒消隐；Console Error 为 0；`L10.9` 场景未变脏。
 
 ## 当前改动落点
+- `Assets/L13 VolumeCloud/L13.unity`
+- `Assets/L13 VolumeCloud/Scripts/*`
+- `Assets/L13 VolumeCloud/Shaders/L13RaymarchedVolumeCloud.shader`
+- `Assets/L13 VolumeCloud/Materials/*`
+- `Assets/L13 VolumeCloud/Textures/*`
+- `Assets/L13 VolumeCloud/Editor/L13VolumeCloudDemoBuilder.cs`
+- `Assets/L12 grass/L12.unity`
+- `Assets/L12 grass/Scripts/*`
+- `Assets/L12 grass/Shaders/L12InteractiveGrass.shader`
+- `Assets/L12 grass/Materials/*`
+- `Assets/L12 grass/Editor/L12GrassExampleBuilder.cs`
 - `Assets/L10.9 learnNPR/L10.9.unity`
 - `Assets/L10.9 learnNPR/shader advance/Toonshader advanced2.shader`
 - `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Body 1.mat`

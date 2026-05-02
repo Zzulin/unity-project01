@@ -1,0 +1,145 @@
+Shader "L12 Grass/Interactive GPU Grass"
+{
+    Properties
+    {
+        _BaseColor ("Base Color", Color) = (0.18, 0.46, 0.13, 1)
+        _TipColor ("Tip Color", Color) = (0.74, 0.9, 0.32, 1)
+        _BladeHeight ("Blade Height", Float) = 1.25
+        _BladeWidth ("Blade Width", Float) = 0.085
+        _WindStrength ("Wind Strength", Range(0, 1.5)) = 0.32
+        _WindScale ("Wind Scale", Float) = 0.18
+        _WindSpeed ("Wind Speed", Float) = 1.8
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            "RenderPipeline" = "UniversalPipeline"
+            "RenderType" = "Opaque"
+            "Queue" = "Geometry"
+        }
+
+        Pass
+        {
+            Name "Forward"
+            Tags { "LightMode" = "UniversalForward" }
+            Cull Off
+            ZWrite On
+            ZTest LEqual
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma vertex Vert
+            #pragma fragment Frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            StructuredBuffer<float4> _BladeData;
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseColor;
+                float4 _TipColor;
+                float4 _FieldOrigin;
+                float4 _Interactors[8];
+                float _FieldSize;
+                float _BladeHeight;
+                float _BladeWidth;
+                float _WindStrength;
+                float _WindScale;
+                float _WindSpeed;
+                int _InteractorCount;
+            CBUFFER_END
+
+            struct Attributes
+            {
+                float3 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+                uint instanceID : SV_InstanceID;
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                half3 color : COLOR0;
+                half fogCoord : TEXCOORD0;
+            };
+
+            float Hash12(float2 p)
+            {
+                return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453123);
+            }
+
+            Varyings Vert(Attributes input)
+            {
+                Varyings output;
+
+                float4 blade = _BladeData[input.instanceID];
+                float random = Hash12(blade.xy);
+                float yaw = blade.z;
+                float height01 = saturate(input.uv.y);
+
+                float3 local = input.positionOS;
+                local.xz *= _BladeWidth * lerp(0.78, 1.22, random);
+                local.y = height01 * _BladeHeight * blade.w;
+
+                float s;
+                float c;
+                sincos(yaw, s, c);
+                float2 rotatedXZ = float2(local.x * c - local.z * s, local.x * s + local.z * c);
+
+                float3 rootWS = float3(_FieldOrigin.x + blade.x, _FieldOrigin.y, _FieldOrigin.z + blade.y);
+                float2 bendXZ = 0;
+
+                float windPhase = dot(rootWS.xz, float2(_WindScale, _WindScale * 1.37)) + _Time.y * _WindSpeed + random * 6.2831853;
+                float2 windDir = normalize(float2(0.82, 0.38));
+                bendXZ += windDir * ((sin(windPhase) + sin(windPhase * 2.17) * 0.34) * _WindStrength);
+
+                [unroll]
+                for (int i = 0; i < 8; i++)
+                {
+                    if (i >= _InteractorCount)
+                    {
+                        break;
+                    }
+
+                    float4 interactor = _Interactors[i];
+                    float2 delta = rootWS.xz - interactor.xy;
+                    float dist = max(length(delta), 0.001);
+                    float influence = saturate(1.0 - dist / max(interactor.z, 0.001));
+                    influence = influence * influence * (3.0 - 2.0 * influence);
+                    bendXZ += (delta / dist) * influence * interactor.w * interactor.z * 0.62;
+                }
+
+                float bendMask = pow(height01, 1.45);
+                float3 positionWS = rootWS;
+                positionWS.xz += rotatedXZ;
+                positionWS.y += local.y;
+                positionWS.xz += bendXZ * bendMask;
+                positionWS.y -= length(bendXZ) * 0.16 * height01 * height01;
+
+                half3 normalWS = normalize(half3(-bendXZ.x * 0.35, 1.0, -bendXZ.y * 0.35));
+                Light mainLight = GetMainLight();
+                half ndl = saturate(dot(normalWS, mainLight.direction));
+                half3 ambient = SampleSH(normalWS) * 0.45;
+                half3 lit = ambient + mainLight.color * (ndl * 0.72 + 0.28);
+                half3 albedo = lerp(_BaseColor.rgb, _TipColor.rgb, height01);
+                albedo *= lerp(0.88, 1.16, random);
+
+                output.positionHCS = TransformWorldToHClip(positionWS);
+                output.color = albedo * lit;
+                output.fogCoord = ComputeFogFactor(output.positionHCS.z);
+                return output;
+            }
+
+            half4 Frag(Varyings input) : SV_Target
+            {
+                half3 color = MixFog(input.color, input.fogCoord);
+                return half4(color, 1);
+            }
+            ENDHLSL
+        }
+    }
+}

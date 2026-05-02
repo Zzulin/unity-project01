@@ -30,10 +30,10 @@ using UnityEngine.Rendering.Universal;
 namespace HSR.NPRShader
 {
     [HelpURL("https://srshader.stalomeow.com/")]
-    [DisallowMultipleRendererFeature("Honkai Star Rail")]
+    [DisallowMultipleRendererFeature("Honkai Star Rail")]//不能在renderer中添加多个StarRailRendererFeature
     public class StarRailRendererFeature : ScriptableRendererFeature
     {
-#if UNITY_EDITOR
+#if UNITY_EDITOR //这部分代码 只在 Unity Editor中编译，打包发布（Standalone、移动端等）时会忽略这段代码。
         [UnityEditor.ShaderKeywordFilter.ApplyRulesIfNotGraphicsAPI(GraphicsDeviceType.OpenGLES2)]
         [UnityEditor.ShaderKeywordFilter.SelectIf(true, keywordNames: ShaderKeywordStrings.MainLightShadowScreen)]
         private const bool k_RequiresScreenSpaceShadowsKeyword = true;
