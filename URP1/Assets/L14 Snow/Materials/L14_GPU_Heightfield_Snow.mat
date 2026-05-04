@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: L14_GPU_Heightfield_Snow
+  m_Shader: {fileID: 4800000, guid: c5f03874733fd49078eb7b1e8fa593d8, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _SnowBaseMap:
+        m_Texture: {fileID: 2800000, guid: 35e657866157f400b95cd32d144d60fb, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SnowHeightMap:
+        m_Texture: {fileID: 2800000, guid: ae3bd9f9fc5dd4ac4a409ed3932e9a27, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SnowNormalMap:
+        m_Texture: {fileID: 2800000, guid: 157bd50da2dda4d76977e918743a1f75, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SnowRoughnessMap:
+        m_Texture: {fileID: 2800000, guid: 1a06c2edfb14b4716b461d45bc2231a5, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SnowSparkleMask:
+        m_Texture: {fileID: 2800000, guid: e8ab348e5ce2240e29ca1a3dee65b940, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SnowState:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BaseReliefScale: 1.45
+    - _BaseReliefStrength: 0.105
+    - _CrystalGlintDensity: 220
+    - _CrystalGlintSharpness: 72
+    - _CrystalGlintStrength: 0.95
+    - _FieldSize: 72
+    - _GlancingSheenStrength: 0.24
+    - _MaxDepression: 0.46
+    - _NormalStrength: 0.64
+    - _PowderNoiseStrength: 0.04
+    - _RidgeHeight: 0.2
+    - _Smoothness: 0.62
+    - _SnowTextureScale: 1
+    - _SubsurfaceStrength: 0.48
+    - _TextureHeightStrength: 0.66
+    m_Colors:
+    - _BaseColor: {r: 0.86, g: 0.92, b: 0.96, a: 1}
+    - _PackedColor: {r: 0.62, g: 0.72, b: 0.86, a: 1}
+    - _RidgeColor: {r: 1, g: 0.98, b: 0.9, a: 1}
+    - _ShadowColor: {r: 0.42, g: 0.55, b: 0.72, a: 1}
+    - _SubsurfaceColor: {r: 0.72, g: 0.9, b: 1, a: 1}
+  m_BuildTextureStacks: []

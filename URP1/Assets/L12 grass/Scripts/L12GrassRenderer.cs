@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 [ExecuteAlways]
 public sealed class L12GrassRenderer : MonoBehaviour
@@ -20,11 +21,18 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private static readonly int WindStrengthId = Shader.PropertyToID("_WindStrength");
     private static readonly int WindScaleId = Shader.PropertyToID("_WindScale");
     private static readonly int WindSpeedId = Shader.PropertyToID("_WindSpeed");
+    private static readonly int WindDirectionId = Shader.PropertyToID("_WindDirection");
+    private static readonly int GustStrengthId = Shader.PropertyToID("_GustStrength");
+    private static readonly int GustFrequencyId = Shader.PropertyToID("_GustFrequency");
+    private static readonly int GustSpeedId = Shader.PropertyToID("_GustSpeed");
+    private static readonly int GustWidthId = Shader.PropertyToID("_GustWidth");
+    private static readonly int GustNoiseScaleId = Shader.PropertyToID("_GustNoiseScale");
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly int TipColorId = Shader.PropertyToID("_TipColor");
     private static readonly int DensityTextureId = Shader.PropertyToID("_DensityTexture");
     private static readonly int InteractionTextureId = Shader.PropertyToID("_InteractionTexture");
     private static readonly int InteractionStrengthId = Shader.PropertyToID("_InteractionStrength");
+    private static readonly int InteractionFlattenStrengthId = Shader.PropertyToID("_InteractionFlattenStrength");
     private static readonly int CameraPositionId = Shader.PropertyToID("_CameraPosition");
     private static readonly int FrustumPlanesId = Shader.PropertyToID("_FrustumPlanes");
     private static readonly int SourceOffsetId = Shader.PropertyToID("_SourceOffset");
@@ -48,6 +56,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
     [Range(1, 32)] public int chunksPerSide = 12;
     [Min(0.05f)] public float bladeHeight = 1.25f;
     [Min(0.005f)] public float bladeWidth = 0.085f;
+    [Tooltip("草叶面片根部宽度倍率。数值越大，底部越宽；配合 Blade Width 控制最终宽度。")]
+    [Range(0.35f, 2.5f)] public float bladeRootWidthScale = 1f;
 
     [Header("剔除与 LOD")]
     [Min(5f)] public float maxDrawDistance = 115f;
@@ -61,11 +71,24 @@ public sealed class L12GrassRenderer : MonoBehaviour
     [Range(0f, 1.5f)] public float windStrength = 0.32f;
     [Min(0.01f)] public float windScale = 0.18f;
     [Min(0f)] public float windSpeed = 1.8f;
+    public Vector2 windDirection = new Vector2(0.86f, 0.42f);
+    [Range(0f, 2f)] public float gustStrength = 0.85f;
+    [Min(0.01f)] public float gustFrequency = 0.065f;
+    [Min(0f)] public float gustSpeed = 5.8f;
+    [Range(0.05f, 0.95f)] public float gustWidth = 0.34f;
+    [Min(0.01f)] public float gustNoiseScale = 0.055f;
 
     [Header("交互压草纹理")]
-    [Range(64, 512)] public int interactionTextureResolution = 256;
+    [FormerlySerializedAs("interactionTextureResolution")]
+    [Tooltip("压草纹理尺寸。它影响压草边缘细腻程度，不直接改变压草强度。")]
+    [Range(64, 512)] public int interactionTextureSize = 256;
+    [Tooltip("压草力度。数值越大，草被推倒得越明显。")]
     [Range(0f, 8f)] public float interactionStrength = 3.6f;
-    [Range(0f, 1f)] public float interactionRecovery = 0.88f;
+    [Tooltip("压草垂直压低强度。数值越大，走过路径越明显地塌下去。")]
+    [Range(0f, 2f)] public float interactionFlattenStrength = 0.85f;
+    [FormerlySerializedAs("interactionRecovery")]
+    [Tooltip("压草痕迹恢复速度。0 表示几乎不恢复；1-2 保留较久；3 为常用恢复；5 为快速恢复。")]
+    [Range(0f, 5f)] public float interactionFadeSpeed = 2.6f;
 
     [Header("颜色")]
     public Color baseColor = new Color(0.11f, 0.34f, 0.12f, 1f);
@@ -78,6 +101,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private readonly ComputeBuffer[] argsBuffers = new ComputeBuffer[LodCount];
     private readonly uint[][] argsData = new uint[LodCount][];
     private readonly List<GrassChunk> chunks = new List<GrassChunk>(256);
+    private readonly Dictionary<L12GrassInteractor, Vector3> previousInteractorPositions = new Dictionary<L12GrassInteractor, Vector3>(16);
 
     private Texture2D runtimeWhiteTexture;
     private Texture2D interactionTexture;
@@ -89,6 +113,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private int currentInteractionTextureResolution;
     private int cullKernel = -1;
     private int bladeCount;
+    private float currentBladeRootWidthScale = -1f;
     private bool needsRebuild = true;
 
     public int SourceBladeCount => bladeCount;
@@ -115,6 +140,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
         fieldSize = Mathf.Max(1f, fieldSize);
         bladeHeight = Mathf.Max(0.05f, bladeHeight);
         bladeWidth = Mathf.Max(0.005f, bladeWidth);
+        bladeRootWidthScale = Mathf.Clamp(bladeRootWidthScale, 0.35f, 2.5f);
+        windDirection = windDirection.sqrMagnitude < 0.001f ? new Vector2(0.86f, 0.42f) : windDirection.normalized;
         maxDrawDistance = Mathf.Max(5f, maxDrawDistance);
         lod0Distance = Mathf.Clamp(lod0Distance, 1f, maxDrawDistance);
         lod1Distance = Mathf.Clamp(Mathf.Max(lod0Distance + 1f, lod1Distance), lod0Distance + 1f, maxDrawDistance);
@@ -213,22 +240,10 @@ public sealed class L12GrassRenderer : MonoBehaviour
             }
         }
 
-        if (lodMeshes[0] == null)
+        float rootWidthScale = Mathf.Clamp(bladeRootWidthScale, 0.35f, 2.5f);
+        if (lodMeshes[0] == null || !Mathf.Approximately(currentBladeRootWidthScale, rootWidthScale))
         {
-            lodMeshes[0] = CreateBladeMesh(3, 5);
-            lodMeshes[0].name = "L12 Grass Blade LOD0";
-        }
-
-        if (lodMeshes[1] == null)
-        {
-            lodMeshes[1] = CreateBladeMesh(2, 3);
-            lodMeshes[1].name = "L12 Grass Blade LOD1";
-        }
-
-        if (lodMeshes[2] == null)
-        {
-            lodMeshes[2] = CreateBladeMesh(1, 1);
-            lodMeshes[2].name = "L12 Grass Blade LOD2";
+            RebuildLodMeshes(rootWidthScale);
         }
 
         if (runtimeWhiteTexture == null)
@@ -241,7 +256,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
             runtimeWhiteTexture.Apply(false, true);
         }
 
-        if (interactionTexture == null || currentInteractionTextureResolution != interactionTextureResolution)
+        if (interactionTexture == null || currentInteractionTextureResolution != interactionTextureSize)
         {
             RebuildInteractionTexture();
         }
@@ -406,17 +421,25 @@ public sealed class L12GrassRenderer : MonoBehaviour
             block.SetFloat(WindStrengthId, windStrength);
             block.SetFloat(WindScaleId, windScale);
             block.SetFloat(WindSpeedId, windSpeed);
+            Vector2 normalizedWind = windDirection.sqrMagnitude < 0.001f ? new Vector2(0.86f, 0.42f) : windDirection.normalized;
+            block.SetVector(WindDirectionId, new Vector4(normalizedWind.x, normalizedWind.y, 0f, 0f));
+            block.SetFloat(GustStrengthId, gustStrength);
+            block.SetFloat(GustFrequencyId, gustFrequency);
+            block.SetFloat(GustSpeedId, gustSpeed);
+            block.SetFloat(GustWidthId, gustWidth);
+            block.SetFloat(GustNoiseScaleId, gustNoiseScale);
             block.SetColor(BaseColorId, baseColor);
             block.SetColor(TipColorId, tipColor);
             block.SetTexture(DensityTextureId, densityMap != null ? densityMap : runtimeWhiteTexture);
             block.SetTexture(InteractionTextureId, interactionTexture != null ? interactionTexture : runtimeWhiteTexture);
             block.SetFloat(InteractionStrengthId, interactionStrength);
+            block.SetFloat(InteractionFlattenStrengthId, interactionFlattenStrength);
         }
     }
 
     private void RebuildInteractionTexture()
     {
-        currentInteractionTextureResolution = Mathf.Clamp(interactionTextureResolution, 64, 512);
+        currentInteractionTextureResolution = Mathf.Clamp(interactionTextureSize, 64, 512);
         interactionPixels = new Color32[currentInteractionTextureResolution * currentInteractionTextureResolution];
         for (int i = 0; i < interactionPixels.Length; i++)
         {
@@ -440,14 +463,16 @@ public sealed class L12GrassRenderer : MonoBehaviour
             return;
         }
 
-        byte neutral = 128;
-        float recovery = Mathf.Clamp01(interactionRecovery);
+        const byte neutral = 128;
+        float deltaTime = Application.isPlaying ? Time.deltaTime : 1f / 30f;
+        float fadeRate = interactionFadeSpeed <= 0f ? 0f : interactionFadeSpeed * interactionFadeSpeed * 0.16f;
+        float fade = 1f - Mathf.Exp(-fadeRate * deltaTime);
         for (int i = 0; i < interactionPixels.Length; i++)
         {
             Color32 pixel = interactionPixels[i];
-            pixel.r = (byte)Mathf.RoundToInt(Mathf.Lerp(neutral, pixel.r, recovery));
-            pixel.g = (byte)Mathf.RoundToInt(Mathf.Lerp(neutral, pixel.g, recovery));
-            pixel.b = (byte)Mathf.RoundToInt(pixel.b * recovery);
+            pixel.r = (byte)Mathf.RoundToInt(Mathf.Lerp(pixel.r, neutral, fade));
+            pixel.g = (byte)Mathf.RoundToInt(Mathf.Lerp(pixel.g, neutral, fade));
+            pixel.b = (byte)Mathf.RoundToInt(Mathf.Lerp(pixel.b, 0f, fade));
             pixel.a = 255;
             interactionPixels[i] = pixel;
         }
@@ -466,27 +491,44 @@ public sealed class L12GrassRenderer : MonoBehaviour
             }
 
             Vector3 position = interactor.transform.position;
-            float localX = position.x - transform.position.x;
-            float localZ = position.z - transform.position.z;
-            float centerU = (localX + halfSize) * invFieldSize;
-            float centerV = (localZ + halfSize) * invFieldSize;
-            int centerX = Mathf.RoundToInt(centerU * (resolution - 1));
-            int centerY = Mathf.RoundToInt(centerV * (resolution - 1));
+            if (!previousInteractorPositions.TryGetValue(interactor, out Vector3 previousPosition))
+            {
+                previousPosition = position;
+            }
+
+            previousInteractorPositions[interactor] = position;
+
+            float previousLocalX = previousPosition.x - transform.position.x;
+            float previousLocalZ = previousPosition.z - transform.position.z;
+            float currentLocalX = position.x - transform.position.x;
+            float currentLocalZ = position.z - transform.position.z;
+
+            float previousU = (previousLocalX + halfSize) * invFieldSize;
+            float previousV = (previousLocalZ + halfSize) * invFieldSize;
+            float currentU = (currentLocalX + halfSize) * invFieldSize;
+            float currentV = (currentLocalZ + halfSize) * invFieldSize;
+
+            Vector2 previousPixel = new Vector2(previousU * (resolution - 1), previousV * (resolution - 1));
+            Vector2 currentPixel = new Vector2(currentU * (resolution - 1), currentV * (resolution - 1));
+            Vector2 segment = currentPixel - previousPixel;
+            float segmentLengthSqr = Mathf.Max(0.0001f, segment.sqrMagnitude);
             int radiusPixels = Mathf.CeilToInt(interactor.radius * invFieldSize * resolution);
 
-            int minX = Mathf.Clamp(centerX - radiusPixels, 0, resolution - 1);
-            int maxX = Mathf.Clamp(centerX + radiusPixels, 0, resolution - 1);
-            int minY = Mathf.Clamp(centerY - radiusPixels, 0, resolution - 1);
-            int maxY = Mathf.Clamp(centerY + radiusPixels, 0, resolution - 1);
+            int minX = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(previousPixel.x, currentPixel.x)) - radiusPixels, 0, resolution - 1);
+            int maxX = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(previousPixel.x, currentPixel.x)) + radiusPixels, 0, resolution - 1);
+            int minY = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(previousPixel.y, currentPixel.y)) - radiusPixels, 0, resolution - 1);
+            int maxY = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(previousPixel.y, currentPixel.y)) + radiusPixels, 0, resolution - 1);
             float radiusSqr = Mathf.Max(1f, radiusPixels * radiusPixels);
 
             for (int y = minY; y <= maxY; y++)
             {
                 for (int x = minX; x <= maxX; x++)
                 {
-                    float dx = x - centerX;
-                    float dy = y - centerY;
-                    float distSqr = dx * dx + dy * dy;
+                    Vector2 pixelPosition = new Vector2(x, y);
+                    float t = Mathf.Clamp01(Vector2.Dot(pixelPosition - previousPixel, segment) / segmentLengthSqr);
+                    Vector2 closestPoint = previousPixel + segment * t;
+                    Vector2 delta = pixelPosition - closestPoint;
+                    float distSqr = delta.sqrMagnitude;
                     if (distSqr > radiusSqr)
                     {
                         continue;
@@ -499,9 +541,16 @@ public sealed class L12GrassRenderer : MonoBehaviour
                         continue;
                     }
 
-                    float invLength = 1f / Mathf.Max(0.001f, Mathf.Sqrt(dx * dx + dy * dy));
-                    float directionX = dx * invLength;
-                    float directionY = dy * invLength;
+                    float invLength = 1f / Mathf.Max(0.001f, delta.magnitude);
+                    float directionX = delta.x * invLength;
+                    float directionY = delta.y * invLength;
+                    if (segment.sqrMagnitude > 0.001f && delta.sqrMagnitude <= 0.001f)
+                    {
+                        Vector2 moveDirection = segment.normalized;
+                        directionX = moveDirection.x;
+                        directionY = moveDirection.y;
+                    }
+
                     int index = y * resolution + x;
                     Color32 pixel = interactionPixels[index];
                     byte pressure = (byte)Mathf.Clamp(Mathf.RoundToInt(influence * 255f), pixel.b, 255);
@@ -518,11 +567,33 @@ public sealed class L12GrassRenderer : MonoBehaviour
         interactionTexture.Apply(false, false);
     }
 
-    private static Mesh CreateBladeMesh(int cardCount, int segmentCount)
+    private void RebuildLodMeshes(float rootWidthScale)
     {
-        int vertsPerCard = (segmentCount + 1) * 2;
+        ReleaseLodMeshes();
+
+        lodMeshes[0] = CreateBladeMesh(3, 5, rootWidthScale);
+        lodMeshes[0].name = "L12 Grass Blade LOD0";
+
+        lodMeshes[1] = CreateBladeMesh(2, 3, rootWidthScale);
+        lodMeshes[1].name = "L12 Grass Blade LOD1";
+
+        lodMeshes[2] = CreateBladeMesh(1, 1, rootWidthScale);
+        lodMeshes[2].name = "L12 Grass Blade LOD2";
+
+        currentBladeRootWidthScale = rootWidthScale;
+        if (bladeDataBuffer != null)
+        {
+            RebuildVisibleBuffers();
+        }
+    }
+
+    private static Mesh CreateBladeMesh(int cardCount, int segmentCount, float rootWidthScale)
+    {
+        segmentCount = Mathf.Max(1, segmentCount);
+        rootWidthScale = Mathf.Max(0.05f, rootWidthScale);
+        int vertsPerCard = segmentCount * 2 + 1;
         int vertCount = vertsPerCard * cardCount;
-        int trisPerCard = segmentCount * 6;
+        int trisPerCard = Mathf.Max(0, segmentCount - 1) * 6 + 3;
         int triIndexCount = trisPerCard * cardCount;
 
         Vector3[] vertices = new Vector3[vertCount];
@@ -537,10 +608,10 @@ public sealed class L12GrassRenderer : MonoBehaviour
             Vector3 sideAxis = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
             int cardStart = vertexCursor;
 
-            for (int segment = 0; segment <= segmentCount; segment++)
+            for (int segment = 0; segment < segmentCount; segment++)
             {
                 float t = segment / (float)segmentCount;
-                float halfWidth = (1f - t * 0.72f);
+                float halfWidth = Mathf.Pow(1f - t, 1.15f) * rootWidthScale;
                 Vector3 centerOffset = Vector3.forward * (t * t * 0.08f);
 
                 vertices[vertexCursor] = centerOffset - sideAxis * halfWidth;
@@ -552,7 +623,12 @@ public sealed class L12GrassRenderer : MonoBehaviour
                 vertexCursor++;
             }
 
-            for (int segment = 0; segment < segmentCount; segment++)
+            int tipVertex = vertexCursor;
+            vertices[vertexCursor] = Vector3.forward * 0.08f;
+            uvs[vertexCursor] = new Vector2(0.5f, 1f);
+            vertexCursor++;
+
+            for (int segment = 0; segment < segmentCount - 1; segment++)
             {
                 int bottomLeft = cardStart + segment * 2;
                 int bottomRight = bottomLeft + 1;
@@ -566,6 +642,12 @@ public sealed class L12GrassRenderer : MonoBehaviour
                 indices[indexCursor++] = topLeft;
                 indices[indexCursor++] = topRight;
             }
+
+            int lastLeft = cardStart + (segmentCount - 1) * 2;
+            int lastRight = lastLeft + 1;
+            indices[indexCursor++] = lastLeft;
+            indices[indexCursor++] = tipVertex;
+            indices[indexCursor++] = lastRight;
         }
 
         Mesh mesh = new Mesh
@@ -589,24 +671,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
 
         ReleaseVisibleBuffers();
 
-        for (int i = 0; i < lodMeshes.Length; i++)
-        {
-            if (lodMeshes[i] == null)
-            {
-                continue;
-            }
-
-            if (Application.isPlaying)
-            {
-                Destroy(lodMeshes[i]);
-            }
-            else
-            {
-                DestroyImmediate(lodMeshes[i]);
-            }
-
-            lodMeshes[i] = null;
-        }
+        ReleaseLodMeshes();
 
         if (runtimeMaterial != null && runtimeMaterial != grassMaterial)
         {
@@ -654,7 +719,32 @@ public sealed class L12GrassRenderer : MonoBehaviour
         currentBladesPerSide = 0;
         currentChunksPerSide = 0;
         bladeCount = 0;
+        previousInteractorPositions.Clear();
         needsRebuild = true;
+    }
+
+    private void ReleaseLodMeshes()
+    {
+        for (int i = 0; i < lodMeshes.Length; i++)
+        {
+            if (lodMeshes[i] == null)
+            {
+                continue;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(lodMeshes[i]);
+            }
+            else
+            {
+                DestroyImmediate(lodMeshes[i]);
+            }
+
+            lodMeshes[i] = null;
+        }
+
+        currentBladeRootWidthScale = -1f;
     }
 
     private void ReleaseVisibleBuffers()

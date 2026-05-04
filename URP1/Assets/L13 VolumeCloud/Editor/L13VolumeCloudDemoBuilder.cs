@@ -15,12 +15,10 @@ public static class L13VolumeCloudDemoBuilder
     private const string MountainMaterialPath = Root + "/Materials/L13_Mountain.mat";
     private const string SkyboxMaterialPath = Root + "/Materials/L13_ProceduralSky.mat";
     private const string VolumeProfilePath = Root + "/Materials/L13_CloudLookProfile.asset";
+    private const string NoiseSettingsPath = Root + "/Settings/L13CloudNoiseSettings.asset";
     private const string ShapeNoisePath = Root + "/Textures/ShapeNoise3D.asset";
     private const string DetailNoisePath = Root + "/Textures/DetailNoise3D.asset";
     private const string WeatherMapPath = Root + "/Textures/WeatherMap.png";
-    private const int ShapeNoiseSize = 64;
-    private const int DetailNoiseSize = 32;
-    private const int WeatherMapSize = 256;
 
     [MenuItem("Tools/Volume Cloud/Build L13 Raymarched Volume Cloud Demo")]
     public static void Build()
@@ -29,10 +27,12 @@ public static class L13VolumeCloudDemoBuilder
         Directory.CreateDirectory(Root + "/Scripts");
         Directory.CreateDirectory(Root + "/Shaders");
         Directory.CreateDirectory(Root + "/Textures");
+        Directory.CreateDirectory(Root + "/Settings");
 
-        Texture3D shapeNoise = LoadOrCreateShapeNoise();
-        Texture3D detailNoise = LoadOrCreateDetailNoise();
-        Texture2D weatherMap = LoadOrCreateWeatherMap();
+        L13CloudNoiseSettings noiseSettings = LoadOrCreateNoiseSettings();
+        Texture3D shapeNoise = LoadOrCreateShapeNoise(noiseSettings);
+        Texture3D detailNoise = LoadOrCreateDetailNoise(noiseSettings);
+        Texture2D weatherMap = LoadOrCreateWeatherMap(noiseSettings);
         Material cloudMaterial = LoadOrCreateCloudMaterial(shapeNoise, detailNoise, weatherMap);
         Material groundMaterial = LoadOrCreateLitMaterial(GroundMaterialPath, "L13_Ground", new Color(0.18f, 0.22f, 0.24f, 1f), 0.35f);
         Material mountainMaterial = LoadOrCreateLitMaterial(MountainMaterialPath, "L13_Mountain", new Color(0.25f, 0.27f, 0.3f, 1f), 0.2f);
@@ -212,10 +212,17 @@ public static class L13VolumeCloudDemoBuilder
     [MenuItem("Tools/Volume Cloud/Regenerate L13 Noise Textures")]
     public static void RegenerateNoiseTextures()
     {
+        RegenerateNoiseTextures(LoadOrCreateNoiseSettings());
+    }
+
+    public static void RegenerateNoiseTextures(L13CloudNoiseSettings settings)
+    {
         Directory.CreateDirectory(Root + "/Textures");
-        Texture3D shapeNoise = LoadOrCreateShapeNoise();
-        Texture3D detailNoise = LoadOrCreateDetailNoise();
-        Texture2D weatherMap = LoadOrCreateWeatherMap();
+        Directory.CreateDirectory(Root + "/Settings");
+        settings = settings != null ? settings : LoadOrCreateNoiseSettings();
+        Texture3D shapeNoise = LoadOrCreateShapeNoise(settings);
+        Texture3D detailNoise = LoadOrCreateDetailNoise(settings);
+        Texture2D weatherMap = LoadOrCreateWeatherMap(settings);
         Material material = AssetDatabase.LoadAssetAtPath<Material>(CloudMaterialPath);
         if (material != null)
         {
@@ -225,6 +232,12 @@ public static class L13VolumeCloudDemoBuilder
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("L13 noise textures regenerated and rebound.");
+    }
+
+    [MenuItem("Tools/Volume Cloud/Select L13 Noise Settings")]
+    public static void SelectNoiseSettings()
+    {
+        Selection.activeObject = LoadOrCreateNoiseSettings();
     }
 
     private static Material LoadOrCreateCloudMaterial(Texture3D shapeNoise, Texture3D detailNoise, Texture2D weatherMap)
@@ -285,32 +298,40 @@ public static class L13VolumeCloudDemoBuilder
         EditorUtility.SetDirty(material);
     }
 
-    private static Texture3D LoadOrCreateShapeNoise()
+    private static L13CloudNoiseSettings LoadOrCreateNoiseSettings()
     {
-        Texture3D texture = AssetDatabase.LoadAssetAtPath<Texture3D>(ShapeNoisePath);
-        if (texture == null)
+        L13CloudNoiseSettings settings = AssetDatabase.LoadAssetAtPath<L13CloudNoiseSettings>(NoiseSettingsPath);
+        if (settings != null)
         {
-            texture = new Texture3D(ShapeNoiseSize, ShapeNoiseSize, ShapeNoiseSize, TextureFormat.RGBA32, true)
-            {
-                name = "ShapeNoise3D"
-            };
-            AssetDatabase.CreateAsset(texture, ShapeNoisePath);
+            return settings;
         }
 
-        Color[] colors = new Color[ShapeNoiseSize * ShapeNoiseSize * ShapeNoiseSize];
+        Directory.CreateDirectory(Root + "/Settings");
+        settings = ScriptableObject.CreateInstance<L13CloudNoiseSettings>();
+        AssetDatabase.CreateAsset(settings, NoiseSettingsPath);
+        AssetDatabase.SaveAssets();
+        return settings;
+    }
+
+    private static Texture3D LoadOrCreateShapeNoise(L13CloudNoiseSettings settings)
+    {
+        int size = Mathf.Clamp(settings.shapeNoiseSize, 16, 128);
+        Texture3D texture = LoadOrCreateTexture3D(ShapeNoisePath, "ShapeNoise3D", size);
+
+        Color[] colors = new Color[size * size * size];
         int cursor = 0;
-        for (int z = 0; z < ShapeNoiseSize; z++)
+        for (int z = 0; z < size; z++)
         {
-            for (int y = 0; y < ShapeNoiseSize; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < ShapeNoiseSize; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    Vector3 p = new Vector3(x, y, z) / ShapeNoiseSize;
-                    float baseNoise = FbmTile(p, 4, 5, 1001);
-                    float broadWorley = TileableWorley(p, 5, 2001);
+                    Vector3 p = new Vector3(x, y, z) / size;
+                    float baseNoise = FbmTile(p, settings.shapeBasePeriod, settings.shapeOctaves, settings.shapeSeed);
+                    float broadWorley = TileableWorley(p, settings.shapeWorleyPeriod, settings.shapeWorleySeed);
                     float softBillow = 1f - Mathf.Abs(baseNoise * 2f - 1f);
-                    float perlinWorley = Mathf.Clamp01(baseNoise * 0.66f + broadWorley * 0.42f - 0.08f);
-                    colors[cursor++] = new Color(perlinWorley, broadWorley, Mathf.Clamp01(perlinWorley * 0.72f + softBillow * 0.36f), baseNoise);
+                    float perlinWorley = Mathf.Clamp01(baseNoise * settings.shapeBaseWeight + broadWorley * settings.shapeWorleyWeight + settings.shapeBias);
+                    colors[cursor++] = new Color(perlinWorley, broadWorley, Mathf.Clamp01(perlinWorley * settings.shapeBlueWeight + softBillow * settings.shapeBillowWeight), baseNoise);
                 }
             }
         }
@@ -324,31 +345,24 @@ public static class L13VolumeCloudDemoBuilder
         return texture;
     }
 
-    private static Texture3D LoadOrCreateDetailNoise()
+    private static Texture3D LoadOrCreateDetailNoise(L13CloudNoiseSettings settings)
     {
-        Texture3D texture = AssetDatabase.LoadAssetAtPath<Texture3D>(DetailNoisePath);
-        if (texture == null)
-        {
-            texture = new Texture3D(DetailNoiseSize, DetailNoiseSize, DetailNoiseSize, TextureFormat.RGBA32, true)
-            {
-                name = "DetailNoise3D"
-            };
-            AssetDatabase.CreateAsset(texture, DetailNoisePath);
-        }
+        int size = Mathf.Clamp(settings.detailNoiseSize, 16, 96);
+        Texture3D texture = LoadOrCreateTexture3D(DetailNoisePath, "DetailNoise3D", size);
 
-        Color[] colors = new Color[DetailNoiseSize * DetailNoiseSize * DetailNoiseSize];
+        Color[] colors = new Color[size * size * size];
         int cursor = 0;
-        for (int z = 0; z < DetailNoiseSize; z++)
+        for (int z = 0; z < size; z++)
         {
-            for (int y = 0; y < DetailNoiseSize; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < DetailNoiseSize; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    Vector3 p = new Vector3(x, y, z) / DetailNoiseSize;
-                    float fineA = TileableWorley(p, 8, 3001);
-                    float fineB = TileableWorley(p, 13, 4001);
-                    float fineC = TileableWorley(p, 24, 5001);
-                    float combined = Mathf.Clamp01(fineA * 0.52f + fineB * 0.32f + fineC * 0.22f);
+                    Vector3 p = new Vector3(x, y, z) / size;
+                    float fineA = TileableWorley(p, settings.detailPeriodA, settings.detailSeedA);
+                    float fineB = TileableWorley(p, settings.detailPeriodB, settings.detailSeedB);
+                    float fineC = TileableWorley(p, settings.detailPeriodC, settings.detailSeedC);
+                    float combined = Mathf.Clamp01(fineA * settings.detailWeightA + fineB * settings.detailWeightB + fineC * settings.detailWeightC);
                     colors[cursor++] = new Color(fineA, fineB, combined, fineC);
                 }
             }
@@ -363,26 +377,27 @@ public static class L13VolumeCloudDemoBuilder
         return texture;
     }
 
-    private static Texture2D LoadOrCreateWeatherMap()
+    private static Texture2D LoadOrCreateWeatherMap(L13CloudNoiseSettings settings)
     {
-        Texture2D texture = new Texture2D(WeatherMapSize, WeatherMapSize, TextureFormat.RGBA32, true, false)
+        int size = Mathf.Clamp(settings.weatherMapSize, 64, 512);
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, true, false)
         {
             name = "WeatherMap"
         };
 
-        Color[] colors = new Color[WeatherMapSize * WeatherMapSize];
+        Color[] colors = new Color[size * size];
         int cursor = 0;
-        for (int y = 0; y < WeatherMapSize; y++)
+        for (int y = 0; y < size; y++)
         {
-            for (int x = 0; x < WeatherMapSize; x++)
+            for (int x = 0; x < size; x++)
             {
-                Vector2 p = new Vector2(x / (float)WeatherMapSize, y / (float)WeatherMapSize);
-                float system = FbmTile2D(p, 3, 5, 6001);
-                float breakup = FbmTile2D(p, 9, 4, 7001);
-                float coverage = Mathf.SmoothStep(0.34f, 0.86f, system * 0.78f + breakup * 0.28f);
-                float cloudType = Mathf.SmoothStep(0.28f, 0.78f, FbmTile2D(p, 4, 4, 8001));
-                float density = Mathf.Lerp(0.68f, 1.0f, FbmTile2D(p, 6, 4, 9001));
-                float detailAmount = Mathf.Lerp(0.72f, 1.0f, breakup);
+                Vector2 p = new Vector2(x / (float)size, y / (float)size);
+                float system = FbmTile2D(p, settings.weatherSystemPeriod, settings.weatherSystemOctaves, settings.weatherSystemSeed);
+                float breakup = FbmTile2D(p, settings.weatherBreakupPeriod, settings.weatherBreakupOctaves, settings.weatherBreakupSeed);
+                float coverage = Mathf.SmoothStep(settings.coverageSmoothMin, settings.coverageSmoothMax, system * settings.weatherSystemWeight + breakup * settings.weatherBreakupWeight);
+                float cloudType = Mathf.SmoothStep(settings.cloudTypeSmoothMin, settings.cloudTypeSmoothMax, FbmTile2D(p, settings.cloudTypePeriod, settings.cloudTypeOctaves, settings.cloudTypeSeed));
+                float density = Mathf.Lerp(settings.densityMin, settings.densityMax, FbmTile2D(p, settings.densityPeriod, settings.densityOctaves, settings.densitySeed));
+                float detailAmount = Mathf.Lerp(settings.detailAmountMin, settings.detailAmountMax, breakup);
                 colors[cursor++] = new Color(coverage, cloudType, density, detailAmount);
             }
         }
@@ -404,10 +419,39 @@ public static class L13VolumeCloudDemoBuilder
             importer.wrapMode = TextureWrapMode.Repeat;
             importer.filterMode = FilterMode.Trilinear;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.maxTextureSize = size;
             importer.SaveAndReimport();
         }
 
         return AssetDatabase.LoadAssetAtPath<Texture2D>(WeatherMapPath);
+    }
+
+    private static Texture3D LoadOrCreateTexture3D(string path, string textureName, int size)
+    {
+        Texture3D texture = AssetDatabase.LoadAssetAtPath<Texture3D>(path);
+        if (texture == null)
+        {
+            texture = new Texture3D(size, size, size, TextureFormat.RGBA32, true)
+            {
+                name = textureName
+            };
+            AssetDatabase.CreateAsset(texture, path);
+            return texture;
+        }
+
+        if (texture.width != size || texture.height != size || texture.depth != size)
+        {
+            Object.DestroyImmediate(texture, true);
+            AssetDatabase.SaveAssets();
+            texture = new Texture3D(size, size, size, TextureFormat.RGBA32, true)
+            {
+                name = textureName
+            };
+            AssetDatabase.CreateAsset(texture, path);
+        }
+
+        texture.name = textureName;
+        return texture;
     }
 
     private static float FbmTile(Vector3 uv, int basePeriod, int octaves, int seed)
@@ -415,6 +459,8 @@ public static class L13VolumeCloudDemoBuilder
         float sum = 0f;
         float amplitude = 0.5f;
         float normalization = 0f;
+        basePeriod = Mathf.Max(1, basePeriod);
+        octaves = Mathf.Max(1, octaves);
         for (int i = 0; i < octaves; i++)
         {
             int period = basePeriod << i;
@@ -431,6 +477,8 @@ public static class L13VolumeCloudDemoBuilder
         float sum = 0f;
         float amplitude = 0.5f;
         float normalization = 0f;
+        basePeriod = Mathf.Max(1, basePeriod);
+        octaves = Mathf.Max(1, octaves);
         for (int i = 0; i < octaves; i++)
         {
             int period = basePeriod << i;
@@ -500,6 +548,7 @@ public static class L13VolumeCloudDemoBuilder
 
     private static float TileableWorley(Vector3 uv, int period, int seed)
     {
+        period = Mathf.Max(1, period);
         Vector3 p = uv * period;
         int cx = Mathf.FloorToInt(p.x);
         int cy = Mathf.FloorToInt(p.y);

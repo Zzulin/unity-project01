@@ -32,7 +32,7 @@ public sealed class L13VolumeCloudDemoHud : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.LeftBracket))
         {
-            cloud.stepCount = Mathf.Max(8, cloud.stepCount - 4);
+            cloud.stepCount = Mathf.Max(3, cloud.stepCount - 4);
         }
 
         if (Input.GetKeyDown(KeyCode.RightBracket))

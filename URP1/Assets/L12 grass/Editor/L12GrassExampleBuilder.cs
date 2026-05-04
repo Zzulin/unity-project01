@@ -17,6 +17,12 @@ public static class L12GrassExampleBuilder
     [MenuItem("Tools/Grass/Build L12 Interactive Grass Demo")]
     public static void Build()
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogWarning("L12 grass demo builder cannot rebuild scenes during Play Mode. Stop Play Mode and run the menu again.");
+            return;
+        }
+
         Directory.CreateDirectory(Root + "/Materials");
         Directory.CreateDirectory(Root + "/Scripts");
         Directory.CreateDirectory(Root + "/Shaders");
@@ -65,17 +71,25 @@ public static class L12GrassExampleBuilder
         grassRenderer.chunksPerSide = 12;
         grassRenderer.bladeHeight = 1.25f;
         grassRenderer.bladeWidth = 0.085f;
+        grassRenderer.bladeRootWidthScale = 1f;
         grassRenderer.maxDrawDistance = 115f;
         grassRenderer.lod0Distance = 26f;
         grassRenderer.lod1Distance = 62f;
         grassRenderer.densityThreshold = 0.08f;
         grassRenderer.densityInfluence = 1f;
-        grassRenderer.interactionTextureResolution = 256;
+        grassRenderer.interactionTextureSize = 256;
         grassRenderer.interactionStrength = 3.6f;
-        grassRenderer.interactionRecovery = 0.88f;
+        grassRenderer.interactionFlattenStrength = 0.85f;
+        grassRenderer.interactionFadeSpeed = 2.6f;
         grassRenderer.windStrength = 0.32f;
         grassRenderer.windScale = 0.18f;
         grassRenderer.windSpeed = 1.8f;
+        grassRenderer.windDirection = new Vector2(0.86f, 0.42f).normalized;
+        grassRenderer.gustStrength = 0.85f;
+        grassRenderer.gustFrequency = 0.065f;
+        grassRenderer.gustSpeed = 5.8f;
+        grassRenderer.gustWidth = 0.34f;
+        grassRenderer.gustNoiseScale = 0.055f;
         grassRenderer.baseColor = new Color(0.11f, 0.34f, 0.12f, 1f);
         grassRenderer.tipColor = new Color(0.46f, 0.68f, 0.22f, 1f);
 
@@ -163,6 +177,7 @@ public static class L12GrassExampleBuilder
             material.SetColor("_BaseColor", new Color(0.11f, 0.34f, 0.12f, 1f));
             material.SetColor("_TipColor", new Color(0.46f, 0.68f, 0.22f, 1f));
             material.SetTexture("_DensityTexture", AssetDatabase.LoadAssetAtPath<Texture2D>(DensityMapPath));
+            SetGrassWindDefaults(material);
             return material;
         }
 
@@ -174,8 +189,20 @@ public static class L12GrassExampleBuilder
         material.SetColor("_BaseColor", new Color(0.11f, 0.34f, 0.12f, 1f));
         material.SetColor("_TipColor", new Color(0.46f, 0.68f, 0.22f, 1f));
         material.SetTexture("_DensityTexture", AssetDatabase.LoadAssetAtPath<Texture2D>(DensityMapPath));
+        SetGrassWindDefaults(material);
         AssetDatabase.CreateAsset(material, GrassMaterialPath);
         return material;
+    }
+
+    private static void SetGrassWindDefaults(Material material)
+    {
+        material.SetVector("_WindDirection", new Vector4(0.86f, 0.42f, 0f, 0f));
+        material.SetFloat("_GustStrength", 0.85f);
+        material.SetFloat("_GustFrequency", 0.065f);
+        material.SetFloat("_GustSpeed", 5.8f);
+        material.SetFloat("_GustWidth", 0.34f);
+        material.SetFloat("_GustNoiseScale", 0.055f);
+        material.SetFloat("_InteractionFlattenStrength", 0.85f);
     }
 
     private static Material LoadOrCreateGroundMaterial()

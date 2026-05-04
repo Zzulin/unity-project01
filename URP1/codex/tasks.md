@@ -1,15 +1,22 @@
 # 当前任务（精简）
 
 ## 当前主线
+- `Assets/L14 Snow/L14.unity` 已作为可交互雪地 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L13 VolumeCloud/L13.unity` 已作为光线步进体积云 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L12 grass/L12.unity` 已作为大规模可交互草地 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L10.9 learnNPR/L10.9.unity` 已作为当前可演示 Demo 场景推进：角色展示、运行时相机漫游、近距离镜头消隐已跑通。
 - `Assets/L11 NPR/L11.unity` 的 StarRail NPR 完整链路仍作为后续任务保留，暂不继续沿旧的一周冲刺计划推进。
 
 ## 已完成结论
+- L14 雪地示例已完成：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移，片元阶段用高度梯度重建法线。
+- L14 雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线；Shader 使用多尺度高度/法线混合、压实色与粗糙度联动，静态 SparkleMask + 视角高光实现雪晶闪点，动态白色流动点和方块雪晶已移除。
+- L14 场景已收敛为纯技术 Demo：玩家已改为低模雪地探索者（头盔/护目镜/外套/背包/雪靴/轻量肢体 Rig），两个自动移动体已改为可见滑雪者和小型 snowcat 压雪车；构建器菜单为 `Tools/Snow/Build L14 Interactive Snow Demo`。
+- L14 资源位于 `Assets/L14 Snow/{Scripts,Shaders,Materials,Textures,Editor}`；最终预览截图位于 `Assets/Screenshots/L14_InteractiveSnow_material_pipeline_v4_final_20260504.png`，后续截图不要复用旧文件名。
+- L14 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - L13 体积云示例已完成：体积盒 Ray March、周期无缝 3D Shape/Detail 噪声贴图、周期 WeatherMap、低成本光照步进阴影、Henyey-Greenstein 相位、银边/粉末感、风场动画和 XZ 边界淡出。
 - L13 场景包含云体积盒、低角度太阳、远景地貌、后处理 Volume、相机控制和 HUD 预设；构建器菜单为 `Tools/Volume Cloud/Build L13 Raymarched Volume Cloud Demo`。
 - L13 噪声资源位于 `Assets/L13 VolumeCloud/Textures`；可通过 `Tools/Volume Cloud/Regenerate L13 Noise Textures` 重建。
+- L13 噪声生成参数已抽成 `Assets/L13 VolumeCloud/Settings/L13CloudNoiseSettings.asset`，可在 Inspector 调 Shape/Detail/Weather 程序化噪声参数；自定义 Inspector 提供手动生成按钮和可选延迟自动生成。
 - L13 已优化默认性能档：48 view steps / 4 light steps，光照阴影采样使用简化密度，编辑器非播放状态不再每帧写云材质。
 - 当前验证：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Unity Console Error 为 0。
 - L12 草地示例已升级：`DrawMeshInstancedIndirect` 替代 Procedural Draw，Compute Shader 使用 AppendBuffer 输出 3 档 LOD 可见草簇，args buffer 驱动间接绘制。
@@ -23,6 +30,15 @@
 - 当前验证：Play 模式贴近角色可见柔性颗粒消隐；Console Error 为 0；`L10.9` 场景未变脏。
 
 ## 当前改动落点
+- `Assets/L14 Snow/L14.unity`
+- `Assets/L14 Snow/Scripts/*`
+- `Assets/L14 Snow/Scripts/L14SnowCharacterRig.cs`
+- `Assets/L14 Snow/Shaders/L14SnowSurface.shader`
+- `Assets/L14 Snow/Shaders/L14SnowSim.compute`
+- `Assets/L14 Snow/Materials/*`
+- `Assets/L14 Snow/Textures/*`
+- `Assets/L14 Snow/Editor/L14SnowDemoBuilder.cs`
+- `Assets/Screenshots/L14_InteractiveSnow_material_pipeline_v4_final_20260504.png`
 - `Assets/L13 VolumeCloud/L13.unity`
 - `Assets/L13 VolumeCloud/Scripts/*`
 - `Assets/L13 VolumeCloud/Shaders/L13RaymarchedVolumeCloud.shader`

@@ -1,0 +1,149 @@
+#pragma kernel ClearSnow
+#pragma kernel DecaySnow
+#pragma kernel StampSnow
+#pragma kernel StampOneSnow
+
+RWTexture2D<float4> _SnowState;
+
+struct SnowStamp
+{
+    float4 path;
+    float4 shape;
+};
+
+StructuredBuffer<SnowStamp> _SnowStamps;
+
+int _TextureResolution;
+int _SnowStampCount;
+int _SnowStampIndex;
+int4 _SnowStampRect;
+float _DeltaTime;
+float _RecoverySpeed;
+float _RidgeSettleSpeed;
+
+float CapsuleDistance(float2 p, float2 a, float2 b)
+{
+    float2 ab = b - a;
+    float denom = max(dot(ab, ab), 1e-6);
+    float t = saturate(dot(p - a, ab) / denom);
+    return length(p - (a + ab * t));
+}
+
+[numthreads(8, 8, 1)]
+void ClearSnow(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TextureResolution || id.y >= (uint)_TextureResolution)
+    {
+        return;
+    }
+
+    _SnowState[int2(id.xy)] = float4(0.0, 0.0, 0.0, 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void DecaySnow(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TextureResolution || id.y >= (uint)_TextureResolution)
+    {
+        return;
+    }
+
+    int2 pixel = int2(id.xy);
+    float4 state = _SnowState[pixel];
+    float recovery = exp(-max(_RecoverySpeed, 0.0) * _DeltaTime);
+    float settle = exp(-max(_RidgeSettleSpeed, 0.0) * _DeltaTime);
+    state.r *= recovery;
+    state.g *= settle;
+    state.b = max(0.0, state.b - _DeltaTime * 0.025);
+    state.a = 1.0;
+    _SnowState[pixel] = state;
+}
+
+[numthreads(8, 8, 1)]
+void StampSnow(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TextureResolution || id.y >= (uint)_TextureResolution)
+    {
+        return;
+    }
+
+    int2 pixel = int2(id.xy);
+    float2 uv = (float2(id.xy) + 0.5) / max((float)_TextureResolution, 1.0);
+    float4 state = _SnowState[pixel];
+
+    [loop]
+    for (int i = 0; i < _SnowStampCount; i++)
+    {
+        SnowStamp stamp = _SnowStamps[i];
+        float2 previousUv = stamp.path.xy;
+        float2 currentUv = stamp.path.zw;
+        float radiusUv = max(stamp.shape.x, 1e-5);
+        float depressionStrength = saturate(stamp.shape.y);
+        float ridgeStrength = saturate(stamp.shape.z);
+        float hardness = max(stamp.shape.w, 0.25);
+
+        float dist01 = CapsuleDistance(uv, previousUv, currentUv) / radiusUv;
+        if (dist01 > 1.35)
+        {
+            continue;
+        }
+
+        float core = smoothstep(1.0, 0.0, dist01);
+        core = pow(core, hardness);
+        float shoulder = saturate((dist01 - 0.52) / 0.48);
+        float ridge = smoothstep(1.15, 0.78, dist01) * smoothstep(0.48, 0.72, dist01);
+
+        state.r = max(state.r, core * depressionStrength);
+        state.g = max(state.g, ridge * ridgeStrength * lerp(0.7, 1.25, shoulder));
+        state.b = max(state.b, core);
+    }
+
+    state.rg = saturate(state.rg);
+    state.b = saturate(state.b);
+    state.a = 1.0;
+    _SnowState[pixel] = state;
+}
+
+[numthreads(8, 8, 1)]
+void StampOneSnow(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_SnowStampRect.z || id.y >= (uint)_SnowStampRect.w)
+    {
+        return;
+    }
+
+    int2 pixel = int2(_SnowStampRect.xy) + int2(id.xy);
+    if (pixel.x < 0 || pixel.y < 0 || pixel.x >= _TextureResolution || pixel.y >= _TextureResolution)
+    {
+        return;
+    }
+
+    float2 uv = (float2(pixel) + 0.5) / max((float)_TextureResolution, 1.0);
+    float4 state = _SnowState[pixel];
+    SnowStamp stamp = _SnowStamps[_SnowStampIndex];
+    float2 previousUv = stamp.path.xy;
+    float2 currentUv = stamp.path.zw;
+    float radiusUv = max(stamp.shape.x, 1e-5);
+    float depressionStrength = saturate(stamp.shape.y);
+    float ridgeStrength = saturate(stamp.shape.z);
+    float hardness = max(stamp.shape.w, 0.25);
+
+    float dist01 = CapsuleDistance(uv, previousUv, currentUv) / radiusUv;
+    if (dist01 > 1.35)
+    {
+        return;
+    }
+
+    float core = smoothstep(1.0, 0.0, dist01);
+    core = pow(core, hardness);
+    float shoulder = saturate((dist01 - 0.52) / 0.48);
+    float ridge = smoothstep(1.15, 0.78, dist01) * smoothstep(0.48, 0.72, dist01);
+
+    state.r = max(state.r, core * depressionStrength);
+    state.g = max(state.g, ridge * ridgeStrength * lerp(0.7, 1.25, shoulder));
+    state.b = max(state.b, core);
+    state.rg = saturate(state.rg);
+    state.b = saturate(state.b);
+    state.a = 1.0;
+    _SnowState[pixel] = state;
+}
