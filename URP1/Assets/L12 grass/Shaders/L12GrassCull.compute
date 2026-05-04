@@ -1,0 +1,98 @@
+#pragma kernel CullGrass
+
+StructuredBuffer<float4> _SourceBladeData;
+AppendStructuredBuffer<float4> _VisibleBladeData0;
+AppendStructuredBuffer<float4> _VisibleBladeData1;
+AppendStructuredBuffer<float4> _VisibleBladeData2;
+Texture2D<float4> _DensityTexture;
+
+float4 _FieldOrigin;
+float4 _CameraPosition;
+float4 _FrustumPlanes[6];
+float _FieldSize;
+float _BladeHeight;
+float _MaxDrawDistance;
+float _CullPadding;
+float _Lod0Distance;
+float _Lod1Distance;
+float _DensityThreshold;
+float _DensityInfluence;
+int _UseDensityTexture;
+int _SourceOffset;
+int _SourceCount;
+
+float Hash12(float2 p)
+{
+    return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453123);
+}
+
+float SampleDensity(float2 localXZ)
+{
+    float density = 1.0;
+    if (_UseDensityTexture != 0)
+    {
+        uint width = 1;
+        uint height = 1;
+        _DensityTexture.GetDimensions(width, height);
+
+        float2 textureSize = max(float2(width, height), 1.0);
+        float2 uv = saturate((localXZ + _FieldSize * 0.5) / max(_FieldSize, 0.001));
+        int2 pixel = int2(clamp(floor(uv * textureSize), 0.0, textureSize - 1.0));
+        density = _DensityTexture.Load(int3(pixel, 0)).r * _DensityInfluence;
+    }
+    return saturate(density);
+}
+
+[numthreads(64, 1, 1)]
+void CullGrass(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_SourceCount)
+    {
+        return;
+    }
+
+    float4 blade = _SourceBladeData[_SourceOffset + id.x];
+    float3 worldPosition = float3(_FieldOrigin.x + blade.x, _FieldOrigin.y + _BladeHeight * blade.w * 0.5, _FieldOrigin.z + blade.y);
+    float3 toCamera = worldPosition - _CameraPosition.xyz;
+    float distanceToCamera = length(toCamera);
+
+    if (distanceToCamera > _MaxDrawDistance)
+    {
+        return;
+    }
+
+    [unroll]
+    for (int i = 0; i < 6; i++)
+    {
+        float planeDistance = dot(_FrustumPlanes[i].xyz, worldPosition) + _FrustumPlanes[i].w;
+        if (planeDistance < -_CullPadding)
+        {
+            return;
+        }
+    }
+
+    float density = SampleDensity(blade.xy);
+    if (density <= _DensityThreshold)
+    {
+        return;
+    }
+
+    float survival = saturate((density - _DensityThreshold) / max(1.0 - _DensityThreshold, 0.001));
+    if (Hash12(blade.xy + 19.37) > survival)
+    {
+        return;
+    }
+
+    if (distanceToCamera < _Lod0Distance)
+    {
+        _VisibleBladeData0.Append(blade);
+    }
+    else if (distanceToCamera < _Lod1Distance)
+    {
+        _VisibleBladeData1.Append(blade);
+    }
+    else
+    {
+        _VisibleBladeData2.Append(blade);
+    }
+}

@@ -2,13 +2,16 @@ Shader "L12 Grass/Interactive GPU Grass"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.18, 0.46, 0.13, 1)
-        _TipColor ("Tip Color", Color) = (0.74, 0.9, 0.32, 1)
+        _BaseColor ("Base Color", Color) = (0.11, 0.34, 0.12, 1)
+        _TipColor ("Tip Color", Color) = (0.46, 0.68, 0.22, 1)
         _BladeHeight ("Blade Height", Float) = 1.25
         _BladeWidth ("Blade Width", Float) = 0.085
         _WindStrength ("Wind Strength", Range(0, 1.5)) = 0.32
         _WindScale ("Wind Scale", Float) = 0.18
         _WindSpeed ("Wind Speed", Float) = 1.8
+        _InteractionStrength ("Interaction Strength", Float) = 3.6
+        _DensityTexture ("Density Texture", 2D) = "white" {}
+        _InteractionTexture ("Interaction Texture", 2D) = "black" {}
     }
 
     SubShader
@@ -36,20 +39,23 @@ Shader "L12 Grass/Interactive GPU Grass"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-            StructuredBuffer<float4> _BladeData;
+            StructuredBuffer<float4> _VisibleBladeData;
+            TEXTURE2D(_DensityTexture);
+            SAMPLER(sampler_DensityTexture);
+            TEXTURE2D(_InteractionTexture);
+            SAMPLER(sampler_InteractionTexture);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
                 float4 _TipColor;
                 float4 _FieldOrigin;
-                float4 _Interactors[8];
                 float _FieldSize;
                 float _BladeHeight;
                 float _BladeWidth;
                 float _WindStrength;
                 float _WindScale;
                 float _WindSpeed;
-                int _InteractorCount;
+                float _InteractionStrength;
             CBUFFER_END
 
             struct Attributes
@@ -76,7 +82,7 @@ Shader "L12 Grass/Interactive GPU Grass"
             {
                 Varyings output;
 
-                float4 blade = _BladeData[input.instanceID];
+                float4 blade = _VisibleBladeData[input.instanceID];
                 float random = Hash12(blade.xy);
                 float yaw = blade.z;
                 float height01 = saturate(input.uv.y);
@@ -92,26 +98,15 @@ Shader "L12 Grass/Interactive GPU Grass"
 
                 float3 rootWS = float3(_FieldOrigin.x + blade.x, _FieldOrigin.y, _FieldOrigin.z + blade.y);
                 float2 bendXZ = 0;
+                float2 fieldUV = saturate((blade.xy + _FieldSize * 0.5) / max(_FieldSize, 0.001));
 
                 float windPhase = dot(rootWS.xz, float2(_WindScale, _WindScale * 1.37)) + _Time.y * _WindSpeed + random * 6.2831853;
                 float2 windDir = normalize(float2(0.82, 0.38));
                 bendXZ += windDir * ((sin(windPhase) + sin(windPhase * 2.17) * 0.34) * _WindStrength);
 
-                [unroll]
-                for (int i = 0; i < 8; i++)
-                {
-                    if (i >= _InteractorCount)
-                    {
-                        break;
-                    }
-
-                    float4 interactor = _Interactors[i];
-                    float2 delta = rootWS.xz - interactor.xy;
-                    float dist = max(length(delta), 0.001);
-                    float influence = saturate(1.0 - dist / max(interactor.z, 0.001));
-                    influence = influence * influence * (3.0 - 2.0 * influence);
-                    bendXZ += (delta / dist) * influence * interactor.w * interactor.z * 0.62;
-                }
+                float4 interaction = SAMPLE_TEXTURE2D_LOD(_InteractionTexture, sampler_InteractionTexture, fieldUV, 0);
+                float2 interactionDir = interaction.rg * 2.0 - 1.0;
+                bendXZ += interactionDir * interaction.b * _InteractionStrength;
 
                 float bendMask = pow(height01, 1.45);
                 float3 positionWS = rootWS;
@@ -126,6 +121,8 @@ Shader "L12 Grass/Interactive GPU Grass"
                 half3 ambient = SampleSH(normalWS) * 0.45;
                 half3 lit = ambient + mainLight.color * (ndl * 0.72 + 0.28);
                 half3 albedo = lerp(_BaseColor.rgb, _TipColor.rgb, height01);
+                half densityTint = SAMPLE_TEXTURE2D_LOD(_DensityTexture, sampler_DensityTexture, fieldUV, 0).r;
+                albedo *= lerp(0.82, 1.12, densityTint);
                 albedo *= lerp(0.88, 1.16, random);
 
                 output.positionHCS = TransformWorldToHClip(positionWS);

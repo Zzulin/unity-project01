@@ -25,8 +25,8 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
         _PowderStrength ("Powder Strength", Range(0, 3)) = 1.15
         _WindDirection ("Wind Direction", Vector) = (1, 0, 0.25, 0)
         _WindSpeed ("Wind Speed", Range(0, 30)) = 7
-        _StepCount ("View Steps", Range(24, 160)) = 48
-        _LightStepCount ("Light Steps", Range(1, 12)) = 4
+        _StepCount ("View Steps", Range(3, 96)) = 16
+        _LightStepCount ("Light Steps", Range(0, 8)) = 0
         _Opacity ("Opacity", Range(0, 1)) = 0.92
     }
 
@@ -141,6 +141,12 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
             }
 
+            float EdgeFade(float3 p01)
+            {
+                float2 edgeDistance = min(p01.xz, 1.0 - p01.xz);
+                return smoothstep(0.0, 0.075, min(edgeDistance.x, edgeDistance.y));
+            }
+
             float SampleCloudDensity(float3 pOS, bool includeDetail)
             {
                 float3 p01 = pOS + 0.5;
@@ -152,14 +158,14 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 float heightMask = HeightGradient(p01.y);
                 float3 windDirection = normalize(_WindDirection.xyz + float3(0.0001, 0.0, 0.0001));
                 float3 wind = windDirection * (_Time.y * _WindSpeed * 0.015);
-                float2 weatherUV = frac(p01.xz * 0.72 + wind.xz * 0.035);
+                float2 weatherUV = p01.xz * 0.72 + wind.xz * 0.035;
                 float4 weather = _WeatherMap.SampleLevel(sampler_WeatherMap, weatherUV, 0);
 
                 float coverage = saturate(_Coverage + (weather.r - 0.5) * _WeatherStrength);
                 float cloudType = weather.g;
                 float localDensity = lerp(0.65, 1.25, weather.b);
 
-                float3 shapeUVW = frac(p01 * _ShapeScale * 0.12 + wind);
+                float3 shapeUVW = p01 * _ShapeScale * 0.12 + wind;
                 float4 shapeNoise = _ShapeNoise.SampleLevel(sampler_ShapeNoise, shapeUVW, 0);
                 float baseShape = lerp(shapeNoise.r, shapeNoise.b, 0.72);
                 float cellularEdge = shapeNoise.g;
@@ -169,13 +175,13 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
 
                 if (includeDetail)
                 {
-                    float3 detailUVW = frac(p01 * _DetailScale * 0.08 + wind * 2.2);
+                    float3 detailUVW = p01 * _DetailScale * 0.08 + wind * 2.2;
                     float4 detailNoise = _DetailNoise.SampleLevel(sampler_DetailNoise, detailUVW, 0);
                     float detailErosion = lerp(detailNoise.r, detailNoise.b, saturate(p01.y));
                     body = saturate(body - (1.0 - detailErosion) * _DetailStrength * weather.a * saturate(body * 1.65));
                 }
 
-                return body * heightMask * _Density * localDensity;
+                return body * heightMask * EdgeFade(p01) * _Density * localDensity;
             }
 
             float HenyeyGreenstein(float cosTheta, float g)
@@ -187,6 +193,13 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
 
             float LightTransmittance(float3 pOS, float3 lightDirOS)
             {
+                if (_LightStepCount <= 0)
+                {
+                    float height = saturate(pOS.y + 0.5);
+                    float sunFacing = saturate(dot(normalize(lightDirOS), float3(0.0, 1.0, 0.0)) * 0.5 + 0.5);
+                    return lerp(0.45, 0.95, saturate(height * 0.7 + sunFacing * 0.3));
+                }
+
                 float2 hit = IntersectUnitBox(pOS, lightDirOS);
                 float end = max(hit.y, 0.0);
                 int lightSteps = clamp(_LightStepCount, 1, MAX_LIGHT_STEPS);
@@ -220,7 +233,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                     discard;
                 }
 
-                int viewSteps = clamp(_StepCount, 24, MAX_VIEW_STEPS);
+                int viewSteps = clamp(_StepCount, 3, MAX_VIEW_STEPS);
                 float start = max(hit.x, 0.0);
                 float end = hit.y;
                 float rayLength = end - start;

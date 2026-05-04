@@ -45,20 +45,20 @@ Material:
     - _DetailScale: 38
     - _DetailStrength: 0.42
     - _LightAbsorption: 2.9
-    - _LightStepCount: 4
+    - _LightStepCount: 3
     - _Opacity: 0.92
     - _PhaseBackward: -0.28
     - _PhaseForward: 0.58
     - _PowderStrength: 1.15
     - _ShapeScale: 10.5
     - _SilverIntensity: 1.65
-    - _StepCount: 48
+    - _StepCount: 16
     - _TopSoftness: 0.22
     - _WeatherStrength: 0.72
     - _WindSpeed: 7
     m_Colors:
     - _AmbientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
-    - _CloudColor: {r: 1, g: 0.9130435, b: 0.75, a: 1}
+    - _CloudColor: {r: 1, g: 0.91408354, b: 0.759434, a: 1}
     - _ShadowColor: {r: 0.48, g: 0.56, b: 0.68, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0.25, a: 0}
   m_BuildTextureStacks: []

@@ -22,15 +22,24 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _DensityTexture:
+        m_Texture: {fileID: 2800000, guid: 8259c172ea03443f1a2e22822476c63b, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _InteractionTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _BladeHeight: 1.25
     - _BladeWidth: 0.085
+    - _InteractionStrength: 3.6
     - _WindScale: 0.18
     - _WindSpeed: 1.8
     - _WindStrength: 0.32
     m_Colors:
-    - _BaseColor: {r: 0.18, g: 0.46, b: 0.13, a: 1}
-    - _TipColor: {r: 0.74, g: 0.9, b: 0.32, a: 1}
+    - _BaseColor: {r: 0.11, g: 0.34, b: 0.12, a: 1}
+    - _TipColor: {r: 0.46, g: 0.68, b: 0.22, a: 1}
   m_BuildTextureStacks: []

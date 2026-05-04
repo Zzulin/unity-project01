@@ -5,9 +5,9 @@ public sealed class L13VolumeCloudDemoHud : MonoBehaviour
     public L13VolumeCloudController cloud;
     public Light sunLight;
 
-    private readonly L13CloudPreset softPreset = new L13CloudPreset(2.0f, 0.48f, 0.58f, 6.2f, 30f, 0.32f, 0.22f, 0.24f, 0.54f, 2.1f, 2.3f, 0.48f, -0.2f, 1.1f, 0.9f, 4.2f, 36, 3);
-    private readonly L13CloudPreset ueLikePreset = new L13CloudPreset(3.2f, 0.6f, 0.72f, 10.5f, 38f, 0.4f, 0.18f, 0.22f, 0.62f, 2.6f, 2.9f, 0.58f, -0.28f, 1.55f, 1.15f, 7f, 48, 4);
-    private readonly L13CloudPreset stormPreset = new L13CloudPreset(4.2f, 0.68f, 0.84f, 9.2f, 48f, 0.54f, 0.12f, 0.28f, 0.72f, 3.2f, 3.6f, 0.68f, -0.34f, 2.0f, 1.45f, 10.5f, 64, 5);
+    private readonly L13CloudPreset softPreset = new L13CloudPreset(2.0f, 0.48f, 0.58f, 6.2f, 30f, 0.32f, 0.22f, 0.24f, 0.54f, 2.1f, 2.3f, 0.48f, -0.2f, 1.1f, 0.9f, 4.2f, 12, 0);
+    private readonly L13CloudPreset ueLikePreset = new L13CloudPreset(3.2f, 0.6f, 0.72f, 10.5f, 38f, 0.4f, 0.18f, 0.22f, 0.62f, 2.6f, 2.9f, 0.58f, -0.28f, 1.55f, 1.15f, 7f, 16, 0);
+    private readonly L13CloudPreset stormPreset = new L13CloudPreset(4.2f, 0.68f, 0.84f, 9.2f, 48f, 0.54f, 0.12f, 0.28f, 0.72f, 3.2f, 3.6f, 0.68f, -0.34f, 2.0f, 1.45f, 10.5f, 24, 1);
 
     private void Update()
     {
@@ -32,12 +32,12 @@ public sealed class L13VolumeCloudDemoHud : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.LeftBracket))
         {
-            cloud.stepCount = Mathf.Max(24, cloud.stepCount - 8);
+            cloud.stepCount = Mathf.Max(8, cloud.stepCount - 4);
         }
 
         if (Input.GetKeyDown(KeyCode.RightBracket))
         {
-            cloud.stepCount = Mathf.Min(96, cloud.stepCount + 8);
+            cloud.stepCount = Mathf.Min(96, cloud.stepCount + 4);
         }
 
         if (sunLight != null)

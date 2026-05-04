@@ -11,6 +11,8 @@ public static class L12GrassExampleBuilder
     private const string GrassMaterialPath = Root + "/Materials/L12_InteractiveGrass.mat";
     private const string GroundMaterialPath = Root + "/Materials/L12_Ground.mat";
     private const string InteractorMaterialPath = Root + "/Materials/L12_Interactor.mat";
+    private const string DensityMapPath = Root + "/Textures/L12_GrassDensity.asset";
+    private const string CullingComputePath = Root + "/Shaders/L12GrassCull.compute";
 
     [MenuItem("Tools/Grass/Build L12 Interactive Grass Demo")]
     public static void Build()
@@ -18,10 +20,13 @@ public static class L12GrassExampleBuilder
         Directory.CreateDirectory(Root + "/Materials");
         Directory.CreateDirectory(Root + "/Scripts");
         Directory.CreateDirectory(Root + "/Shaders");
+        Directory.CreateDirectory(Root + "/Textures");
 
         Material grassMaterial = LoadOrCreateGrassMaterial();
         Material groundMaterial = LoadOrCreateGroundMaterial();
         Material interactorMaterial = LoadOrCreateInteractorMaterial();
+        Texture2D densityMap = LoadOrCreateDensityMap();
+        ComputeShader cullingCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(CullingComputePath);
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "L12 Interactive Grass";
@@ -50,16 +55,29 @@ public static class L12GrassExampleBuilder
         MeshRenderer groundRenderer = ground.GetComponent<MeshRenderer>();
         groundRenderer.sharedMaterial = groundMaterial;
 
-        GameObject grass = new GameObject("GPU Grass Field - 90k Interactive Blades");
+        GameObject grass = new GameObject("GPU Grass Field - Indirect Chunked LOD");
         L12GrassRenderer grassRenderer = grass.AddComponent<L12GrassRenderer>();
         grassRenderer.grassMaterial = grassMaterial;
+        grassRenderer.cullingCompute = cullingCompute;
+        grassRenderer.densityMap = densityMap;
         grassRenderer.bladesPerSide = 300;
         grassRenderer.fieldSize = 90f;
+        grassRenderer.chunksPerSide = 12;
         grassRenderer.bladeHeight = 1.25f;
         grassRenderer.bladeWidth = 0.085f;
+        grassRenderer.maxDrawDistance = 115f;
+        grassRenderer.lod0Distance = 26f;
+        grassRenderer.lod1Distance = 62f;
+        grassRenderer.densityThreshold = 0.08f;
+        grassRenderer.densityInfluence = 1f;
+        grassRenderer.interactionTextureResolution = 256;
+        grassRenderer.interactionStrength = 3.6f;
+        grassRenderer.interactionRecovery = 0.88f;
         grassRenderer.windStrength = 0.32f;
         grassRenderer.windScale = 0.18f;
         grassRenderer.windSpeed = 1.8f;
+        grassRenderer.baseColor = new Color(0.11f, 0.34f, 0.12f, 1f);
+        grassRenderer.tipColor = new Color(0.46f, 0.68f, 0.22f, 1f);
 
         GameObject walker = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         walker.name = "Player Grass Interactor";
@@ -88,9 +106,18 @@ public static class L12GrassExampleBuilder
         cameraObject.AddComponent<AudioListener>();
         L12GrassCameraRig cameraRig = cameraObject.AddComponent<L12GrassCameraRig>();
         cameraRig.target = walker.transform;
-        cameraRig.offset = new Vector3(0f, 18f, -24f);
-        cameraObject.transform.position = walker.transform.position + cameraRig.offset;
-        cameraObject.transform.rotation = Quaternion.LookRotation(walker.transform.position + Vector3.up * 1.2f - cameraObject.transform.position, Vector3.up);
+        cameraRig.distance = 30f;
+        cameraRig.minDistance = 8f;
+        cameraRig.maxDistance = 70f;
+        cameraRig.yaw = 0f;
+        cameraRig.pitch = 36f;
+        cameraRig.rotateSensitivity = 4.5f;
+        cameraRig.zoomSensitivity = 8f;
+        cameraRig.panSensitivity = 0.035f;
+        Vector3 initialFocus = walker.transform.position + Vector3.up * cameraRig.lookHeight;
+        Quaternion initialRotation = Quaternion.Euler(cameraRig.pitch, cameraRig.yaw, 0f);
+        cameraObject.transform.position = initialFocus + initialRotation * new Vector3(0f, 0f, -cameraRig.distance);
+        cameraObject.transform.rotation = Quaternion.LookRotation(initialFocus - cameraObject.transform.position, Vector3.up);
 
         GameObject hud = new GameObject("Demo HUD");
         L12GrassDemoHud demoHud = hud.AddComponent<L12GrassDemoHud>();
@@ -133,6 +160,9 @@ public static class L12GrassExampleBuilder
         Material material = AssetDatabase.LoadAssetAtPath<Material>(GrassMaterialPath);
         if (material != null)
         {
+            material.SetColor("_BaseColor", new Color(0.11f, 0.34f, 0.12f, 1f));
+            material.SetColor("_TipColor", new Color(0.46f, 0.68f, 0.22f, 1f));
+            material.SetTexture("_DensityTexture", AssetDatabase.LoadAssetAtPath<Texture2D>(DensityMapPath));
             return material;
         }
 
@@ -141,8 +171,9 @@ public static class L12GrassExampleBuilder
         {
             name = "L12_InteractiveGrass"
         };
-        material.SetColor("_BaseColor", new Color(0.18f, 0.46f, 0.13f, 1f));
-        material.SetColor("_TipColor", new Color(0.74f, 0.9f, 0.32f, 1f));
+        material.SetColor("_BaseColor", new Color(0.11f, 0.34f, 0.12f, 1f));
+        material.SetColor("_TipColor", new Color(0.46f, 0.68f, 0.22f, 1f));
+        material.SetTexture("_DensityTexture", AssetDatabase.LoadAssetAtPath<Texture2D>(DensityMapPath));
         AssetDatabase.CreateAsset(material, GrassMaterialPath);
         return material;
     }
@@ -183,5 +214,43 @@ public static class L12GrassExampleBuilder
         material.SetFloat("_Smoothness", 0.42f);
         AssetDatabase.CreateAsset(material, InteractorMaterialPath);
         return material;
+    }
+
+    private static Texture2D LoadOrCreateDensityMap()
+    {
+        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(DensityMapPath);
+        if (texture != null)
+        {
+            return texture;
+        }
+
+        const int size = 256;
+        texture = new Texture2D(size, size, TextureFormat.RGBA32, false, true)
+        {
+            name = "L12_GrassDensity",
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Bilinear
+        };
+
+        Color[] pixels = new Color[size * size];
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float u = x / (size - 1f);
+                float v = y / (size - 1f);
+                float centerFalloff = Mathf.Clamp01(1f - Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)) * 1.12f);
+                float pathA = Mathf.SmoothStep(0.08f, 0f, Mathf.Abs(v - 0.5f - Mathf.Sin(u * 9.5f) * 0.045f));
+                float pathB = Mathf.SmoothStep(0.06f, 0f, Mathf.Abs(u - 0.66f - Mathf.Sin(v * 11.0f) * 0.035f));
+                float noise = Mathf.PerlinNoise(u * 9.2f + 4.1f, v * 9.2f + 8.7f) * 0.25f;
+                float density = Mathf.Clamp01(centerFalloff * 0.74f + 0.28f + noise - Mathf.Max(pathA, pathB) * 0.75f);
+                pixels[y * size + x] = new Color(density, density, density, 1f);
+            }
+        }
+
+        texture.SetPixels(pixels);
+        texture.Apply(false, false);
+        AssetDatabase.CreateAsset(texture, DensityMapPath);
+        return texture;
     }
 }

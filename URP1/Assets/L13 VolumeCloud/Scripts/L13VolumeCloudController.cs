@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [ExecuteAlways]
 public sealed class L13VolumeCloudController : MonoBehaviour
@@ -56,11 +59,12 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     [Range(0f, 30f)] public float windSpeed = 7f;
 
     [Header("Quality")]
-    [Range(24, 160)] public int stepCount = 48;
-    [Range(1, 12)] public int lightStepCount = 4;
+    [Range(3, 96)] public int stepCount = 16;
+    [Range(0, 8)] public int lightStepCount = 0;
     [Range(0f, 1f)] public float opacity = 0.92f;
 
     private MeshRenderer cachedRenderer;
+    private MaterialPropertyBlock propertyBlock;
 
     public void ApplyPreset(L13CloudPreset preset)
     {
@@ -82,79 +86,47 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         windSpeed = preset.windSpeed;
         stepCount = preset.stepCount;
         lightStepCount = preset.lightStepCount;
-        PushProperties();
+        PushProperties(!Application.isPlaying);
     }
 
     private void OnEnable()
     {
         CacheMaterialFromRenderer();
-        PushProperties();
+        PushProperties(false);
     }
 
     private void OnValidate()
     {
         CacheMaterialFromRenderer();
-        PushProperties();
+        PushProperties(true);
     }
 
     private void Update()
     {
-        if (!Application.isPlaying)
-        {
-            return;
-        }
+        PushProperties(false);
+    }
 
-        PushProperties();
+    private void OnWillRenderObject()
+    {
+        PushProperties(false);
     }
 
     private void CacheMaterialFromRenderer()
     {
-        if (cloudMaterial != null)
-        {
-            return;
-        }
-
         if (cachedRenderer == null)
         {
             cachedRenderer = GetComponent<MeshRenderer>();
         }
 
-        if (cachedRenderer != null)
+        if (cloudMaterial == null && cachedRenderer != null)
         {
             cloudMaterial = cachedRenderer.sharedMaterial;
         }
     }
 
-    private void PushProperties()
+    private void PushProperties(bool persistMaterialAsset)
     {
-        if (cloudMaterial == null)
-        {
-            return;
-        }
-
-        cloudMaterial.SetColor(CloudColorId, cloudColor);
-        cloudMaterial.SetColor(ShadowColorId, shadowColor);
-        cloudMaterial.SetColor(AmbientColorId, ambientColor);
-        cloudMaterial.SetFloat(DensityId, density);
-        cloudMaterial.SetFloat(CoverageId, coverage);
-        cloudMaterial.SetFloat(WeatherStrengthId, weatherStrength);
-        cloudMaterial.SetFloat(ShapeScaleId, shapeScale);
-        cloudMaterial.SetFloat(DetailScaleId, detailScale);
-        cloudMaterial.SetFloat(DetailStrengthId, detailStrength);
-        cloudMaterial.SetFloat(BottomSoftnessId, bottomSoftness);
-        cloudMaterial.SetFloat(TopSoftnessId, topSoftness);
-        cloudMaterial.SetFloat(AnvilBiasId, anvilBias);
-        cloudMaterial.SetFloat(AbsorptionId, absorption);
-        cloudMaterial.SetFloat(LightAbsorptionId, lightAbsorption);
-        cloudMaterial.SetFloat(PhaseForwardId, forwardPhase);
-        cloudMaterial.SetFloat(PhaseBackwardId, backwardPhase);
-        cloudMaterial.SetFloat(SilverIntensityId, silverIntensity);
-        cloudMaterial.SetFloat(PowderStrengthId, powderStrength);
-        cloudMaterial.SetVector(WindDirectionId, windDirection);
-        cloudMaterial.SetFloat(WindSpeedId, windSpeed);
-        cloudMaterial.SetInt(StepCountId, stepCount);
-        cloudMaterial.SetInt(LightStepCountId, lightStepCount);
-        cloudMaterial.SetFloat(OpacityId, opacity);
+        CacheMaterialFromRenderer();
 
         Vector3 sunDirection = Vector3.Normalize(new Vector3(0.35f, 0.72f, 0.4f));
         Color sunColor = Color.white;
@@ -164,8 +136,87 @@ public sealed class L13VolumeCloudController : MonoBehaviour
             sunColor = sunLight.color * Mathf.Max(sunLight.intensity, 0f);
         }
 
-        cloudMaterial.SetVector(SunDirectionId, new Vector4(sunDirection.x, sunDirection.y, sunDirection.z, 0f));
-        cloudMaterial.SetColor(SunColorId, sunColor);
+        if (cachedRenderer != null)
+        {
+            if (propertyBlock == null)
+            {
+                propertyBlock = new MaterialPropertyBlock();
+            }
+
+            cachedRenderer.GetPropertyBlock(propertyBlock);
+            ApplyToBlock(propertyBlock, sunDirection, sunColor);
+            cachedRenderer.SetPropertyBlock(propertyBlock);
+        }
+
+        if (persistMaterialAsset && cloudMaterial != null)
+        {
+            ApplyToMaterial(cloudMaterial, sunDirection, sunColor);
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                EditorUtility.SetDirty(cloudMaterial);
+            }
+#endif
+        }
+    }
+
+    private void ApplyToMaterial(Material material, Vector3 sunDirection, Color sunColor)
+    {
+        material.SetColor(CloudColorId, cloudColor);
+        material.SetColor(ShadowColorId, shadowColor);
+        material.SetColor(AmbientColorId, ambientColor);
+        material.SetFloat(DensityId, density);
+        material.SetFloat(CoverageId, coverage);
+        material.SetFloat(WeatherStrengthId, weatherStrength);
+        material.SetFloat(ShapeScaleId, shapeScale);
+        material.SetFloat(DetailScaleId, detailScale);
+        material.SetFloat(DetailStrengthId, detailStrength);
+        material.SetFloat(BottomSoftnessId, bottomSoftness);
+        material.SetFloat(TopSoftnessId, topSoftness);
+        material.SetFloat(AnvilBiasId, anvilBias);
+        material.SetFloat(AbsorptionId, absorption);
+        material.SetFloat(LightAbsorptionId, lightAbsorption);
+        material.SetFloat(PhaseForwardId, forwardPhase);
+        material.SetFloat(PhaseBackwardId, backwardPhase);
+        material.SetFloat(SilverIntensityId, silverIntensity);
+        material.SetFloat(PowderStrengthId, powderStrength);
+        material.SetVector(WindDirectionId, windDirection);
+        material.SetFloat(WindSpeedId, windSpeed);
+        material.SetInt(StepCountId, stepCount);
+        material.SetInt(LightStepCountId, lightStepCount);
+        material.SetFloat(OpacityId, opacity);
+
+        material.SetVector(SunDirectionId, new Vector4(sunDirection.x, sunDirection.y, sunDirection.z, 0f));
+        material.SetColor(SunColorId, sunColor);
+    }
+
+    private void ApplyToBlock(MaterialPropertyBlock block, Vector3 sunDirection, Color sunColor)
+    {
+        block.SetColor(CloudColorId, cloudColor);
+        block.SetColor(ShadowColorId, shadowColor);
+        block.SetColor(AmbientColorId, ambientColor);
+        block.SetFloat(DensityId, density);
+        block.SetFloat(CoverageId, coverage);
+        block.SetFloat(WeatherStrengthId, weatherStrength);
+        block.SetFloat(ShapeScaleId, shapeScale);
+        block.SetFloat(DetailScaleId, detailScale);
+        block.SetFloat(DetailStrengthId, detailStrength);
+        block.SetFloat(BottomSoftnessId, bottomSoftness);
+        block.SetFloat(TopSoftnessId, topSoftness);
+        block.SetFloat(AnvilBiasId, anvilBias);
+        block.SetFloat(AbsorptionId, absorption);
+        block.SetFloat(LightAbsorptionId, lightAbsorption);
+        block.SetFloat(PhaseForwardId, forwardPhase);
+        block.SetFloat(PhaseBackwardId, backwardPhase);
+        block.SetFloat(SilverIntensityId, silverIntensity);
+        block.SetFloat(PowderStrengthId, powderStrength);
+        block.SetVector(WindDirectionId, windDirection);
+        block.SetFloat(WindSpeedId, windSpeed);
+        block.SetInt(StepCountId, stepCount);
+        block.SetInt(LightStepCountId, lightStepCount);
+        block.SetFloat(OpacityId, opacity);
+        block.SetVector(SunDirectionId, new Vector4(sunDirection.x, sunDirection.y, sunDirection.z, 0f));
+        block.SetColor(SunColorId, sunColor);
     }
 }
 

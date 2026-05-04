@@ -29,14 +29,15 @@
   - 快速核对工具：`Assets/L11 NPR/Editor/L11NprContextReporter.cs`（菜单 `Tools/NPR/输出 L11 上下文报告`）
 
 ## 当前结论（短版）
-- `Assets/L13 VolumeCloud/L13.unity` 已生成光线步进体积云示例：体积盒 Ray March、预生成 3D Shape/Detail 噪声贴图、WeatherMap、低成本光照步进阴影、银边/粉末感、风场动画、HUD 参数预设。
+- `Assets/L13 VolumeCloud/L13.unity` 已生成光线步进体积云示例：体积盒 Ray March、周期无缝 3D Shape/Detail 噪声贴图、周期 WeatherMap、低成本光照步进阴影、银边/粉末感、风场动画、XZ 边界淡出、HUD 参数预设。
 - L13 资源集中在 `Assets/L13 VolumeCloud/{Scripts,Shaders,Materials,Editor}`；构建菜单为 `Tools/Volume Cloud/Build L13 Raymarched Volume Cloud Demo`。
 - L13 噪声资源集中在 `Assets/L13 VolumeCloud/Textures`，可通过 `Tools/Volume Cloud/Regenerate L13 Noise Textures` 重新生成并绑定。
 - L13 已降到默认性能档：48 view steps / 4 light steps；HUD 的高质量预设不再超过 64/5，避免编辑器打开即卡顿。
 - L13 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Unity Console Error 为 0。
-- `Assets/L12 grass/L12.unity` 已生成大规模可交互草地示例：GPU Instancing 草簇、Shader 风场/交互弯折、玩家与自动交互体、跟随相机、HUD。
-- L12 草地脚本与资源集中在 `Assets/L12 grass/{Scripts,Shaders,Materials,Editor}`；构建菜单为 `Tools/Grass/Build L12 Interactive Grass Demo`。
-- L12 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Play Mode 短跑后 L12 相关 Console Error 为 0。
+- `Assets/L12 grass/L12.unity` 已升级为 GPU-driven 草地示例：`DrawMeshInstancedIndirect`、chunk 分块、Compute Shader 视锥/距离/密度剔除、近中远 LOD、密度图控制、交互压草纹理。
+- L12 运行时相机已支持基础操作：右键拖拽旋转视角、滚轮缩放、中键拖拽平移观察中心、`R` 复位。
+- L12 草地脚本与资源集中在 `Assets/L12 grass/{Scripts,Shaders,Materials,Textures,Editor}`；构建菜单为 `Tools/Grass/Build L12 Interactive Grass Demo`。
+- L12 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - L10.9 运行时相机漫游与最早版近距离屏幕抖动溶解保留；后续“整体同步/模型范围”重做方案效果不理想，已 discard 回退，不作为当前基线。
 - Graphics 默认 RP 指向 `NPR Render Pipeline.asset`，当前质量档 `High` 指向 `UniversalRP-HighQuality.asset`。
 - `0_mesh_mesh` 材质槽位以场景内嵌 `(Instance)` 为主，`hair` 是 `CharHair`，多数身体/面部槽位仍是 URP Lit。
