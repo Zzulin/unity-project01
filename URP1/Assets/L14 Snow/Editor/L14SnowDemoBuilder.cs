@@ -45,15 +45,8 @@ public static class L14SnowDemoBuilder
         SnowTextureSet snowTextures = LoadOrCreateSnowTextures();
         Material snowMaterial = LoadOrCreateSnowMaterial(snowTextures);
         Material playerMaterial = LoadOrCreateLitMaterial(PlayerMaterialPath, "L14_Player", new Color(0.13f, 0.28f, 0.42f, 1f), 0.46f);
-        Material bootMaterial = LoadOrCreateLitMaterial(BootMaterialPath, "L14_Boots", new Color(0.035f, 0.037f, 0.04f, 1f), 0.28f);
-        Material playerPantsMaterial = LoadOrCreateLitMaterial(PlayerPantsMaterialPath, "L14_Player_Pants", new Color(0.07f, 0.095f, 0.13f, 1f), 0.34f);
-        Material playerAccentMaterial = LoadOrCreateLitMaterial(PlayerAccentMaterialPath, "L14_Player_Accent", new Color(0.95f, 0.48f, 0.12f, 1f), 0.38f);
-        Material skinMaterial = LoadOrCreateLitMaterial(SkinMaterialPath, "L14_Skin", new Color(0.92f, 0.68f, 0.48f, 1f), 0.24f);
-        Material visorMaterial = LoadOrCreateLitMaterial(VisorMaterialPath, "L14_Visor", new Color(0.025f, 0.08f, 0.12f, 1f), 0.82f);
         Material skierMaterial = LoadOrCreateLitMaterial(SkierMaterialPath, "L14_Visible_Skier", new Color(0.92f, 0.28f, 0.12f, 1f), 0.36f);
         Material groomerMaterial = LoadOrCreateLitMaterial(GroomerMaterialPath, "L14_Visible_Groomer", new Color(0.95f, 0.65f, 0.08f, 1f), 0.32f);
-        Material groomerCabMaterial = LoadOrCreateLitMaterial(GroomerCabMaterialPath, "L14_Groomer_Cab", new Color(0.1f, 0.2f, 0.26f, 1f), 0.68f);
-        Material metalMaterial = LoadOrCreateLitMaterial(MetalMaterialPath, "L14_Dark_Metal", new Color(0.035f, 0.04f, 0.045f, 1f), 0.42f);
         ComputeShader snowCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputePath);
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -89,14 +82,15 @@ public static class L14SnowDemoBuilder
         walker.moveSpeed = 6.6f;
         walker.sprintMultiplier = 1.65f;
 
-        GameObject leftBoot = CreateBoot("Left Boot Stamp", player.transform, -0.34f, bootMaterial);
-        GameObject rightBoot = CreateBoot("Right Boot Stamp", player.transform, 0.34f, bootMaterial);
-        walker.leftFoot = leftBoot.transform;
-        walker.rightFoot = rightBoot.transform;
-        CreatePlayerVisual(player, walker, leftBoot.transform, rightBoot.transform, playerMaterial, playerPantsMaterial, playerAccentMaterial, skinMaterial, visorMaterial, bootMaterial);
+        L14SnowInteractor playerInteractor = player.AddComponent<L14SnowInteractor>();
+        playerInteractor.radius = 1.02f;
+        playerInteractor.strength = 1.04f;
+        playerInteractor.ridgeStrength = 0.72f;
+        playerInteractor.hardness = 1.18f;
+        CreateDemoBall("Player Demo Ball", player.transform, new Vector3(0f, 0f, 0f), 0.72f, playerMaterial);
 
-        CreateSkierInteractor(skierMaterial, playerAccentMaterial, skinMaterial, visorMaterial, bootMaterial, metalMaterial);
-        CreateGroomerInteractor(groomerMaterial, groomerCabMaterial, bootMaterial, metalMaterial);
+        CreateSkierInteractor(skierMaterial);
+        CreateGroomerInteractor(groomerMaterial);
 
         GameObject cameraObject = new GameObject("Main Camera");
         Camera camera = cameraObject.AddComponent<Camera>();
@@ -160,6 +154,11 @@ public static class L14SnowDemoBuilder
             new Vector3(0.34f, 0.11f, 0.74f),
             Quaternion.identity,
             material);
+        MeshRenderer renderer = boot.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.enabled = false;
+        }
 
         L14SnowInteractor interactor = boot.AddComponent<L14SnowInteractor>();
         interactor.radius = 0.82f;
@@ -206,22 +205,12 @@ public static class L14SnowDemoBuilder
         rig.rightArm = rightArm;
     }
 
-    private static void CreateSkierInteractor(Material bodyMaterial, Material accentMaterial, Material skinMaterial, Material visorMaterial, Material skiMaterial, Material poleMaterial)
+    private static void CreateSkierInteractor(Material bodyMaterial)
     {
-        GameObject root = new GameObject("Visible Auto Skier - Figure Eight");
+        GameObject root = new GameObject("Auto Demo Ball - Figure Eight");
         root.transform.position = new Vector3(-8f, 0.12f, -4f);
 
-        CreatePart("Left Carving Ski", PrimitiveType.Cube, root.transform, new Vector3(-0.24f, 0.08f, 0f), new Vector3(0.16f, 0.055f, 2.9f), Quaternion.Euler(0f, 0f, -2f), skiMaterial);
-        CreatePart("Right Carving Ski", PrimitiveType.Cube, root.transform, new Vector3(0.24f, 0.08f, 0f), new Vector3(0.16f, 0.055f, 2.9f), Quaternion.Euler(0f, 0f, 2f), skiMaterial);
-        CreatePart("Skier Boots", PrimitiveType.Cube, root.transform, new Vector3(0f, 0.23f, 0.04f), new Vector3(0.62f, 0.18f, 0.46f), Quaternion.identity, poleMaterial);
-        CreatePart("Skier Jacket", PrimitiveType.Capsule, root.transform, new Vector3(0f, 0.82f, 0f), new Vector3(0.42f, 0.55f, 0.34f), Quaternion.identity, bodyMaterial);
-        CreatePart("Skier Helmet", PrimitiveType.Sphere, root.transform, new Vector3(0f, 1.42f, 0.04f), new Vector3(0.26f, 0.26f, 0.26f), Quaternion.identity, accentMaterial);
-        CreatePart("Skier Face", PrimitiveType.Sphere, root.transform, new Vector3(0f, 1.36f, 0.15f), new Vector3(0.2f, 0.16f, 0.11f), Quaternion.identity, skinMaterial);
-        CreatePart("Skier Goggles", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.39f, 0.245f), new Vector3(0.34f, 0.08f, 0.025f), Quaternion.identity, visorMaterial);
-        CreatePart("Left Ski Pole", PrimitiveType.Cylinder, root.transform, new Vector3(-0.62f, 0.66f, 0.08f), new Vector3(0.025f, 0.62f, 0.025f), Quaternion.Euler(18f, 0f, 16f), poleMaterial);
-        CreatePart("Right Ski Pole", PrimitiveType.Cylinder, root.transform, new Vector3(0.62f, 0.66f, 0.08f), new Vector3(0.025f, 0.62f, 0.025f), Quaternion.Euler(18f, 0f, -16f), poleMaterial);
-        CreatePart("Left Bent Arm", PrimitiveType.Capsule, root.transform, new Vector3(-0.42f, 0.86f, 0.06f), new Vector3(0.065f, 0.34f, 0.065f), Quaternion.Euler(0f, 0f, -36f), bodyMaterial);
-        CreatePart("Right Bent Arm", PrimitiveType.Capsule, root.transform, new Vector3(0.42f, 0.86f, 0.06f), new Vector3(0.065f, 0.34f, 0.065f), Quaternion.Euler(0f, 0f, 36f), bodyMaterial);
+        CreateDemoBall("Figure Eight Demo Ball", root.transform, new Vector3(0f, 0.56f, 0f), 0.62f, bodyMaterial);
 
         L14SnowInteractor interactor = root.AddComponent<L14SnowInteractor>();
         interactor.radius = 1.12f;
@@ -237,18 +226,12 @@ public static class L14SnowDemoBuilder
         auto.phase = 1.6f;
     }
 
-    private static void CreateGroomerInteractor(Material bodyMaterial, Material cabMaterial, Material trackMaterial, Material metalMaterial)
+    private static void CreateGroomerInteractor(Material bodyMaterial)
     {
-        GameObject root = new GameObject("Visible Auto Groomer - Wide Track");
+        GameObject root = new GameObject("Wide Track Demo Ball");
         root.transform.position = new Vector3(10f, 0.18f, 8f);
 
-        CreatePart("Wide Compression Plate", PrimitiveType.Cube, root.transform, new Vector3(0f, 0.08f, 0.62f), new Vector3(3.6f, 0.12f, 1.15f), Quaternion.identity, trackMaterial);
-        CreatePart("Left Rubber Track", PrimitiveType.Cube, root.transform, new Vector3(-1.16f, 0.24f, -0.08f), new Vector3(0.46f, 0.25f, 1.9f), Quaternion.identity, metalMaterial);
-        CreatePart("Right Rubber Track", PrimitiveType.Cube, root.transform, new Vector3(1.16f, 0.24f, -0.08f), new Vector3(0.46f, 0.25f, 1.9f), Quaternion.identity, metalMaterial);
-        CreatePart("Snowcat Body", PrimitiveType.Cube, root.transform, new Vector3(0f, 0.63f, -0.08f), new Vector3(2.25f, 0.66f, 1.28f), Quaternion.identity, bodyMaterial);
-        CreatePart("Angled Cabin", PrimitiveType.Cube, root.transform, new Vector3(0f, 1.08f, 0.16f), new Vector3(1.32f, 0.54f, 0.84f), Quaternion.Euler(-8f, 0f, 0f), cabMaterial);
-        CreatePart("Front Blade", PrimitiveType.Cube, root.transform, new Vector3(0f, 0.42f, 1.28f), new Vector3(2.7f, 0.24f, 0.18f), Quaternion.Euler(12f, 0f, 0f), metalMaterial);
-        CreatePart("Roof Beacon", PrimitiveType.Sphere, root.transform, new Vector3(0f, 1.42f, 0.16f), new Vector3(0.18f, 0.1f, 0.18f), Quaternion.identity, bodyMaterial);
+        CreateDemoBall("Wide Track Demo Ball Visual", root.transform, new Vector3(0f, 0.7f, 0f), 0.86f, bodyMaterial);
 
         L14SnowInteractor interactor = root.AddComponent<L14SnowInteractor>();
         interactor.radius = 1.9f;
@@ -262,6 +245,11 @@ public static class L14SnowDemoBuilder
         auto.pathScale = new Vector2(1f, 0.56f);
         auto.angularSpeed = -0.2f;
         auto.phase = 1.1f;
+    }
+
+    private static GameObject CreateDemoBall(string name, Transform parent, Vector3 localPosition, float radius, Material material)
+    {
+        return CreatePart(name, PrimitiveType.Sphere, parent, localPosition, Vector3.one * radius, Quaternion.identity, material);
     }
 
     private static GameObject CreatePart(string name, PrimitiveType type, Transform parent, Vector3 localPosition, Vector3 localScale, Quaternion localRotation, Material material)
