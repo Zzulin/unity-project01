@@ -30,7 +30,7 @@
 
 ## 当前结论（短版）
 - `Assets/L14 Snow/L14.unity` 已生成可交互雪地 Demo：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移；雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线，多尺度高度/法线混合，动态白色流动点和方块雪晶已移除。
-- L14 雪面光照已加入包裹漫反射、浅层透光、掠射边缘光和静态视角相关雪晶闪点；脚印区域同步改变高度、法线响应、压实色与粗糙度。
+- L14 雪面光照已加入包裹漫反射、浅层透光、掠射边缘光和静态视角相关雪晶闪点；压痕区域同步改变高度、法线响应、压实色与粗糙度，压过区域会降低雪晶闪点并压低边缘堆雪亮度，避免“白色软管”感。
 - L14 场景已收敛为纯技术 Demo：玩家和两个自动移动体均改为可见小球；每个小球只保留 1 个 `L14SnowInteractor` 压痕源，玩家不再生成左右脚 stamp，所以小球轨迹是单条圆形压痕；构建菜单为 `Tools/Snow/Build L14 Interactive Snow Demo`。
 - L14 资源集中在 `Assets/L14 Snow/{Scripts,Shaders,Materials,Textures,Editor}`；最终预览截图为 `Assets/Screenshots/L14_InteractiveSnow_material_pipeline_v4_final_20260504.png`，后续截图不要复用旧文件名。
 - L14 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
@@ -42,6 +42,7 @@
 - L13 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Unity Console Error 为 0。
 - `Assets/L12 grass/L12.unity` 已升级为 GPU-driven 草地示例：`DrawMeshInstancedIndirect`、chunk 分块、Compute Shader 视锥/距离/密度剔除、近中远 LOD、密度图控制、交互压草纹理。
 - L12 运行时相机已支持基础操作：右键拖拽旋转视角、滚轮缩放、中键拖拽平移观察中心、`R` 复位。
+- L12 制作流程文档已新增：`Assets/L12 grass/Docs/L12_InteractiveGrass_Workflow.md`。
 - L12 草地脚本与资源集中在 `Assets/L12 grass/{Scripts,Shaders,Materials,Textures,Editor}`；构建菜单为 `Tools/Grass/Build L12 Interactive Grass Demo`。
 - L12 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - L10.9 运行时相机漫游与最早版近距离屏幕抖动溶解保留；后续“整体同步/模型范围”重做方案效果不理想，已 discard 回退，不作为当前基线。

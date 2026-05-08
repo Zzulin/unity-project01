@@ -10,6 +10,7 @@ public sealed class L14SnowInteractor : MonoBehaviour
     [Range(0f, 2f)] public float strength = 1f;
     [Range(0f, 2f)] public float ridgeStrength = 0.8f;
     [Range(0.35f, 3f)] public float hardness = 1.25f;
+    public bool canStamp = true;
 
     [Header("调试")]
     public Color gizmoColor = new Color(0.42f, 0.72f, 1f, 0.32f);

@@ -31,20 +31,11 @@ dotnet build Assembly-CSharp-Editor.csproj
 | `L10 sss/` | 次表面散射 | |
 | `L10.9 learnNPR/` | NPR 角色渲染 + 屏幕溶解 | 含多个角色模型（妮露/阮梅/刻莱诺/荧），shader/shader advance 两个着色器变体 |
 | `L11 NPR/` | StarRail NPR 完整链路 | 当前主线目标场景 |
-| `L12 grass/` | GPU Instancing 草地 | Codex 生成，含风场/交互弯折，构建菜单 `Tools/Grass/` |
-| `L13 VolumeCloud/` | 光线步进体积云 | Codex 生成，含 3D 噪声纹理/相位函数/银边，构建菜单 `Tools/Volume Cloud/` |
+| `L12 grass/` | GPU Instancing 草地 | 含风场/交互弯折，构建菜单 `Tools/Grass/` |
+| `L13 VolumeCloud/` | 光线步进体积云 | 含 3D 噪声纹理/相位函数/银边，构建菜单 `Tools/Volume Cloud/` |
 | `LX learn computeShader/` | Compute Shader 基础 | ComputeBuffer 示例 |
 
 场景 L4 未使用（编号跳过）。
-
-## Codex 生成的场景
-
-L12 和 L13 由 OpenAI Codex CLI 生成，遵循统一架构模式：
-- **Editor Builder**（`Editor/L1xXxxExampleBuilder.cs`）：一键重建场景，生成噪声纹理/材质，配置所有 GameObject
-- **Controller**（`Scripts/L1xXxxController.cs`）：`[ExecuteAlways]`，运行时/编辑器推送材质参数
-- **Camera Rig**：独立相机控制脚本
-- **HUD**：运行时参数调试和预设切换
-- **Shader**：包含所有 HLSL 逻辑，无外部依赖
 
 ## URP 配置
 

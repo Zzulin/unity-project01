@@ -5,6 +5,9 @@ public sealed class L14SnowWalker : MonoBehaviour
     [Min(0.1f)] public float moveSpeed = 6.5f;
     [Min(0.1f)] public float sprintMultiplier = 1.65f;
     [Min(1f)] public float fieldLimit = 43f;
+    [Min(0f)] public float contactHeight = 0.34f;
+    [Min(0.1f)] public float jumpHeight = 2.2f;
+    [Min(0.1f)] public float gravity = 18f;
 
     [Header("脚印")]
     public Transform leftFoot;
@@ -16,8 +19,11 @@ public sealed class L14SnowWalker : MonoBehaviour
 
     private float stepPhase;
     private Vector3 previousPosition;
+    private L14SnowInteractor contactInteractor;
+    private float verticalVelocity;
 
     public float CurrentSpeed { get; private set; }
+    public bool IsGrounded { get; private set; } = true;
 
     private void OnEnable()
     {
@@ -26,6 +32,11 @@ public sealed class L14SnowWalker : MonoBehaviour
 
     private void Update()
     {
+        if (contactInteractor == null)
+        {
+            contactInteractor = GetComponent<L14SnowInteractor>();
+        }
+
         Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
         if (input.sqrMagnitude > 1f)
         {
@@ -40,10 +51,38 @@ public sealed class L14SnowWalker : MonoBehaviour
         transform.position += motion;
 
         Vector3 position = transform.position;
+        bool wasGrounded = IsGrounded;
+        if (wasGrounded && Input.GetKeyDown(KeyCode.Space))
+        {
+            verticalVelocity = Mathf.Sqrt(2f * gravity * jumpHeight);
+            IsGrounded = false;
+        }
+
+        if (!IsGrounded)
+        {
+            verticalVelocity -= gravity * Time.deltaTime;
+            position.y += verticalVelocity * Time.deltaTime;
+            if (position.y <= contactHeight)
+            {
+                position.y = contactHeight;
+                verticalVelocity = 0f;
+                IsGrounded = true;
+            }
+        }
+        else
+        {
+            position.y = contactHeight;
+            verticalVelocity = 0f;
+        }
+
         position.x = Mathf.Clamp(position.x, -fieldLimit, fieldLimit);
         position.z = Mathf.Clamp(position.z, -fieldLimit, fieldLimit);
-        position.y = 0.95f;
         transform.position = position;
+
+        if (contactInteractor != null)
+        {
+            contactInteractor.canStamp = IsGrounded;
+        }
 
         CurrentSpeed = (transform.position - previousPosition).magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
         previousPosition = transform.position;

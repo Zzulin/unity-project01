@@ -29,6 +29,19 @@ float CapsuleDistance(float2 p, float2 a, float2 b)
     return length(p - (a + ab * t));
 }
 
+float3 EvaluateTrackShape(float dist01, float hardness)
+{
+    float core = smoothstep(0.92, 0.0, dist01);
+    core = pow(core, hardness);
+
+    float compact = smoothstep(1.0, 0.0, dist01);
+    compact = pow(compact, max(hardness * 0.65, 0.35));
+
+    float ridge = smoothstep(0.48, 0.72, dist01) * smoothstep(1.18, 0.78, dist01);
+    ridge = pow(saturate(ridge), 0.85);
+    return float3(core, ridge, compact);
+}
+
 [numthreads(8, 8, 1)]
 void ClearSnow(uint3 id : SV_DispatchThreadID)
 {
@@ -88,14 +101,12 @@ void StampSnow(uint3 id : SV_DispatchThreadID)
             continue;
         }
 
-        float core = smoothstep(1.0, 0.0, dist01);
-        core = pow(core, hardness);
-        float shoulder = saturate((dist01 - 0.52) / 0.48);
-        float ridge = smoothstep(1.15, 0.78, dist01) * smoothstep(0.48, 0.72, dist01);
+        float3 shape = EvaluateTrackShape(dist01, hardness);
+        float centerGain = lerp(0.88, 1.12, saturate(1.0 - dist01));
 
-        state.r = max(state.r, core * depressionStrength);
-        state.g = max(state.g, ridge * ridgeStrength * lerp(0.7, 1.25, shoulder));
-        state.b = max(state.b, core);
+        state.r = max(state.r, shape.x * depressionStrength * centerGain);
+        state.g = max(state.g, shape.y * ridgeStrength * 0.68);
+        state.b = max(state.b, shape.z);
     }
 
     state.rg = saturate(state.rg);
@@ -134,14 +145,12 @@ void StampOneSnow(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float core = smoothstep(1.0, 0.0, dist01);
-    core = pow(core, hardness);
-    float shoulder = saturate((dist01 - 0.52) / 0.48);
-    float ridge = smoothstep(1.15, 0.78, dist01) * smoothstep(0.48, 0.72, dist01);
+    float3 shape = EvaluateTrackShape(dist01, hardness);
+    float centerGain = lerp(0.88, 1.12, saturate(1.0 - dist01));
 
-    state.r = max(state.r, core * depressionStrength);
-    state.g = max(state.g, ridge * ridgeStrength * lerp(0.7, 1.25, shoulder));
-    state.b = max(state.b, core);
+    state.r = max(state.r, shape.x * depressionStrength * centerGain);
+    state.g = max(state.g, shape.y * ridgeStrength * 0.68);
+    state.b = max(state.b, shape.z);
     state.rg = saturate(state.rg);
     state.b = saturate(state.b);
     state.a = 1.0;

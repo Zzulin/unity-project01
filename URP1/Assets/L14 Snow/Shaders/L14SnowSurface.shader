@@ -108,6 +108,7 @@ Shader "L14 Snow/GPU Heightfield Snow"
                 half3 viewDirWS : TEXCOORD4;
                 half depression : TEXCOORD5;
                 half ridge : TEXCOORD6;
+                half compaction : TEXCOORD7;
             };
 
             float HeightFromState(float4 state, float2 uv)
@@ -151,6 +152,7 @@ Shader "L14 Snow/GPU Heightfield Snow"
                 output.viewDirWS = GetWorldSpaceNormalizeViewDir(output.positionWS);
                 output.depression = state.r;
                 output.ridge = state.g;
+                output.compaction = state.b;
                 return output;
             }
 
@@ -160,8 +162,10 @@ Shader "L14 Snow/GPU Heightfield Snow"
                 half3 viewDirWS = normalize(input.viewDirWS);
                 float2 textureUv = input.uv * _SnowTextureScale;
                 half3 normalSample = SAMPLE_TEXTURE2D(_SnowNormalMap, sampler_SnowNormalMap, textureUv).xyz * 2.0h - 1.0h;
-                half3 detailNormalWS = normalize(half3(normalSample.x * _NormalStrength, normalSample.z, normalSample.y * _NormalStrength));
-                normalWS = normalize(lerp(normalWS, normalize(normalWS + detailNormalWS), saturate(_NormalStrength)));
+                half compactMask = saturate(input.compaction);
+                half detailBlend = saturate(_NormalStrength * lerp(1.0h, 0.38h, compactMask));
+                half3 detailNormalWS = normalize(half3(normalSample.x * detailBlend, normalSample.z, normalSample.y * detailBlend));
+                normalWS = normalize(lerp(normalWS, normalize(normalWS + detailNormalWS), detailBlend));
 
                 Light mainLight = GetMainLight();
                 half ndl = saturate(dot(normalWS, mainLight.direction));
@@ -174,10 +178,12 @@ Shader "L14 Snow/GPU Heightfield Snow"
                 half3 textureAlbedo = SAMPLE_TEXTURE2D(_SnowBaseMap, sampler_SnowBaseMap, textureUv).rgb;
                 half roughness = SAMPLE_TEXTURE2D(_SnowRoughnessMap, sampler_SnowRoughnessMap, textureUv).r;
                 roughness = saturate(lerp(roughness, 0.72h, input.depression * 0.85h));
+                roughness = saturate(lerp(roughness, 0.88h, compactMask * 0.75h));
 
                 half3 albedo = _BaseColor.rgb * textureAlbedo;
-                albedo = lerp(albedo, _PackedColor.rgb * textureAlbedo, saturate(input.depression * 0.9h));
-                albedo = lerp(albedo, _RidgeColor.rgb, saturate(input.ridge * 0.65h));
+                half3 compactedAlbedo = _PackedColor.rgb * textureAlbedo * 0.82h;
+                albedo = lerp(albedo, compactedAlbedo, saturate(max(input.depression * 0.82h, compactMask * 0.72h)));
+                albedo = lerp(albedo, _RidgeColor.rgb * textureAlbedo, saturate(input.ridge * 0.42h));
                 albedo *= lerp(_ShadowColor.rgb, 1.0h.xxx, wrapDiffuse);
 
                 half3 halfDir = normalize(mainLight.direction + viewDirWS);
@@ -192,12 +198,13 @@ Shader "L14 Snow/GPU Heightfield Snow"
                 half crystalFacet = pow(saturate(dot(normalWS, halfDir)), max(_CrystalGlintSharpness * 0.45h, 1.0h));
                 half grazingFlash = fresnel * 0.22h;
                 half glintFacing = mirrorGlint * 0.75h + crystalFacet * 0.35h + grazingFlash;
-                half crystalGlint = glintMask * glintFacing * saturate(1.0h - input.depression * 0.7h) * _CrystalGlintStrength;
+                half crystalGlint = glintMask * glintFacing * saturate(1.0h - input.depression * 0.7h - compactMask * 0.45h) * _CrystalGlintStrength;
 
                 half backScatter = pow(saturate(dot(viewDirWS, -mainLight.direction) * 0.5h + 0.5h), 3.0h);
                 half powderMask = saturate(1.0h - input.depression * 0.65h + input.ridge * 0.35h);
                 half3 subsurface = _SubsurfaceColor.rgb * mainLight.color * (backScatter * powderMask * _SubsurfaceStrength * 0.22h);
                 half3 specular = (broadSpec + tightSpec + rimSheen + crystalGlint) * mainLight.color;
+                specular *= saturate(1.0h - compactMask * 0.42h + input.ridge * 0.10h);
 
                 half3 color = albedo * (ambient + lightColor) + subsurface + specular;
                 color = MixFog(color, input.fogCoord);

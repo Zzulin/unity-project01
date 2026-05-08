@@ -342,6 +342,12 @@ public sealed class L14SnowField : MonoBehaviour
             }
 
             Vector3 current = interactor.transform.position;
+            if (!interactor.canStamp)
+            {
+                previousInteractorPositions[interactor] = current;
+                continue;
+            }
+
             if (!previousInteractorPositions.TryGetValue(interactor, out Vector3 previous))
             {
                 previous = current;

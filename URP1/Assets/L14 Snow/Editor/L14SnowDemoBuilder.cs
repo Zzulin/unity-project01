@@ -8,17 +8,13 @@ public static class L14SnowDemoBuilder
 {
     private const string Root = "Assets/L14 Snow";
     private const string ScenePath = Root + "/L14.unity";
+    private const float PlayerContactHeight = 0.34f;
+    private const float FigureEightContactHeight = 0.30f;
+    private const float WideTrackContactHeight = 0.36f;
     private const string SnowMaterialPath = Root + "/Materials/L14_GPU_Heightfield_Snow.mat";
     private const string PlayerMaterialPath = Root + "/Materials/L14_Player.mat";
-    private const string BootMaterialPath = Root + "/Materials/L14_Boots.mat";
-    private const string PlayerPantsMaterialPath = Root + "/Materials/L14_Player_Pants.mat";
-    private const string PlayerAccentMaterialPath = Root + "/Materials/L14_Player_Accent.mat";
-    private const string SkinMaterialPath = Root + "/Materials/L14_Skin.mat";
-    private const string VisorMaterialPath = Root + "/Materials/L14_Visor.mat";
     private const string SkierMaterialPath = Root + "/Materials/L14_Visible_Skier.mat";
     private const string GroomerMaterialPath = Root + "/Materials/L14_Visible_Groomer.mat";
-    private const string GroomerCabMaterialPath = Root + "/Materials/L14_Groomer_Cab.mat";
-    private const string MetalMaterialPath = Root + "/Materials/L14_Dark_Metal.mat";
     private const string ComputePath = Root + "/Shaders/L14SnowSim.compute";
     private const string SnowBaseMapPath = Root + "/Textures/L14_Snow_BaseColor.asset";
     private const string SnowNormalMapPath = Root + "/Textures/L14_Snow_Normal.asset";
@@ -64,8 +60,8 @@ public static class L14SnowDemoBuilder
         snowField.fieldSize = 72f;
         snowField.meshResolution = 520;
         snowField.textureResolution = 1024;
-        snowField.maxDepression = 0.46f;
-        snowField.ridgeHeight = 0.20f;
+        snowField.maxDepression = 0.38f;
+        snowField.ridgeHeight = 0.13f;
         snowField.powderNoiseStrength = 0.04f;
         snowField.baseReliefStrength = 0.105f;
         snowField.baseReliefScale = 1.45f;
@@ -75,19 +71,23 @@ public static class L14SnowDemoBuilder
         snowField.ClearSnowState();
 
         GameObject player = new GameObject("Player Snow Explorer");
-        player.transform.position = new Vector3(0f, 0.95f, 0f);
+        player.transform.position = new Vector3(0f, PlayerContactHeight, 0f);
 
         L14SnowWalker walker = player.AddComponent<L14SnowWalker>();
         walker.fieldLimit = 43f;
         walker.moveSpeed = 6.6f;
         walker.sprintMultiplier = 1.65f;
+        walker.contactHeight = PlayerContactHeight;
+        walker.jumpHeight = 2.2f;
+        walker.gravity = 18f;
 
         L14SnowInteractor playerInteractor = player.AddComponent<L14SnowInteractor>();
-        playerInteractor.radius = 1.02f;
-        playerInteractor.strength = 1.04f;
-        playerInteractor.ridgeStrength = 0.72f;
+        playerInteractor.canStamp = true;
+        playerInteractor.radius = 1.18f;
+        playerInteractor.strength = 1.08f;
+        playerInteractor.ridgeStrength = 0.62f;
         playerInteractor.hardness = 1.18f;
-        CreateDemoBall("Player Demo Ball", player.transform, new Vector3(0f, 0f, 0f), 0.72f, playerMaterial);
+        CreateDemoBall("Player Demo Ball", player.transform, new Vector3(0f, 0.02f, 0f), 0.96f, playerMaterial);
 
         CreateSkierInteractor(skierMaterial);
         CreateGroomerInteractor(groomerMaterial);
@@ -208,14 +208,15 @@ public static class L14SnowDemoBuilder
     private static void CreateSkierInteractor(Material bodyMaterial)
     {
         GameObject root = new GameObject("Auto Demo Ball - Figure Eight");
-        root.transform.position = new Vector3(-8f, 0.12f, -4f);
+        root.transform.position = new Vector3(-8f, FigureEightContactHeight, -4f);
 
-        CreateDemoBall("Figure Eight Demo Ball", root.transform, new Vector3(0f, 0.56f, 0f), 0.62f, bodyMaterial);
+        CreateDemoBall("Figure Eight Demo Ball", root.transform, new Vector3(0f, 0.02f, 0f), 0.9f, bodyMaterial);
 
         L14SnowInteractor interactor = root.AddComponent<L14SnowInteractor>();
-        interactor.radius = 1.12f;
-        interactor.strength = 0.95f;
-        interactor.ridgeStrength = 0.55f;
+        interactor.canStamp = true;
+        interactor.radius = 1.2f;
+        interactor.strength = 0.98f;
+        interactor.ridgeStrength = 0.5f;
         interactor.hardness = 1.35f;
 
         L14SnowAutoInteractor auto = root.AddComponent<L14SnowAutoInteractor>();
@@ -229,14 +230,15 @@ public static class L14SnowDemoBuilder
     private static void CreateGroomerInteractor(Material bodyMaterial)
     {
         GameObject root = new GameObject("Wide Track Demo Ball");
-        root.transform.position = new Vector3(10f, 0.18f, 8f);
+        root.transform.position = new Vector3(10f, WideTrackContactHeight, 8f);
 
-        CreateDemoBall("Wide Track Demo Ball Visual", root.transform, new Vector3(0f, 0.7f, 0f), 0.86f, bodyMaterial);
+        CreateDemoBall("Wide Track Demo Ball Visual", root.transform, new Vector3(0f, 0.02f, 0f), 1.16f, bodyMaterial);
 
         L14SnowInteractor interactor = root.AddComponent<L14SnowInteractor>();
-        interactor.radius = 1.9f;
-        interactor.strength = 1.35f;
-        interactor.ridgeStrength = 0.95f;
+        interactor.canStamp = true;
+        interactor.radius = 2.0f;
+        interactor.strength = 1.18f;
+        interactor.ridgeStrength = 0.64f;
         interactor.hardness = 1.05f;
 
         L14SnowAutoInteractor auto = root.AddComponent<L14SnowAutoInteractor>();
@@ -303,16 +305,16 @@ public static class L14SnowDemoBuilder
 
         material.SetColor("_BaseColor", new Color(0.86f, 0.92f, 0.96f, 1f));
         material.SetColor("_ShadowColor", new Color(0.42f, 0.55f, 0.72f, 1f));
-        material.SetColor("_PackedColor", new Color(0.62f, 0.72f, 0.86f, 1f));
-        material.SetColor("_RidgeColor", new Color(1f, 0.98f, 0.9f, 1f));
+        material.SetColor("_PackedColor", new Color(0.52f, 0.63f, 0.76f, 1f));
+        material.SetColor("_RidgeColor", new Color(0.91f, 0.96f, 0.98f, 1f));
         material.SetColor("_SubsurfaceColor", new Color(0.72f, 0.9f, 1f, 1f));
         material.SetTexture("_SnowBaseMap", textures.baseMap);
         material.SetTexture("_SnowNormalMap", textures.normalMap);
         material.SetTexture("_SnowHeightMap", textures.heightMap);
         material.SetTexture("_SnowRoughnessMap", textures.roughnessMap);
         material.SetTexture("_SnowSparkleMask", textures.sparkleMask);
-        material.SetFloat("_MaxDepression", 0.46f);
-        material.SetFloat("_RidgeHeight", 0.20f);
+        material.SetFloat("_MaxDepression", 0.38f);
+        material.SetFloat("_RidgeHeight", 0.13f);
         material.SetFloat("_PowderNoiseStrength", 0.04f);
         material.SetFloat("_BaseReliefStrength", 0.105f);
         material.SetFloat("_BaseReliefScale", 1.45f);

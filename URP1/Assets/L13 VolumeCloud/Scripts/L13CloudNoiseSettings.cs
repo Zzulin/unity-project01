@@ -1,6 +1,9 @@
 using UnityEngine;
 
+// CreateAssetMenu 特性：在 Unity 编辑器 Assets → Create 菜单中注册入口
+// menuName = 菜单路径（/ 表示子菜单层级），fileName = 右键创建时的默认文件名
 [CreateAssetMenu(menuName = "L13 VolumeCloud/Cloud Noise Settings", fileName = "L13CloudNoiseSettings")]
+// sealed 禁止继承；继承 ScriptableObject 使其可序列化为 .asset 文件，数据持久保存在项目中
 public sealed class L13CloudNoiseSettings : ScriptableObject
 {
     [Header("Generation")]
@@ -61,6 +64,9 @@ public sealed class L13CloudNoiseSettings : ScriptableObject
     [Range(0f, 1f)] public float detailAmountMin = 0.72f;
     [Range(0f, 2f)] public float detailAmountMax = 1.0f;
 
+    // OnValidate：Unity 回调，Inspector 中修改任何字段后自动调用，运行时不触发
+    // Mathf.Max(a, b) 取较大值，确保 max ≥ min，避免 MinMaxSlider 区间无效
+    // + 0.001f 留最小间距，防止 min 和 max 完全相等导致 smoothstep 出问题
     private void OnValidate()
     {
         coverageSmoothMax = Mathf.Max(coverageSmoothMin + 0.001f, coverageSmoothMax);
