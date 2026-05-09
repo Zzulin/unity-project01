@@ -14,6 +14,7 @@
 - 噪声类型：周期无缝 Shape Noise、Detail Noise、WeatherMap
 - 光照：低成本 Light Marching / 近似透光、Henyey-Greenstein 相位函数
 - 效果：银边、粉末感、风场动画、XZ 边界淡出
+- 盒体缩放：Transform Scale 只控制 Ray-Box 边界，噪声采样由独立 `Noise World Size` 控制，非等比缩放云盒时云纹理不随盒体拉伸。
 - 交互：运行时相机控制、HUD 参数预设
 - 场景内容：低角度太阳、远景地貌、后处理 Volume、中性蓝天 Procedural Sky
 
@@ -213,6 +214,18 @@ Shader 密度路径改为：
 - 密度范围
 - 细节侵蚀范围
 
+### 10. 盒体缩放与噪声拉伸解耦
+
+之前 Shader 使用盒体局部坐标 `pOS + 0.5` 直接采样 Shape/Detail/Weather 噪声，所以调整 `Raymarched Volume Cloud Box` 的 Transform Scale 时，云形会跟随盒体被压扁或拉长。
+
+当前改为：
+
+- Transform Scale 只决定 Ray-Box Intersection 的体积边界。
+- Shader 内新增 `_NoiseWorldSize`，作为独立的噪声采样世界尺寸。
+- `L13VolumeCloudController.noiseWorldSize` 每次渲染前通过 `MaterialPropertyBlock` 推送到 Shader。
+- 默认 `Noise World Size = (240, 76, 160)`，对应构建器生成的基准云盒尺寸。
+- 放大云盒时会显示更大范围的云场；缩小云盒时只裁剪云场范围，云团颗粒尺度保持一致。
+
 ## 当前验证记录
 
 旧线程中多次通过：
@@ -235,19 +248,6 @@ Shader 密度路径改为：
 - 高分辨率 Game View 下体积云依然会受像素数显著影响。
 
 ## 后续待办
-
-### 盒体缩放与噪声拉伸解耦
-
-当前最后一个未完成需求：
-
-> 体积云盒体大小需要可调整，但调整 Transform Scale 时，盒体内部云不能被拉伸。
-
-建议实现方向：
-
-- Transform Scale 只控制 Ray-Box 边界。
-- 噪声采样使用世界空间坐标，或独立的 `Cloud Volume Size / Noise World Scale` 参数。
-- Shader / Controller 中把“盒体世界尺寸”和“噪声采样尺度”解耦。
-- 非等比缩放盒体时，云纹理仍保持世界尺度一致。
 
 ### 效果继续优化方向
 

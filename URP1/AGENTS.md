@@ -6,7 +6,6 @@
 - 引用本仓库源码行号时，以 Rider 显示为准；命令行读取行号需按原始 LF 拆行或使用 `rg -n`，避免 PowerShell `Get-Content` 行号偏移。
 
 ## 可用技能
-- `unity-skills`：通过 REST API 自动化控制 Unity Editor。
 
 ## 学习参考仓库（跨端可直接识别）
 - `StarRailNPRShader`（GPL-3.0，已归档）  
@@ -35,10 +34,11 @@
 - L14 资源集中在 `Assets/L14 Snow/{Scripts,Shaders,Materials,Textures,Editor}`；最终预览截图为 `Assets/Screenshots/L14_InteractiveSnow_material_pipeline_v4_final_20260504.png`，后续截图不要复用旧文件名。
 - L14 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - `Assets/L13 VolumeCloud/L13.unity` 已生成光线步进体积云示例：体积盒 Ray March、周期无缝 3D Shape/Detail 噪声贴图、周期 WeatherMap、低成本光照步进阴影、银边/粉末感、风场动画、XZ 边界淡出、HUD 参数预设。
+- L13 云盒缩放已与噪声采样解耦：Transform Scale 只控制 Ray-Box 边界，Shader/Controller 通过独立 `Noise World Size` 保持云纹理世界尺度，非等比缩放云盒不会拉伸云团。
 - L13 资源集中在 `Assets/L13 VolumeCloud/{Scripts,Shaders,Materials,Editor}`；构建菜单为 `Tools/Volume Cloud/Build L13 Raymarched Volume Cloud Demo`。
 - L13 噪声资源集中在 `Assets/L13 VolumeCloud/Textures`，可通过 `Tools/Volume Cloud/Regenerate L13 Noise Textures` 重新生成并绑定。
 - L13 程序化噪声参数集中在 `Assets/L13 VolumeCloud/Settings/L13CloudNoiseSettings.asset`，Inspector 支持手动生成和可选延迟自动生成。
-- L13 已降到默认性能档：48 view steps / 4 light steps；HUD 的高质量预设不再超过 64/5，避免编辑器打开即卡顿。
+- L13 已降到默认性能档：16 view steps / 0 light steps；HUD 高质量预设为 24/1，避免编辑器打开即卡顿。
 - L13 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Unity Console Error 为 0。
 - `Assets/L12 grass/L12.unity` 已升级为 GPU-driven 草地示例：`DrawMeshInstancedIndirect`、chunk 分块、Compute Shader 视锥/距离/密度剔除、近中远 LOD、密度图控制、交互压草纹理。
 - L12 运行时相机已支持基础操作：右键拖拽旋转视角、滚轮缩放、中键拖拽平移观察中心、`R` 复位。
@@ -53,3 +53,7 @@
 - 计划已细化为“面试向一周 Demo”，每天包含：实现目标、验收产出、可讲述技术点。
 - `L11NprContextReporter` 已增强：新增活跃 URP Renderer/默认 RendererFeature 列表与 StarRailFeature 命中提示，并输出角色材质槽位统计（CharBody/Face/Hair、URP Lit、Embedded）。
 - 本地编译校验已通过：`dotnet build Assembly-CSharp-Editor.csproj`（0 error）。
+
+
+## UnitySkills
+- unity-skills: Unity Editor automation via REST API

@@ -8,6 +8,8 @@ using UnityEngine.SceneManagement;
 
 public static class L13VolumeCloudDemoBuilder
 {
+    private static readonly Vector3 DefaultCloudVolumeSize = new Vector3(240f, 76f, 160f);
+
     private const string Root = "Assets/L13 VolumeCloud";
     private const string ScenePath = Root + "/L13.unity";
     private const string CloudMaterialPath = Root + "/Materials/L13_RaymarchedCloud.mat";
@@ -62,7 +64,7 @@ public static class L13VolumeCloudDemoBuilder
         GameObject cloudVolume = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cloudVolume.name = "Raymarched Volume Cloud Box";
         cloudVolume.transform.position = new Vector3(0f, 58f, 8f);
-        cloudVolume.transform.localScale = new Vector3(240f, 76f, 160f);
+        cloudVolume.transform.localScale = DefaultCloudVolumeSize;
         MeshRenderer cloudRenderer = cloudVolume.GetComponent<MeshRenderer>();
         cloudRenderer.sharedMaterial = cloudMaterial;
         cloudRenderer.shadowCastingMode = ShadowCastingMode.Off;
@@ -81,8 +83,8 @@ public static class L13VolumeCloudDemoBuilder
         cloudController.density = 3.2f;
         cloudController.coverage = 0.6f;
         cloudController.weatherStrength = 0.72f;
-        cloudController.shapeScale = 10.5f;
-        cloudController.detailScale = 38f;
+        cloudController.shapeScale = 6f;
+        cloudController.detailScale = 18f;
         cloudController.detailStrength = 0.42f;
         cloudController.bottomSoftness = 0.18f;
         cloudController.topSoftness = 0.22f;
@@ -95,6 +97,7 @@ public static class L13VolumeCloudDemoBuilder
         cloudController.powderStrength = 1.15f;
         cloudController.windDirection = new Vector4(1f, 0f, 0.25f, 0f);
         cloudController.windSpeed = 7f;
+        cloudController.noiseWorldSize = DefaultCloudVolumeSize;
         cloudController.stepCount = 16;
         cloudController.lightStepCount = 0;
 
@@ -268,8 +271,9 @@ public static class L13VolumeCloudDemoBuilder
         material.SetFloat("_Density", 3.2f);
         material.SetFloat("_Coverage", 0.6f);
         material.SetFloat("_WeatherStrength", 0.72f);
-        material.SetFloat("_ShapeScale", 10.5f);
-        material.SetFloat("_DetailScale", 38f);
+        material.SetFloat("_ShapeScale", 6f);
+        material.SetFloat("_DetailScale", 18f);
+        material.SetVector("_NoiseWorldSize", DefaultCloudVolumeSize);
         material.SetFloat("_DetailStrength", 0.42f);
         material.SetFloat("_BottomSoftness", 0.18f);
         material.SetFloat("_TopSoftness", 0.22f);

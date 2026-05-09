@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: c4ac46dc366134736b68cfd84476bdb0, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 0ffaa0b7117ba8c47a9d05ae701d4b4d, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -576,6 +576,55 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1184430738}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1223951428
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1223951430}
+  - component: {fileID: 1223951429}
+  m_Layer: 0
+  m_Name: Global Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1223951429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223951428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: 2e28b5dc0c091304ca03562e18f29786, type: 2}
+--- !u!4 &1223951430
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223951428}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -184.52054, y: 93.4576, z: 151.3388}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1323884558
 GameObject:
   m_ObjectHideFlags: 0
@@ -778,13 +827,13 @@ MonoBehaviour:
   cloudColor: {r: 1, g: 0.91408354, b: 0.759434, a: 1}
   shadowColor: {r: 0.48, g: 0.56, b: 0.68, a: 1}
   ambientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
-  density: 3.2
-  coverage: 0.6
+  density: 10.35
+  coverage: 0.286
   weatherStrength: 0.72
-  shapeScale: 10.5
-  detailScale: 38
-  detailStrength: 0.42
-  bottomSoftness: 0.18
+  shapeScale: 1.63
+  detailScale: 3.43
+  detailStrength: 0.569
+  bottomSoftness: 0.357
   topSoftness: 0.22
   anvilBias: 0.62
   absorption: 2.6
@@ -794,10 +843,11 @@ MonoBehaviour:
   silverIntensity: 1.65
   powderStrength: 1.15
   windDirection: {x: 1, y: 0, z: 0.25, w: 0}
-  windSpeed: 7
-  stepCount: 16
+  windSpeed: 2.6
+  noiseWorldSize: {x: 240, y: 240, z: 240}
+  stepCount: 14
   lightStepCount: 3
-  opacity: 0.92
+  opacity: 1
 --- !u!23 &1726857895
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -857,8 +907,8 @@ Transform:
   m_GameObject: {fileID: 1726857893}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 58, z: 8}
-  m_LocalScale: {x: 240, y: 76, z: 160}
+  m_LocalPosition: {x: 0, y: 282.3, z: 8}
+  m_LocalScale: {x: 2354.9348, y: 170.75624, z: 3146.223}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1057,13 +1107,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1898409713}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.11361133, y: -0.60451496, z: 0.08765053, w: 0.7835634}
+  m_LocalRotation: {x: 0.13481331, y: -0.3389675, z: 0.049147975, w: 0.9297908}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 16.5, y: -75.3, z: 0}
+  m_LocalEulerAnglesHint: {x: 16.5, y: -40.06, z: 0}
 --- !u!114 &1898409716
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1098,3 +1148,4 @@ SceneRoots:
   - {fileID: 930666148}
   - {fileID: 52795661}
   - {fileID: 36674383}
+  - {fileID: 1223951430}

@@ -16,7 +16,11 @@ dotnet build Assembly-CSharp-Editor.csproj
 
 ## 场景架构
 
-每个课程场景在 `Assets/` 下都有独立文件夹，自包含着色器、材质和脚本：
+每个课程场景在 `Assets/` 下都有独立文件夹，自包含着色器、材质和脚本。L12/L13/L14 等复杂场景还包含 `Editor/`（构建器菜单）和 `Docs/`（制作流程文档）：
+
+每个复杂场景遵循统一结构：
+- `Editor/*Builder.cs` — 提供 `Tools/` 菜单一键重建场景、材质、灯光和默认参数
+- `Docs/*_Workflow.md` — 记录制作流程、当前状态、设计取舍和待办
 
 | 场景 | 技术 | 备注 |
 |------|------|------|
@@ -33,6 +37,7 @@ dotnet build Assembly-CSharp-Editor.csproj
 | `L11 NPR/` | StarRail NPR 完整链路 | 当前主线目标场景 |
 | `L12 grass/` | GPU Instancing 草地 | 含风场/交互弯折，构建菜单 `Tools/Grass/` |
 | `L13 VolumeCloud/` | 光线步进体积云 | 含 3D 噪声纹理/相位函数/银边，构建菜单 `Tools/Volume Cloud/` |
+| `L14 Snow/` | 交互雪地 | Compute Shader 写入高度/堆雪状态图，顶点位移，构建菜单 `Tools/Snow/` |
 | `LX learn computeShader/` | Compute Shader 基础 | ComputeBuffer 示例 |
 
 场景 L4 未使用（编号跳过）。
@@ -63,6 +68,7 @@ dotnet build Assembly-CSharp-Editor.csproj
 | `Plugins/StarRailNPRShader-main/` | StarRail NPR 着色器参考（GPL-3.0） |
 | `Assets/URPSimpleGenshinShaders-master/` | 原神风格着色器参考 |
 | `Assets/UnityURPToonLitShaderExample-master/` | URP Toon Lit 示例（MIT） |
+| `Plugins/LWGUI-main/` | Shader GUI 插件（材质面板 Attribute 驱动） |
 
 ## 着色器开发
 
@@ -95,3 +101,10 @@ dotnet build Assembly-CSharp-Editor.csproj
 - 默认中文输出
 - 任务进度同步到 `codex/tasks.md`，保持简洁
 - 引用源码行号以 `rg -n` 或 Rider 显示为准
+- 复杂场景的制作流程文档在 `Assets/L*/Docs/*.md`，记录当前状态、设计取舍和待办
+
+## 着色器文件命名
+
+- 场景着色器：`L{N}{DescriptiveName}.shader`（如 `L13RaymarchedVolumeCloud.shader`）
+- Compute Shader：`L{N}{DescriptiveName}.compute`（如 `L12GrassCull.compute`、`L14SnowSim.compute`）
+- 噪声设置资产：`Assets/L*/Settings/L*{Name}Settings.asset`

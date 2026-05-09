@@ -14,6 +14,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     private static readonly int WeatherStrengthId = Shader.PropertyToID("_WeatherStrength");
     private static readonly int ShapeScaleId = Shader.PropertyToID("_ShapeScale");
     private static readonly int DetailScaleId = Shader.PropertyToID("_DetailScale");
+    private static readonly int NoiseWorldSizeId = Shader.PropertyToID("_NoiseWorldSize");
     private static readonly int DetailStrengthId = Shader.PropertyToID("_DetailStrength");
     private static readonly int BottomSoftnessId = Shader.PropertyToID("_BottomSoftness");
     private static readonly int TopSoftnessId = Shader.PropertyToID("_TopSoftness");
@@ -43,8 +44,8 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     [Range(0f, 12f)] public float density = 3.2f;
     [Range(0f, 1f)] public float coverage = 0.6f;
     [Range(0f, 1f)] public float weatherStrength = 0.72f;
-    [Range(1f, 24f)] public float shapeScale = 10.5f;
-    [Range(4f, 96f)] public float detailScale = 38f;
+    [Range(0.05f, 8f)] public float shapeScale = 6f;
+    [Range(0.25f, 24f)] public float detailScale = 18f;
     [Range(0f, 1f)] public float detailStrength = 0.42f;
     [Range(0.01f, 0.45f)] public float bottomSoftness = 0.18f;
     [Range(0.01f, 0.45f)] public float topSoftness = 0.22f;
@@ -57,6 +58,9 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     [Range(0f, 3f)] public float powderStrength = 1.15f;
     public Vector4 windDirection = new Vector4(1f, 0f, 0.25f, 0f);
     [Range(0f, 30f)] public float windSpeed = 7f;
+
+    [Header("Sampling")]
+    public Vector3 noiseWorldSize = new Vector3(240f, 76f, 160f);
 
     [Header("Quality")]
     [Range(3, 96)] public int stepCount = 16;
@@ -97,6 +101,10 @@ public sealed class L13VolumeCloudController : MonoBehaviour
 
     private void OnValidate()
     {
+        noiseWorldSize = new Vector3(
+            Mathf.Max(0.001f, noiseWorldSize.x),
+            Mathf.Max(0.001f, noiseWorldSize.y),
+            Mathf.Max(0.001f, noiseWorldSize.z));
         CacheMaterialFromRenderer();
         PushProperties(true);
     }
@@ -170,6 +178,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         material.SetFloat(WeatherStrengthId, weatherStrength);
         material.SetFloat(ShapeScaleId, shapeScale);
         material.SetFloat(DetailScaleId, detailScale);
+        material.SetVector(NoiseWorldSizeId, ToNoiseWorldSizeVector());
         material.SetFloat(DetailStrengthId, detailStrength);
         material.SetFloat(BottomSoftnessId, bottomSoftness);
         material.SetFloat(TopSoftnessId, topSoftness);
@@ -200,6 +209,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         block.SetFloat(WeatherStrengthId, weatherStrength);
         block.SetFloat(ShapeScaleId, shapeScale);
         block.SetFloat(DetailScaleId, detailScale);
+        block.SetVector(NoiseWorldSizeId, ToNoiseWorldSizeVector());
         block.SetFloat(DetailStrengthId, detailStrength);
         block.SetFloat(BottomSoftnessId, bottomSoftness);
         block.SetFloat(TopSoftnessId, topSoftness);
@@ -217,6 +227,15 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         block.SetFloat(OpacityId, opacity);
         block.SetVector(SunDirectionId, new Vector4(sunDirection.x, sunDirection.y, sunDirection.z, 0f));
         block.SetColor(SunColorId, sunColor);
+    }
+
+    private Vector4 ToNoiseWorldSizeVector()
+    {
+        return new Vector4(
+            Mathf.Max(0.001f, noiseWorldSize.x),
+            Mathf.Max(0.001f, noiseWorldSize.y),
+            Mathf.Max(0.001f, noiseWorldSize.z),
+            0f);
     }
 }
 

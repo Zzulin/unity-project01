@@ -11,8 +11,9 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
         _Density ("Density", Range(0, 12)) = 3.2
         _Coverage ("Coverage", Range(0, 1)) = 0.6
         _WeatherStrength ("Weather Strength", Range(0, 1)) = 0.72
-        _ShapeScale ("Shape Scale", Range(1, 24)) = 7.5
-        _DetailScale ("Detail Scale", Range(4, 96)) = 38
+        _ShapeScale ("Shape Scale", Range(0.05, 8)) = 7.5
+        _DetailScale ("Detail Scale", Range(0.25, 24)) = 18
+        _NoiseWorldSize ("Noise World Size", Vector) = (240, 76, 160, 0)
         _DetailStrength ("Detail Strength", Range(0, 1)) = 0.42
         _BottomSoftness ("Bottom Softness", Range(0.01, 0.45)) = 0.18
         _TopSoftness ("Top Softness", Range(0.01, 0.45)) = 0.22
@@ -76,6 +77,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 float4 _SunDirectionWS;
                 float4 _SunColor;
                 float4 _WindDirection;
+                float4 _NoiseWorldSize;
                 float _Density;
                 float _Coverage;
                 float _WeatherStrength;
@@ -156,16 +158,20 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 }
 
                 float heightMask = HeightGradient(p01.y);
+                float3 pWS = TransformObjectToWorld(pOS);
+                float3 centerWS = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
+                float3 noiseWorldSize = max(abs(_NoiseWorldSize.xyz), float3(0.001, 0.001, 0.001));
+                float3 noiseCoord = (pWS - centerWS) / noiseWorldSize + 0.5;
                 float3 windDirection = normalize(_WindDirection.xyz + float3(0.0001, 0.0, 0.0001));
                 float3 wind = windDirection * (_Time.y * _WindSpeed * 0.015);
-                float2 weatherUV = p01.xz * 0.72 + wind.xz * 0.035;
+                float2 weatherUV = noiseCoord.xz * 0.72 + wind.xz * 0.035;
                 float4 weather = _WeatherMap.SampleLevel(sampler_WeatherMap, weatherUV, 0);
 
                 float coverage = saturate(_Coverage + (weather.r - 0.5) * _WeatherStrength);
                 float cloudType = weather.g;
                 float localDensity = lerp(0.65, 1.25, weather.b);
 
-                float3 shapeUVW = p01 * _ShapeScale * 0.12 + wind;
+                float3 shapeUVW = noiseCoord * _ShapeScale * 0.12 + wind;
                 float4 shapeNoise = _ShapeNoise.SampleLevel(sampler_ShapeNoise, shapeUVW, 0);
                 float baseShape = lerp(shapeNoise.r, shapeNoise.b, 0.72);
                 float cellularEdge = shapeNoise.g;
@@ -175,7 +181,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
 
                 if (includeDetail)
                 {
-                    float3 detailUVW = p01 * _DetailScale * 0.08 + wind * 2.2;
+                    float3 detailUVW = noiseCoord * _DetailScale * 0.08 + wind * 2.2;
                     float4 detailNoise = _DetailNoise.SampleLevel(sampler_DetailNoise, detailUVW, 0);
                     float detailErosion = lerp(detailNoise.r, detailNoise.b, saturate(p01.y));
                     body = saturate(body - (1.0 - detailErosion) * _DetailStrength * weather.a * saturate(body * 1.65));

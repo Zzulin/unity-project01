@@ -15,10 +15,11 @@
 - L14 资源位于 `Assets/L14 Snow/{Scripts,Shaders,Materials,Textures,Editor}`；最终预览截图位于 `Assets/Screenshots/L14_InteractiveSnow_material_pipeline_v4_final_20260504.png`，后续截图不要复用旧文件名。
 - L14 校验已通过：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - L13 体积云示例已完成：体积盒 Ray March、周期无缝 3D Shape/Detail 噪声贴图、周期 WeatherMap、低成本光照步进阴影、Henyey-Greenstein 相位、银边/粉末感、风场动画和 XZ 边界淡出。
+- L13 云盒缩放已与噪声采样解耦：Transform Scale 只控制 Ray-Box 边界，Shader/Controller 通过独立 `Noise World Size` 保持云纹理世界尺度，非等比缩放云盒不会拉伸云团。
 - L13 场景包含云体积盒、低角度太阳、远景地貌、后处理 Volume、相机控制和 HUD 预设；构建器菜单为 `Tools/Volume Cloud/Build L13 Raymarched Volume Cloud Demo`。
 - L13 噪声资源位于 `Assets/L13 VolumeCloud/Textures`；可通过 `Tools/Volume Cloud/Regenerate L13 Noise Textures` 重建。
 - L13 噪声生成参数已抽成 `Assets/L13 VolumeCloud/Settings/L13CloudNoiseSettings.asset`，可在 Inspector 调 Shape/Detail/Weather 程序化噪声参数；自定义 Inspector 提供手动生成按钮和可选延迟自动生成。
-- L13 已优化默认性能档：48 view steps / 4 light steps，光照阴影采样使用简化密度，编辑器非播放状态不再每帧写云材质。
+- L13 已优化默认性能档：16 view steps / 0 light steps，`Light Step Count = 0` 时走低成本近似透光，编辑器非播放状态不再每帧写云材质。
 - 当前验证：`dotnet build Assembly-CSharp.csproj`、`dotnet build Assembly-CSharp-Editor.csproj` 均 0 error；Unity Console Error 为 0。
 - L12 草地示例已升级：`DrawMeshInstancedIndirect` 替代 Procedural Draw，Compute Shader 使用 AppendBuffer 输出 3 档 LOD 可见草簇，args buffer 驱动间接绘制。
 - L12 现在包含 chunk 分块、CPU chunk 粗剔除、GPU 视锥/距离/密度图剔除、`Assets/L12 grass/Textures/L12_GrassDensity.asset` 密度图、交互压草纹理和 HUD 状态展示。
