@@ -18,9 +18,12 @@
 - `StarRailNPRShader`：`Plugins/StarRailNPRShader-main`
 
 ## 项目任务概览
-- 目标场景：`Assets/L11 NPR/L11.unity`
-- 当前目标：打通 StarRail NPR 角色渲染联调链路（管线、RendererFeature、材质、Shader）
+- 目标场景：`Assets/LXII game 整合/game.unity`
+- 当前目标：用 Claude Code 单 CLI duo-agent 工作流推进 LXII 游戏整合 Demo，整合 L11/L10.9 NPR、LXI 动作、L12 草地、L13 体积云、L14 雪地。
 - 关键路径：
+  - Claude 工作流：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`
+  - LXII 场景：`Assets/LXII game 整合/game.unity`
+  - 动作资源：`Assets/LXI 动作测试/*`
   - 管线资源：`Assets/Settings/NPR Render Pipeline.asset`
   - Renderer：`Assets/Settings/NPR Render Pipeline Asset_Renderer.asset`
   - Feature：`Plugins/StarRailNPRShader-main/Runtime/StarRailRendererFeature.cs`
@@ -28,6 +31,7 @@
   - 快速核对工具：`Assets/L11 NPR/Editor/L11NprContextReporter.cs`（菜单 `Tools/NPR/输出 L11 上下文报告`）
 
 ## 当前结论（短版）
+- 已新增 Claude Code 单 CLI duo-agent 工作流文档：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`；后续先让 Claude 做资源盘点，再创建 LXII 可重建场景 Builder。
 - `Assets/L14 Snow/L14.unity` 已生成可交互雪地 Demo：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移；雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线，多尺度高度/法线混合，动态白色流动点和方块雪晶已移除。
 - L14 雪面光照已加入包裹漫反射、浅层透光、掠射边缘光和静态视角相关雪晶闪点；压痕区域同步改变高度、法线响应、压实色与粗糙度，压过区域会降低雪晶闪点并压低边缘堆雪亮度，避免“白色软管”感。
 - L14 场景已收敛为纯技术 Demo：玩家和两个自动移动体均改为可见小球；每个小球只保留 1 个 `L14SnowInteractor` 压痕源，玩家不再生成左右脚 stamp，所以小球轨迹是单条圆形压痕；构建菜单为 `Tools/Snow/Build L14 Interactive Snow Demo`。

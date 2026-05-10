@@ -1,6 +1,7 @@
 # 当前任务（精简）
 
 ## 当前主线
+- `Assets/LXII game 整合/game.unity` 已确定为下一阶段整合型游戏 Demo 目标：整合 L11/L10.9 NPR、LXI 动作、L12 草地、L13 体积云、L14 雪地。
 - `Assets/L14 Snow/L14.unity` 已作为可交互雪地 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L13 VolumeCloud/L13.unity` 已作为光线步进体积云 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L12 grass/L12.unity` 已作为大规模可交互草地 Demo 场景落地，当前可进入 Play Mode 验证。
@@ -8,6 +9,7 @@
 - `Assets/L11 NPR/L11.unity` 的 StarRail NPR 完整链路仍作为后续任务保留，暂不继续沿旧的一周冲刺计划推进。
 
 ## 已完成结论
+- 已新增 Claude Code 单 CLI duo-agent 工作流文档：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`，用于按 Director/Builder 双角色推进 LXII 游戏整合。
 - L14 雪地示例已完成：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移，片元阶段用高度梯度重建法线。
 - L14 雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线；Shader 使用多尺度高度/法线混合、压实色与粗糙度联动，静态 SparkleMask + 视角高光实现雪晶闪点，动态白色流动点和方块雪晶已移除。
 - L14 压痕材质响应已调优：压过区域更暗、更粗糙、少闪点，边缘堆雪高度和亮度降低，轨迹从偏“白色软管”改为更克制的压实凹槽。
@@ -33,6 +35,7 @@
 - 当前验证：Play 模式贴近角色可见柔性颗粒消隐；Console Error 为 0；`L10.9` 场景未变脏。
 
 ## 当前改动落点
+- `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`
 - `Assets/L14 Snow/L14.unity`
 - `Assets/L14 Snow/Scripts/*`
 - `Assets/L14 Snow/Shaders/L14SnowSurface.shader`
@@ -63,6 +66,7 @@
 - `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Face and face_eye.mat`
 
 ## 待办（只保留未完成）
+- LXII 下一步：让 Claude Code 先按 duo-agent 文档做资源盘点，不要先写代码；随后创建 `Tools/LXII/Build Integrated Game Demo` 的可重建场景骨架。
 - 录制/截图一组 L10.9 演示视角：中景、近景、贴近溶解触发前后。
 - 视效果微调近距离溶解参数：`_NearDissolveStart`、`_NearDissolveEnd`、`_NearDissolvePatternScale`、边缘颜色/强度。
 - 若要重新做“整体同步消散”，不要沿用已回退的 ModelRadius/LocalWeight/Sync 方案，需重新设计更稳定的角色级方案。

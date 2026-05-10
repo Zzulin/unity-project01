@@ -38,6 +38,7 @@ dotnet build Assembly-CSharp-Editor.csproj
 | `L12 grass/` | GPU Instancing 草地 | 含风场/交互弯折，构建菜单 `Tools/Grass/` |
 | `L13 VolumeCloud/` | 光线步进体积云 | 含 3D 噪声纹理/相位函数/银边，构建菜单 `Tools/Volume Cloud/` |
 | `L14 Snow/` | 交互雪地 | Compute Shader 写入高度/堆雪状态图，顶点位移，构建菜单 `Tools/Snow/` |
+| `LXII game 整合/` | 游戏整合 Demo | 目标整合 L11/L10.9 NPR、LXI 动作、L12 草地、L13 体积云、L14 雪地；Claude Code 工作流见 `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` |
 | `LX learn computeShader/` | Compute Shader 基础 | ComputeBuffer 示例 |
 
 场景 L4 未使用（编号跳过）。
@@ -102,6 +103,7 @@ dotnet build Assembly-CSharp-Editor.csproj
 - 任务进度同步到 `codex/tasks.md`，保持简洁
 - 引用源码行号以 `rg -n` 或 Rider 显示为准
 - 复杂场景的制作流程文档在 `Assets/L*/Docs/*.md`，记录当前状态、设计取舍和待办
+- 处理 LXII 整合任务时，先阅读 `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`，按 Director/Builder 双角色轮班推进。
 
 ## 着色器文件命名
 

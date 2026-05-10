@@ -1,0 +1,16 @@
+
+Version 1.3
+ * Added bug fix by Joris V. (added ability to display RenderTextures)
+ * Bug fixes
+
+Version 1.2
+ * Added ability to save an image of the UV layout
+ * Added ability to inspect uv values
+
+Version 1.1
+ * Bug fixes
+ * UI improvements
+
+Version 1.0
+ * Initial release
+
