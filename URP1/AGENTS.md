@@ -19,19 +19,17 @@
 
 ## 项目任务概览
 - 目标场景：`Assets/LXII game 整合/game.unity`
-- 当前目标：用 Claude Code 单 CLI duo-agent 工作流推进 LXII 游戏整合 Demo，整合 L11/L10.9 NPR、LXI 动作、L12 草地、L13 体积云、L14 雪地。
+- 当前目标：用 Claude Code 单 CLI duo-agent 工作流推进 LXII 游戏整合 Demo；LXII 不使用 L11，玩家固定为 L10.9 妮露 FBX，需补 Humanoid Avatar/骨骼绑定并使用 LXI 动作。
 - 关键路径：
   - Claude 工作流：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`
   - LXII 场景：`Assets/LXII game 整合/game.unity`
+  - 妮露模型：`Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx`
+  - 妮露材质：`Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/{Body 1,Body 2,Hair 1,Face and face_eye}.mat`
   - 动作资源：`Assets/LXI 动作测试/*`
-  - 管线资源：`Assets/Settings/NPR Render Pipeline.asset`
-  - Renderer：`Assets/Settings/NPR Render Pipeline Asset_Renderer.asset`
-  - Feature：`Plugins/StarRailNPRShader-main/Runtime/StarRailRendererFeature.cs`
-  - 角色 Shader：`Plugins/StarRailNPRShader-main/Shaders/Character/*`
-  - 快速核对工具：`Assets/L11 NPR/Editor/L11NprContextReporter.cs`（菜单 `Tools/NPR/输出 L11 上下文报告`）
+  - 场景系统：`Assets/L12 grass/*`、`Assets/L13 VolumeCloud/*`、`Assets/L14 Snow/*`
 
 ## 当前结论（短版）
-- 已新增 Claude Code 单 CLI duo-agent 工作流文档：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`；后续先让 Claude 做资源盘点，再创建 LXII 可重建场景 Builder。
+- LXII 方案已修正：不使用 L11/StarRail；玩家必须是 `NPC_Avatar_Girl_Sword_Nilou.fbx`，保留 L10.9 妮露材质，并补 Humanoid Avatar 后重定向 LXI 动作。
 - `Assets/L14 Snow/L14.unity` 已生成可交互雪地 Demo：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移；雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线，多尺度高度/法线混合，动态白色流动点和方块雪晶已移除。
 - L14 雪面光照已加入包裹漫反射、浅层透光、掠射边缘光和静态视角相关雪晶闪点；压痕区域同步改变高度、法线响应、压实色与粗糙度，压过区域会降低雪晶闪点并压低边缘堆雪亮度，避免“白色软管”感。
 - L14 场景已收敛为纯技术 Demo：玩家和两个自动移动体均改为可见小球；每个小球只保留 1 个 `L14SnowInteractor` 压痕源，玩家不再生成左右脚 stamp，所以小球轨迹是单条圆形压痕；构建菜单为 `Tools/Snow/Build L14 Interactive Snow Demo`。
@@ -52,10 +50,10 @@
 - L10.9 运行时相机漫游与最早版近距离屏幕抖动溶解保留；后续“整体同步/模型范围”重做方案效果不理想，已 discard 回退，不作为当前基线。
 - Graphics 默认 RP 指向 `NPR Render Pipeline.asset`，当前质量档 `High` 指向 `UniversalRP-HighQuality.asset`。
 - `0_mesh_mesh` 材质槽位以场景内嵌 `(Instance)` 为主，`hair` 是 `CharHair`，多数身体/面部槽位仍是 URP Lit。
-- `CharBody.shader` 还未稳定进入当前主体材质链路，改 Shader 前要先确认材质治理策略。
-- 学习与实现基线收敛为 2 个仓库：`UnityURPToonLitShaderExample` + `StarRailNPRShader`；执行节奏为 1 周冲刺（Demo 优先，不追全特性完美），以 `codex/tasks.md` 为准。
+- L11/StarRail 相关结论只作为历史记录；LXII 当前不使用 L11、StarRailRendererFeature、CharBody/CharFace/CharHair。
+- 学习参考仓库仍可作为历史资料保留，但 LXII 当前实现基线改为 L10.9 妮露 + LXI 动作 + L12/L13/L14 场景系统。
 - 计划已细化为“面试向一周 Demo”，每天包含：实现目标、验收产出、可讲述技术点。
-- `L11NprContextReporter` 已增强：新增活跃 URP Renderer/默认 RendererFeature 列表与 StarRailFeature 命中提示，并输出角色材质槽位统计（CharBody/Face/Hair、URP Lit、Embedded）。
+- `L11NprContextReporter` 属于 L11 历史工具，LXII 当前不要调用。
 - 本地编译校验已通过：`dotnet build Assembly-CSharp-Editor.csproj`（0 error）。
 
 

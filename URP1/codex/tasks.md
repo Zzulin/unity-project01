@@ -1,7 +1,7 @@
 # 当前任务（精简）
 
 ## 当前主线
-- `Assets/LXII game 整合/game.unity` 已确定为下一阶段整合型游戏 Demo 目标：整合 L11/L10.9 NPR、LXI 动作、L12 草地、L13 体积云、L14 雪地。
+- `Assets/LXII game 整合/game.unity` 当前方案已修正：不使用 L11/StarRail；玩家固定为 L10.9 妮露 `Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx`，保留其 L10.9 材质，并补 Humanoid Avatar 后使用 LXI 动作。
 - `Assets/L14 Snow/L14.unity` 已作为可交互雪地 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L13 VolumeCloud/L13.unity` 已作为光线步进体积云 Demo 场景落地，当前可进入 Play Mode 验证。
 - `Assets/L12 grass/L12.unity` 已作为大规模可交互草地 Demo 场景落地，当前可进入 Play Mode 验证。
@@ -9,7 +9,7 @@
 - `Assets/L11 NPR/L11.unity` 的 StarRail NPR 完整链路仍作为后续任务保留，暂不继续沿旧的一周冲刺计划推进。
 
 ## 已完成结论
-- 已新增 Claude Code 单 CLI duo-agent 工作流文档：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`，用于按 Director/Builder 双角色推进 LXII 游戏整合。
+- 已修正 Claude Code 单 CLI duo-agent 工作流文档：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`，明确 LXII 不用 L11，下一优先级是妮露 Humanoid Avatar/骨骼绑定 + LXI 动作重定向。
 - L14 雪地示例已完成：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移，片元阶段用高度梯度重建法线。
 - L14 雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线；Shader 使用多尺度高度/法线混合、压实色与粗糙度联动，静态 SparkleMask + 视角高光实现雪晶闪点，动态白色流动点和方块雪晶已移除。
 - L14 压痕材质响应已调优：压过区域更暗、更粗糙、少闪点，边缘堆雪高度和亮度降低，轨迹从偏“白色软管”改为更克制的压实凹槽。
@@ -65,13 +65,19 @@
 - `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Hair 1.mat`
 - `Assets/L10.9 learnNPR/43 妮露/Nilou/tex4.23/材质/Face and face_eye.mat`
 
+## LXII 进展（按新约束修正后）
+- 妮露 FBX Avatar 已修正：`animationType` 2→3（Humanoid），`avatarSetup` 0→1，Unity reimport 无 Avatar 警告。
+- Builder 已修正：生成妮露模型（非 Capsule/HumanM），绑定 4 个 L10.9 Toon 材质。
+- 动画已补全三态：Idle、Run、Action（Space 触发），均来自 LXI HumanM 动画。
+- L11/StarRail 未使用（符合硬约束）。
+- 验证：dotnet build 均 0 error，Unity Console 0 errors 0 warnings。
+
 ## 待办（只保留未完成）
-- LXII 下一步：让 Claude Code 先按 duo-agent 文档做资源盘点，不要先写代码；随后创建 `Tools/LXII/Build Integrated Game Demo` 的可重建场景骨架。
-- 录制/截图一组 L10.9 演示视角：中景、近景、贴近溶解触发前后。
-- 视效果微调近距离溶解参数：`_NearDissolveStart`、`_NearDissolveEnd`、`_NearDissolvePatternScale`、边缘颜色/强度。
-- 若要重新做“整体同步消散”，不要沿用已回退的 ModelRadius/LocalWeight/Sync 方案，需重新设计更稳定的角色级方案。
-- 若继续 L11：先重新执行 `Tools/NPR/输出 L11 上下文报告`，再用 Frame Debugger 验证 `HSRForward1/2/3`、`HSRHair*`、`HSROutline` 是否命中。
-- 若继续 StarRail 材质治理：先确认目标角色与材质策略，再决定是否切到 `CharBody/CharFace/CharHair`，不要沿用旧 Day 3 计划直接改。
+- LXII：Play Mode 验证妮露 Avatar 能否正确播放 LXI 动画（需人工视觉确认）。
+- LXII：集成 L10.9 近距离屏幕抖动溶解 shader。
+- LXII 进阶：终点触发器（穿过草地区→雪地区→云下终点）。
+- LXII 进阶：双脚 stamp 交互。
+- 录制/截图一组 LXII 演示视角。
 
 ## 维护规则
 - 每次只记录“最新结论 + 未完成事项”，不要写长过程。

@@ -34,11 +34,11 @@ dotnet build Assembly-CSharp-Editor.csproj
 | `L9 lightmap/` | 光照贴图 | |
 | `L10 sss/` | 次表面散射 | |
 | `L10.9 learnNPR/` | NPR 角色渲染 + 屏幕溶解 | 含多个角色模型（妮露/阮梅/刻莱诺/荧），shader/shader advance 两个着色器变体 |
-| `L11 NPR/` | StarRail NPR 完整链路 | 当前主线目标场景 |
+| `L11 NPR/` | StarRail NPR 完整链路 | 非 LXII 当前方案输入，LXII 不使用 L11 |
 | `L12 grass/` | GPU Instancing 草地 | 含风场/交互弯折，构建菜单 `Tools/Grass/` |
 | `L13 VolumeCloud/` | 光线步进体积云 | 含 3D 噪声纹理/相位函数/银边，构建菜单 `Tools/Volume Cloud/` |
 | `L14 Snow/` | 交互雪地 | Compute Shader 写入高度/堆雪状态图，顶点位移，构建菜单 `Tools/Snow/` |
-| `LXII game 整合/` | 游戏整合 Demo | 目标整合 L11/L10.9 NPR、LXI 动作、L12 草地、L13 体积云、L14 雪地；Claude Code 工作流见 `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` |
+| `LXII game 整合/` | 游戏整合 Demo | 不使用 L11；玩家固定为 `Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx`，保留其 L10.9 材质，补 Humanoid Avatar 后接 LXI 动作；工作流见 `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` |
 | `LX learn computeShader/` | Compute Shader 基础 | ComputeBuffer 示例 |
 
 场景 L4 未使用（编号跳过）。
@@ -104,6 +104,7 @@ dotnet build Assembly-CSharp-Editor.csproj
 - 引用源码行号以 `rg -n` 或 Rider 显示为准
 - 复杂场景的制作流程文档在 `Assets/L*/Docs/*.md`，记录当前状态、设计取舍和待办
 - 处理 LXII 整合任务时，先阅读 `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`，按 Director/Builder 双角色轮班推进。
+- LXII 当前硬约束：不要使用 `Assets/L11 NPR/**` 或 StarRail 插件内容；优先处理 L10.9 妮露模型的 Humanoid Avatar/骨骼绑定与 LXI 动作重定向。
 
 ## 着色器文件命名
 
