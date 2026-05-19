@@ -1,0 +1,33 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+*.cs text
+*.shader text
+*.compute text
+*.cginc text
+*.hlsl text
+*.json text
+*.md text
+*.asmdef text
+*.asmref text
+
+*.meta text
+*.unity text
+*.prefab text
+*.asset text
+*.mat text
+*.anim text
+*.controller text
+*.overrideController text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.fbx binary
+*.wav binary
+*.mp3 binary
+*.dll binary
+*.exe binary

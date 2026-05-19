@@ -59,3 +59,6 @@
 
 ## UnitySkills
 - unity-skills: Unity Editor automation via REST API
+
+## Git baseline
+- 2026-05-19: 仓库维持单一 `main` 主线，不拆 `windows/mac` 长期分支；已补 `.gitignore` / `.gitattributes` 基线，并将 `.dotnet`、`.dotnet_home`、`.trae` 这类本机环境文件从 Git 跟踪中移除。

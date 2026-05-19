@@ -92,3 +92,6 @@
 ## 维护规则
 - 每次只记录“最新结论 + 未完成事项”，不要写长过程。
 - 完成一个待办就勾选或删除过时项。
+
+## Git baseline
+- 2026-05-19: 保持单一 `main` 主线，不拆 `windows/mac` 长期分支；已补 `.gitignore` / `.gitattributes`，并清理 `.dotnet`、`.dotnet_home`、`.trae` 的 Git 跟踪。

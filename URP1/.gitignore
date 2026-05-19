@@ -1,0 +1,33 @@
+# Unity generated folders
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Mm]emoryCaptures/
+/UserSettings/
+
+# Generated project files
+*.csproj
+*.sln
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# IDE and tool caches
+/.idea/
+/.vs/
+/.vscode/
+/.trae/
+/.dotnet/
+/.dotnet_home/
+
+# OS cruft
+.DS_Store
+Thumbs.db
