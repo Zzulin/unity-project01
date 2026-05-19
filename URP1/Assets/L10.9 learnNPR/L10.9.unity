@@ -559,6 +559,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boost: 1.5
   positionLerpTime: 0.29
+  middleMousePanSensitivity: 0.015
+  scrollZoomSensitivity: 0.08
   mouseSensitivity: 180
   mouseSensitivityCurve:
     serializedVersion: 2
@@ -1172,7 +1174,7 @@ MonoBehaviour:
     m_ColorSpace: 0
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  tex: {fileID: 994812368}
+  tex: {fileID: 1868984588}
 --- !u!4 &538932143
 Transform:
   m_ObjectHideFlags: 0
@@ -5397,54 +5399,6 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
---- !u!28 &994812368
-Texture2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 2
-  m_Width: 128
-  m_Height: 1
-  m_CompleteImageSize: 1020
-  m_MipsStripped: 0
-  m_TextureFormat: 4
-  m_MipCount: 8
-  m_IsReadable: 1
-  m_IsPreProcessed: 0
-  m_IgnoreMipmapLimit: 0
-  m_MipmapLimitGroupName: 
-  m_StreamingMipmaps: 0
-  m_StreamingMipmapsPriority: 0
-  m_VTOnly: 0
-  m_AlphaIsTransparency: 0
-  m_ImageCount: 1
-  m_TextureDimension: 2
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_LightmapFormat: 0
-  m_ColorSpace: 1
-  m_PlatformBlob: 
-  image data: 1020
-  _typelessdata: 8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8f8f8fff989898ffa0a0a0ffa9a9a9ffb2b2b2ffbababaffc3c3c3ffccccccffd4d4d4ffddddddffe5e5e5ffeeeeeefff7f7f7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff939393ffa4a4a4ffb6b6b6ffc7c7c7ffd8d8d8ffe9e9e9fffbfbfbffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff9b9b9bffbebebeffe0e0e0fffdfdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8affacacacffeeeeeeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff9b9b9bfff6f6f6ffffffffffffffffffffffffffffffffff8a8a8affc8c8c8ffffffffffffffffffa9a9a9ffffffffffd4d4d4ff
-  m_StreamData:
-    serializedVersion: 2
-    offset: 0
-    size: 0
-    path: 
 --- !u!21 &1018510605
 Material:
   serializedVersion: 8
@@ -198026,6 +197980,54 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
+--- !u!28 &1868984588
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_ForcedFallbackFormat: 4
+  m_DownscaleFallback: 0
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 2
+  m_Width: 128
+  m_Height: 1
+  m_CompleteImageSize: 1020
+  m_MipsStripped: 0
+  m_TextureFormat: 4
+  m_MipCount: 8
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 0
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_LightmapFormat: 0
+  m_ColorSpace: 1
+  m_PlatformBlob: 
+  image data: 1020
+  _typelessdata: 8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8f8f8fff989898ffa0a0a0ffa9a9a9ffb2b2b2ffbababaffc3c3c3ffccccccffd4d4d4ffddddddffe5e5e5ffeeeeeefff7f7f7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff939393ffa4a4a4ffb6b6b6ffc7c7c7ffd8d8d8ffe9e9e9fffbfbfbffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8aff9b9b9bffbebebeffe0e0e0fffdfdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff8a8a8aff8a8a8aff8a8a8affacacacffeeeeeeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8a8a8aff8a8a8aff9b9b9bfff6f6f6ffffffffffffffffffffffffffffffffff8a8a8affc8c8c8ffffffffffffffffffa9a9a9ffffffffffd4d4d4ff
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
 --- !u!1 &1870194540
 GameObject:
   m_ObjectHideFlags: 0

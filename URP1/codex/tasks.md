@@ -10,6 +10,14 @@
 
 ## 已完成结论
 - 已修正 Claude Code 单 CLI duo-agent 工作流文档：`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`，明确 LXII 不用 L11，下一优先级是妮露 Humanoid Avatar/骨骼绑定 + LXI 动作重定向。
+- 已重写 LXII 工作流文档结构：补充当前仓库真实快照、阶段完成标准、验证矩阵和启动 Prompt，避免把目标状态误写成已落地状态。
+- 已新增 `Tools/LXII/Setup Nilou Humanoid In Game Scene` 编辑器工具：会校验/必要时重导入妮露 FBX 为 Humanoid，验证 Avatar 有效性，并把妮露实例 + Animator + 固定材质写入 `Assets/LXII game 整合/game.unity`。
+- 已在 Unity 2022 中执行 `Tools/LXII/Setup Nilou Humanoid In Game Scene` 和 `Tools/LXII/Validate Nilou Humanoid Avatar`：`game.unity` 已写入 `LXII Nilou Player`，Avatar 校验通过。
+- 已修正 LXII 妮露初版材质替换漏网项：`EffectMesh / EyeStar` 现在也会落到 `Face and face_eye.mat`，衣服发粉问题已消失。
+- 已将妮露 Humanoid 从“自动猜测映射”改成“显式主干映射”：`NPC_Avatar_Girl_Sword_Nilou.fbx.meta` 现在明确写入 Hips / Spine / Chest / UpperChest / Neck / Head / 四肢骨骼名称，避免 Unity 自动映射漂移。
+- 已新增 `Tools/LXII/Setup LXI Animation Test In Game Scene`：会把 LXI 的 `Idle / Run / Action` 三个 Female Humanoid clip 接入 `game.unity`，生成 `LXII_Nilou_LXI_Test.controller`，并给 `LXII Nilou Player` 挂上 `LXIIAnimationTestDriver`。
+- 已在 Unity 2022 的 `game.unity` 中完成 LXI 动作测试：`1=Idle`、`2=Run`、`3=Action` 实测可切换，当前机位下可直接观察胯部、肩颈和头发链表现。
+- 已调整 LXII 测试机位：`Main Camera` 固定为 `Position (0, 1.18, -3.6)`、`Rotation (5, 0, 0)`、`FOV 40`，用于人物正面动作验证。
 - L14 雪地示例已完成：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移，片元阶段用高度梯度重建法线。
 - L14 雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线；Shader 使用多尺度高度/法线混合、压实色与粗糙度联动，静态 SparkleMask + 视角高光实现雪晶闪点，动态白色流动点和方块雪晶已移除。
 - L14 压痕材质响应已调优：压过区域更暗、更粗糙、少闪点，边缘堆雪高度和亮度降低，轨迹从偏“白色软管”改为更克制的压实凹槽。
@@ -36,6 +44,7 @@
 
 ## 当前改动落点
 - `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`
+- `Assets/LXII game 整合/Editor/LXIINilouHumanoidSetup.cs`
 - `Assets/L14 Snow/L14.unity`
 - `Assets/L14 Snow/Scripts/*`
 - `Assets/L14 Snow/Shaders/L14SnowSurface.shader`
@@ -68,12 +77,13 @@
 ## LXII 进展（按新约束修正后）
 - 妮露 FBX Avatar 已修正：`animationType` 2→3（Humanoid），`avatarSetup` 0→1，Unity reimport 无 Avatar 警告。
 - Builder 已修正：生成妮露模型（非 Capsule/HumanM），绑定 4 个 L10.9 Toon 材质。
-- 动画已补全三态：Idle、Run、Action（Space 触发），均来自 LXI HumanM 动画。
+- 动画测试已补全三态：Idle、Run、Action，当前使用 LXI Female Humanoid 动画，场景内通过 `1/2/3` 切换。
+- 动作测试相机已固化：正面中景机位，便于观察胯部和头发链。
 - L11/StarRail 未使用（符合硬约束）。
-- 验证：dotnet build 均 0 error，Unity Console 0 errors 0 warnings。
+- 验证：Unity 2022 中 `game.unity` 已实测切换 Idle / Run / Action；`dotnet build` 本轮未拿到稳定结果，暂以 Unity 场景内验证为准。
 
 ## 待办（只保留未完成）
-- LXII：Play Mode 验证妮露 Avatar 能否正确播放 LXI 动画（需人工视觉确认）。
+- LXII：继续人工复核 Avatar Configuration 中胯部/头发链观感是否仍异常，必要时再细化到 Pose 或具体骨骼节点。
 - LXII：集成 L10.9 近距离屏幕抖动溶解 shader。
 - LXII 进阶：终点触发器（穿过草地区→雪地区→云下终点）。
 - LXII 进阶：双脚 stamp 交互。
