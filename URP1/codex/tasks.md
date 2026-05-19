@@ -95,3 +95,4 @@
 
 ## Git baseline
 - 2026-05-19: 保持单一 `main` 主线，不拆 `windows/mac` 长期分支；已补 `.gitignore` / `.gitattributes`，并清理 `.dotnet`、`.dotnet_home`、`.trae` 的 Git 跟踪。
+- 2026-05-19: 已复查 `URP1/.gitignore`；保留跨机器共享的 AI 配置目录，不忽略 `.claude/`、`.mcp.json`、`.trae/`，其余补充 `.gradle/`、`.consulo/`、`*.suo`、`*.tmp`、`*.userprefs`、`*.unityproj`、`*.slnx`、崩溃日志与 `Recordings/` 等本机产物规则。

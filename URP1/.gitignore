@@ -11,7 +11,12 @@
 # Generated project files
 *.csproj
 *.sln
+*.slnx
+*.unityproj
 *.user
+*.userprefs
+*.suo
+*.tmp
 *.pidb
 *.booproj
 *.svd
@@ -19,15 +24,29 @@
 *.mdb
 *.opendb
 *.VC.db
+*.DotSettings.user
+*.log
 
 # IDE and tool caches
 /.idea/
 /.vs/
 /.vscode/
-/.trae/
+/.consulo/
+/.gradle/
 /.dotnet/
 /.dotnet_home/
 
+# Unity export and crash artifacts
+/ExportedObj/
+/[Rr]ecordings/
+sysinfo.txt
+mono_crash.*
+
 # OS cruft
 .DS_Store
+._*
+.AppleDouble
+.LSOverride
+Icon?
+ehthumbs.db
 Thumbs.db
