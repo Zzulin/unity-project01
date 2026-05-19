@@ -95,4 +95,5 @@
 
 ## Git baseline
 - 2026-05-19: 保持单一 `main` 主线，不拆 `windows/mac` 长期分支；已补 `.gitignore` / `.gitattributes`，并清理 `.dotnet`、`.dotnet_home`、`.trae` 的 Git 跟踪。
-- 2026-05-19: 已复查 `URP1/.gitignore`；保留跨机器共享的 AI 配置目录，不忽略 `.claude/`、`.mcp.json`、`.trae/`，其余补充 `.gradle/`、`.consulo/`、`*.suo`、`*.tmp`、`*.userprefs`、`*.unityproj`、`*.slnx`、崩溃日志与 `Recordings/` 等本机产物规则。
+- 2026-05-19: 已将忽略规则收敛为仓库根单一 `.gitignore`；取消上层对 `.claude/`、`.mcp.json` 的忽略，保留跨机器共享 AI 配置，并合并 `URP1/.gitignore` 的本机产物规则后删除子目录重复文件。
+- 2026-05-20: 已进一步精简仓库根 `.gitignore`，移除当前仓库未使用的 Addressables、Visual Scripting、Blender 备份、移动端包产物等模板项，仅保留 Unity 生成目录、工程文件、IDE 本机缓存、崩溃/导出残留与系统垃圾文件规则。

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp *)",
+      "Read(//Users/xiaofu/Documents/Codex/**)",
+      "Read(//Users/xiaofu/Documents/Codex/config/**)",
+      "mcp__zai-mcp-server__analyze_image",
+      "mcp__mimo-tools__mimo_web_search",
+      "mcp__web-search-prime__web_search_prime",
+      "mcp__web-reader__webReader",
+      "Bash(curl -sv https://token-plan-cn.xiaomimimo.com/v1/chat/completions -H 'api-key: tp-c9nia1wwhxlvowpapygy8piw8x8qnedx52za4sdm1wwtuhd4' -H 'Content-Type: application/json' -d '{\"model\":\"mimo-v2.5-pro\",\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}],\"tools\":[{\"type\":\"web_search\",\"force_search\":true,\"max_keyword\":1,\"limit\":1}],\"max_completion_tokens\":100,\"stream\":false,\"thinking\":{\"type\":\"disabled\"}}')",
+      "Bash(curl *)",
+      "Bash(claude -r --help)",
+      "Bash(python3 -c ' *)",
+      "Bash(claude *)",
+      "WebSearch"
+    ]
+  }
+}
