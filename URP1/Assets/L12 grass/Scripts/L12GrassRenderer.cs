@@ -15,6 +15,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private static readonly int VisibleBladeData2Id = Shader.PropertyToID("_VisibleBladeData2");
     private static readonly int VisibleBladeDataId = Shader.PropertyToID("_VisibleBladeData");
     private static readonly int FieldOriginId = Shader.PropertyToID("_FieldOrigin");
+    private static readonly int FieldScaleId = Shader.PropertyToID("_FieldScale");
     private static readonly int FieldSizeId = Shader.PropertyToID("_FieldSize");
     private static readonly int BladeHeightId = Shader.PropertyToID("_BladeHeight");
     private static readonly int BladeWidthId = Shader.PropertyToID("_BladeWidth");
@@ -52,7 +53,14 @@ public sealed class L12GrassRenderer : MonoBehaviour
 
     [Header("草地规模")]
     [Min(8)] public int bladesPerSide = 300;
+    [Tooltip("基础草地覆盖尺寸（米）。最终范围 = Field Size * Transform Scale(XZ)。")]
     [Min(1f)] public float fieldSize = 90f;
+    [Tooltip("推荐开启。缩放草地区域时自动补充实例，尽量保持草间距不变。")]
+    public bool preserveDensityWhenResized = true;
+    [Tooltip("目标草间距（世界米）。值越小越密；0.4 以上通常会显得过稀。0 表示按当前 Field Size / Blades Per Side 自动初始化一次。")]
+    [Range(0.01f, 0.4f)] public float targetBladeSpacing = 0f;
+    [Tooltip("为防止缩放过大时显存暴涨，自动补密会受这个上限保护。")]
+    [Min(128)] public int maxBladesPerAxis = 3072;
     [Range(1, 32)] public int chunksPerSide = 12;
     [Min(0.05f)] public float bladeHeight = 1.25f;
     [Min(0.005f)] public float bladeWidth = 0.085f;
@@ -65,7 +73,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
     [Min(1f)] public float lod0Distance = 26f;
     [Min(1f)] public float lod1Distance = 62f;
     [Range(0f, 1f)] public float densityThreshold = 0.08f;
-    [Range(0f, 1f)] public float densityInfluence = 1f;
+    [Range(0f, 3f)] public float densityInfluence = 1f;
 
     [Header("风")]
     [Range(0f, 1.5f)] public float windStrength = 0.32f;
@@ -109,6 +117,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private ComputeBuffer bladeDataBuffer;
     private Material runtimeMaterial;
     private int currentBladesPerSide;
+    private int currentBladesPerAxisX;
+    private int currentBladesPerAxisZ;
     private int currentChunksPerSide;
     private int currentInteractionTextureResolution;
     private int cullKernel = -1;
@@ -135,7 +145,13 @@ public sealed class L12GrassRenderer : MonoBehaviour
 
     private void OnValidate()
     {
-        bladesPerSide = Mathf.Clamp(bladesPerSide, 8, 600);
+        bladesPerSide = Mathf.Clamp(bladesPerSide, 8, 1200);
+        if (targetBladeSpacing <= 0.001f)
+        {
+            targetBladeSpacing = fieldSize / Mathf.Clamp(bladesPerSide, 8, 1200);
+        }
+        targetBladeSpacing = Mathf.Clamp(targetBladeSpacing, 0.01f, 0.4f);
+        maxBladesPerAxis = Mathf.Clamp(maxBladesPerAxis, 128, 4096);
         chunksPerSide = Mathf.Clamp(chunksPerSide, 1, 32);
         fieldSize = Mathf.Max(1f, fieldSize);
         bladeHeight = Mathf.Max(0.05f, bladeHeight);
@@ -182,9 +198,10 @@ public sealed class L12GrassRenderer : MonoBehaviour
         DispatchVisibleBladeCulling(renderCamera);
         PushCommonMaterialProperties();
 
+        Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
         Bounds bounds = new Bounds(
             transform.position + Vector3.up * bladeHeight,
-            new Vector3(fieldSize + 8f, bladeHeight * 4f + 4f, fieldSize + 8f));
+            new Vector3(scaledFieldSize.x + 8f, bladeHeight * 4f + 4f, scaledFieldSize.y + 8f));
 
         for (int lod = 0; lod < LodCount; lod++)
         {
@@ -261,7 +278,13 @@ public sealed class L12GrassRenderer : MonoBehaviour
             RebuildInteractionTexture();
         }
 
-        if (needsRebuild || currentBladesPerSide != bladesPerSide || currentChunksPerSide != chunksPerSide || bladeDataBuffer == null)
+        Vector2Int effectiveBladeCounts = GetEffectiveBladeCounts();
+        if (needsRebuild
+            || currentBladesPerSide != bladesPerSide
+            || currentBladesPerAxisX != effectiveBladeCounts.x
+            || currentBladesPerAxisZ != effectiveBladeCounts.y
+            || currentChunksPerSide != chunksPerSide
+            || bladeDataBuffer == null)
         {
             RebuildBladeBuffer();
         }
@@ -275,14 +298,18 @@ public sealed class L12GrassRenderer : MonoBehaviour
             bladeDataBuffer = null;
         }
 
-        currentBladesPerSide = Mathf.Clamp(bladesPerSide, 8, 600);
+        currentBladesPerSide = Mathf.Clamp(bladesPerSide, 8, 1200);
         currentChunksPerSide = Mathf.Clamp(chunksPerSide, 1, 32);
-        bladeCount = currentBladesPerSide * currentBladesPerSide;
+        Vector2Int effectiveBladeCounts = GetEffectiveBladeCounts();
+        currentBladesPerAxisX = effectiveBladeCounts.x;
+        currentBladesPerAxisZ = effectiveBladeCounts.y;
+        bladeCount = currentBladesPerAxisX * currentBladesPerAxisZ;
 
         Vector4[] bladeData = new Vector4[bladeCount];
         chunks.Clear();
 
-        float spacing = fieldSize / currentBladesPerSide;
+        float spacingX = fieldSize / currentBladesPerAxisX;
+        float spacingZ = fieldSize / currentBladesPerAxisZ;
         float halfSize = fieldSize * 0.5f;
         float chunkSize = fieldSize / currentChunksPerSide;
         var random = new System.Random(1205);
@@ -292,20 +319,20 @@ public sealed class L12GrassRenderer : MonoBehaviour
         {
             for (int chunkX = 0; chunkX < currentChunksPerSide; chunkX++)
             {
-                int xStart = Mathf.FloorToInt(chunkX * currentBladesPerSide / (float)currentChunksPerSide);
-                int xEnd = Mathf.FloorToInt((chunkX + 1) * currentBladesPerSide / (float)currentChunksPerSide);
-                int zStart = Mathf.FloorToInt(chunkZ * currentBladesPerSide / (float)currentChunksPerSide);
-                int zEnd = Mathf.FloorToInt((chunkZ + 1) * currentBladesPerSide / (float)currentChunksPerSide);
+                int xStart = Mathf.FloorToInt(chunkX * currentBladesPerAxisX / (float)currentChunksPerSide);
+                int xEnd = Mathf.FloorToInt((chunkX + 1) * currentBladesPerAxisX / (float)currentChunksPerSide);
+                int zStart = Mathf.FloorToInt(chunkZ * currentBladesPerAxisZ / (float)currentChunksPerSide);
+                int zEnd = Mathf.FloorToInt((chunkZ + 1) * currentBladesPerAxisZ / (float)currentChunksPerSide);
                 int offset = writeIndex;
 
                 for (int z = zStart; z < zEnd; z++)
                 {
                     for (int x = xStart; x < xEnd; x++)
                     {
-                        float jitterX = ((float)random.NextDouble() - 0.5f) * spacing * 0.92f;
-                        float jitterZ = ((float)random.NextDouble() - 0.5f) * spacing * 0.92f;
-                        float px = (x + 0.5f) * spacing - halfSize + jitterX;
-                        float pz = (z + 0.5f) * spacing - halfSize + jitterZ;
+                        float jitterX = ((float)random.NextDouble() - 0.5f) * spacingX * 0.92f;
+                        float jitterZ = ((float)random.NextDouble() - 0.5f) * spacingZ * 0.92f;
+                        float px = (x + 0.5f) * spacingX - halfSize + jitterX;
+                        float pz = (z + 0.5f) * spacingZ - halfSize + jitterZ;
                         float yaw = (float)random.NextDouble() * Mathf.PI * 2f;
                         float scale = Mathf.Lerp(0.62f, 1.32f, (float)random.NextDouble());
                         bladeData[writeIndex] = new Vector4(px, pz, yaw, scale);
@@ -359,13 +386,17 @@ public sealed class L12GrassRenderer : MonoBehaviour
             frustumPlaneData[i] = new Vector4(normal.x, normal.y, normal.z, frustumPlanes[i].distance);
         }
 
+        Vector2 fieldScale = GetFieldScaleXZ();
+        Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
+
         cullingCompute.SetBuffer(cullKernel, SourceBladeDataId, bladeDataBuffer);
         cullingCompute.SetBuffer(cullKernel, VisibleBladeData0Id, visibleBladeBuffers[0]);
         cullingCompute.SetBuffer(cullKernel, VisibleBladeData1Id, visibleBladeBuffers[1]);
         cullingCompute.SetBuffer(cullKernel, VisibleBladeData2Id, visibleBladeBuffers[2]);
         cullingCompute.SetTexture(cullKernel, DensityTextureId, densityMap != null ? densityMap : runtimeWhiteTexture);
         cullingCompute.SetVector(FieldOriginId, transform.position);
-        cullingCompute.SetFloat(FieldSizeId, fieldSize);
+        cullingCompute.SetVector(FieldScaleId, new Vector4(fieldScale.x, fieldScale.y, 0f, 0f));
+        cullingCompute.SetVector(FieldSizeId, new Vector4(scaledFieldSize.x, scaledFieldSize.y, 0f, 0f));
         cullingCompute.SetFloat(BladeHeightId, bladeHeight);
         cullingCompute.SetFloat(MaxDrawDistanceId, maxDrawDistance);
         cullingCompute.SetFloat(CullPaddingId, cullPadding);
@@ -384,7 +415,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
         for (int i = 0; i < chunks.Count; i++)
         {
             GrassChunk chunk = chunks[i];
-            Bounds chunkBounds = chunk.ToWorldBounds(transform.position, bladeHeight);
+            Bounds chunkBounds = chunk.ToWorldBounds(transform.position, bladeHeight, fieldScale);
             if (!GeometryUtility.TestPlanesAABB(frustumPlanes, chunkBounds))
             {
                 continue;
@@ -410,12 +441,16 @@ public sealed class L12GrassRenderer : MonoBehaviour
 
     private void PushCommonMaterialProperties()
     {
+        Vector2 fieldScale = GetFieldScaleXZ();
+        Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
+
         for (int lod = 0; lod < LodCount; lod++)
         {
             MaterialPropertyBlock block = lodPropertyBlocks[lod];
             block.Clear();
             block.SetVector(FieldOriginId, transform.position);
-            block.SetFloat(FieldSizeId, fieldSize);
+            block.SetVector(FieldScaleId, new Vector4(fieldScale.x, fieldScale.y, 0f, 0f));
+            block.SetVector(FieldSizeId, new Vector4(scaledFieldSize.x, scaledFieldSize.y, 0f, 0f));
             block.SetFloat(BladeHeightId, bladeHeight);
             block.SetFloat(BladeWidthId, bladeWidth);
             block.SetFloat(WindStrengthId, windStrength);
@@ -478,9 +513,12 @@ public sealed class L12GrassRenderer : MonoBehaviour
         }
 
         IReadOnlyList<L12GrassInteractor> interactors = L12GrassInteractor.ActiveInteractors;
-        float invFieldSize = 1f / Mathf.Max(fieldSize, 0.001f);
+        Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
+        Vector2 invFieldSize = new Vector2(
+            1f / Mathf.Max(scaledFieldSize.x, 0.001f),
+            1f / Mathf.Max(scaledFieldSize.y, 0.001f));
         int resolution = currentInteractionTextureResolution;
-        float halfSize = fieldSize * 0.5f;
+        Vector2 halfSize = scaledFieldSize * 0.5f;
 
         for (int i = 0; i < interactors.Count; i++)
         {
@@ -503,22 +541,22 @@ public sealed class L12GrassRenderer : MonoBehaviour
             float currentLocalX = position.x - transform.position.x;
             float currentLocalZ = position.z - transform.position.z;
 
-            float previousU = (previousLocalX + halfSize) * invFieldSize;
-            float previousV = (previousLocalZ + halfSize) * invFieldSize;
-            float currentU = (currentLocalX + halfSize) * invFieldSize;
-            float currentV = (currentLocalZ + halfSize) * invFieldSize;
+            float previousU = (previousLocalX + halfSize.x) * invFieldSize.x;
+            float previousV = (previousLocalZ + halfSize.y) * invFieldSize.y;
+            float currentU = (currentLocalX + halfSize.x) * invFieldSize.x;
+            float currentV = (currentLocalZ + halfSize.y) * invFieldSize.y;
 
             Vector2 previousPixel = new Vector2(previousU * (resolution - 1), previousV * (resolution - 1));
             Vector2 currentPixel = new Vector2(currentU * (resolution - 1), currentV * (resolution - 1));
             Vector2 segment = currentPixel - previousPixel;
             float segmentLengthSqr = Mathf.Max(0.0001f, segment.sqrMagnitude);
-            int radiusPixels = Mathf.CeilToInt(interactor.radius * invFieldSize * resolution);
+            float radiusPixelsX = Mathf.Max(1f, interactor.radius * invFieldSize.x * resolution);
+            float radiusPixelsY = Mathf.Max(1f, interactor.radius * invFieldSize.y * resolution);
 
-            int minX = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(previousPixel.x, currentPixel.x)) - radiusPixels, 0, resolution - 1);
-            int maxX = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(previousPixel.x, currentPixel.x)) + radiusPixels, 0, resolution - 1);
-            int minY = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(previousPixel.y, currentPixel.y)) - radiusPixels, 0, resolution - 1);
-            int maxY = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(previousPixel.y, currentPixel.y)) + radiusPixels, 0, resolution - 1);
-            float radiusSqr = Mathf.Max(1f, radiusPixels * radiusPixels);
+            int minX = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(previousPixel.x, currentPixel.x)) - Mathf.CeilToInt(radiusPixelsX), 0, resolution - 1);
+            int maxX = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(previousPixel.x, currentPixel.x)) + Mathf.CeilToInt(radiusPixelsX), 0, resolution - 1);
+            int minY = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(previousPixel.y, currentPixel.y)) - Mathf.CeilToInt(radiusPixelsY), 0, resolution - 1);
+            int maxY = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(previousPixel.y, currentPixel.y)) + Mathf.CeilToInt(radiusPixelsY), 0, resolution - 1);
 
             for (int y = minY; y <= maxY; y++)
             {
@@ -528,13 +566,13 @@ public sealed class L12GrassRenderer : MonoBehaviour
                     float t = Mathf.Clamp01(Vector2.Dot(pixelPosition - previousPixel, segment) / segmentLengthSqr);
                     Vector2 closestPoint = previousPixel + segment * t;
                     Vector2 delta = pixelPosition - closestPoint;
-                    float distSqr = delta.sqrMagnitude;
-                    if (distSqr > radiusSqr)
+                    Vector2 normalizedDelta = new Vector2(delta.x / radiusPixelsX, delta.y / radiusPixelsY);
+                    float distance01 = normalizedDelta.magnitude;
+                    if (distance01 > 1f)
                     {
                         continue;
                     }
 
-                    float distance01 = Mathf.Sqrt(distSqr / radiusSqr);
                     float influence = Mathf.SmoothStep(1f, 0f, distance01) * interactor.strength;
                     if (influence <= 0.001f)
                     {
@@ -565,6 +603,40 @@ public sealed class L12GrassRenderer : MonoBehaviour
 
         interactionTexture.SetPixels32(interactionPixels);
         interactionTexture.Apply(false, false);
+    }
+
+    private Vector2 GetFieldScaleXZ()
+    {
+        Vector3 scale = transform.lossyScale;
+        return new Vector2(
+            Mathf.Max(0.001f, Mathf.Abs(scale.x)),
+            Mathf.Max(0.001f, Mathf.Abs(scale.z)));
+    }
+
+    private Vector2 GetScaledFieldSizeXZ()
+    {
+        Vector2 scale = GetFieldScaleXZ();
+        return new Vector2(
+            Mathf.Max(0.001f, fieldSize * scale.x),
+            Mathf.Max(0.001f, fieldSize * scale.y));
+    }
+
+    private Vector2Int GetEffectiveBladeCounts()
+    {
+        int baseBladesPerSide = Mathf.Clamp(bladesPerSide, 8, 1200);
+        if (!preserveDensityWhenResized)
+        {
+            return new Vector2Int(baseBladesPerSide, baseBladesPerSide);
+        }
+
+        float spacing = targetBladeSpacing <= 0.001f
+            ? fieldSize / baseBladesPerSide
+            : Mathf.Clamp(targetBladeSpacing, 0.01f, 0.4f);
+        Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
+        int maxAxis = Mathf.Clamp(maxBladesPerAxis, 128, 4096);
+        int bladesX = Mathf.Clamp(Mathf.CeilToInt(scaledFieldSize.x / spacing), 8, maxAxis);
+        int bladesZ = Mathf.Clamp(Mathf.CeilToInt(scaledFieldSize.y / spacing), 8, maxAxis);
+        return new Vector2Int(bladesX, bladesZ);
     }
 
     private void RebuildLodMeshes(float rootWidthScale)
@@ -717,6 +789,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
         runtimeMaterial = null;
         cullKernel = -1;
         currentBladesPerSide = 0;
+        currentBladesPerAxisX = 0;
+        currentBladesPerAxisZ = 0;
         currentChunksPerSide = 0;
         bladeCount = 0;
         previousInteractorPositions.Clear();
@@ -780,9 +854,10 @@ public sealed class L12GrassRenderer : MonoBehaviour
             this.size = size;
         }
 
-        public Bounds ToWorldBounds(Vector3 origin, float height)
+        public Bounds ToWorldBounds(Vector3 origin, float height, Vector2 fieldScale)
         {
-            return new Bounds(origin + localCenter, new Vector3(size + 2f, height * 3f + 2f, size + 2f));
+            Vector3 scaledCenter = origin + new Vector3(localCenter.x * fieldScale.x, localCenter.y, localCenter.z * fieldScale.y);
+            return new Bounds(scaledCenter, new Vector3(size * fieldScale.x + 2f, height * 3f + 2f, size * fieldScale.y + 2f));
         }
     }
 }

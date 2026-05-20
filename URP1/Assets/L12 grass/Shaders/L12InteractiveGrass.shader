@@ -42,6 +42,8 @@ Shader "L12 Grass/Interactive GPU Grass"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile _ _SHADOWS_SOFT
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -56,7 +58,8 @@ Shader "L12 Grass/Interactive GPU Grass"
                 float4 _BaseColor;
                 float4 _TipColor;
                 float4 _FieldOrigin;
-                float _FieldSize;
+                float4 _FieldScale;
+                float4 _FieldSize;
                 float _BladeHeight;
                 float _BladeWidth;
                 float _WindStrength;
@@ -85,6 +88,7 @@ Shader "L12 Grass/Interactive GPU Grass"
                 float4 positionHCS : SV_POSITION;
                 half3 color : COLOR0;
                 half fogCoord : TEXCOORD0;
+                float4 shadowCoord : TEXCOORD1;
             };
 
             float Hash12(float2 p)
@@ -122,9 +126,10 @@ Shader "L12 Grass/Interactive GPU Grass"
                 sincos(yaw, s, c);
                 float2 rotatedXZ = float2(local.x * c - local.z * s, local.x * s + local.z * c);
 
-                float3 rootWS = float3(_FieldOrigin.x + blade.x, _FieldOrigin.y, _FieldOrigin.z + blade.y);
+                float2 scaledBladeXZ = blade.xy * _FieldScale.xy;
+                float3 rootWS = float3(_FieldOrigin.x + scaledBladeXZ.x, _FieldOrigin.y, _FieldOrigin.z + scaledBladeXZ.y);
                 float2 bendXZ = 0;
-                float2 fieldUV = saturate((blade.xy + _FieldSize * 0.5) / max(_FieldSize, 0.001));
+                float2 fieldUV = saturate((scaledBladeXZ + _FieldSize.xy * 0.5) / max(_FieldSize.xy, 0.001));
 
                 float2 windDir = normalize(_WindDirection.xy + 0.0001);
                 float2 crossWind = float2(-windDir.y, windDir.x);
@@ -154,10 +159,13 @@ Shader "L12 Grass/Interactive GPU Grass"
                 positionWS.y -= interactionPressure * _InteractionFlattenStrength * height01 * _BladeHeight;
 
                 half3 normalWS = normalize(half3(-bendXZ.x * 0.35, 1.0, -bendXZ.y * 0.35));
-                Light mainLight = GetMainLight();
+                output.shadowCoord = TransformWorldToShadowCoord(positionWS);
+
+                Light mainLight = GetMainLight(output.shadowCoord);
                 half ndl = saturate(dot(normalWS, mainLight.direction));
                 half3 ambient = SampleSH(normalWS) * 0.45;
-                half3 lit = ambient + mainLight.color * (ndl * 0.72 + 0.28);
+                half shadowAttenuation = mainLight.shadowAttenuation;
+                half3 lit = ambient + mainLight.color * shadowAttenuation * (ndl * 0.72 + 0.28);
                 half3 albedo = lerp(_BaseColor.rgb, _TipColor.rgb, height01);
                 half densityTint = SAMPLE_TEXTURE2D_LOD(_DensityTexture, sampler_DensityTexture, fieldUV, 0).r;
                 albedo *= lerp(0.82, 1.12, densityTint);

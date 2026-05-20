@@ -9,7 +9,8 @@ Texture2D<float4> _DensityTexture;
 float4 _FieldOrigin;
 float4 _CameraPosition;
 float4 _FrustumPlanes[6];
-float _FieldSize;
+float4 _FieldScale;
+float4 _FieldSize;
 float _BladeHeight;
 float _MaxDrawDistance;
 float _CullPadding;
@@ -36,7 +37,8 @@ float SampleDensity(float2 localXZ)
         _DensityTexture.GetDimensions(width, height);
 
         float2 textureSize = max(float2(width, height), 1.0);
-        float2 uv = saturate((localXZ + _FieldSize * 0.5) / max(_FieldSize, 0.001));
+        float2 scaledLocalXZ = localXZ * _FieldScale.xy;
+        float2 uv = saturate((scaledLocalXZ + _FieldSize.xy * 0.5) / max(_FieldSize.xy, 0.001));
         int2 pixel = int2(clamp(floor(uv * textureSize), 0.0, textureSize - 1.0));
         density = _DensityTexture.Load(int3(pixel, 0)).r * _DensityInfluence;
     }
@@ -52,7 +54,8 @@ void CullGrass(uint3 id : SV_DispatchThreadID)
     }
 
     float4 blade = _SourceBladeData[_SourceOffset + id.x];
-    float3 worldPosition = float3(_FieldOrigin.x + blade.x, _FieldOrigin.y + _BladeHeight * blade.w * 0.5, _FieldOrigin.z + blade.y);
+    float2 scaledBladeXZ = blade.xy * _FieldScale.xy;
+    float3 worldPosition = float3(_FieldOrigin.x + scaledBladeXZ.x, _FieldOrigin.y + _BladeHeight * blade.w * 0.5, _FieldOrigin.z + scaledBladeXZ.y);
     float3 toCamera = worldPosition - _CameraPosition.xyz;
     float distanceToCamera = length(toCamera);
 

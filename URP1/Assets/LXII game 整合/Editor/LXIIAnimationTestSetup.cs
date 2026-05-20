@@ -21,7 +21,7 @@ public static class LXIIAnimationTestSetup
     [MenuItem("Tools/LXII/Setup LXI Animation Test In Game Scene")]
     public static void SetupLxiAnimationTestInGameScene()
     {
-        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+        if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
         {
             return;
         }
@@ -38,6 +38,7 @@ public static class LXIIAnimationTestSetup
         EnsureFolder("Assets/LXII game 整合", "Settings");
         EnsureFolder("Assets/LXII game 整合", "Scripts");
         EnsureFolder("Assets/LXII game 整合/Scripts", "Animation");
+        EnsureFolder("Assets/LXII game 整合/Scripts", "Camera");
 
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         GameObject player = GameObject.Find(PlayerName);
@@ -70,14 +71,14 @@ public static class LXIIAnimationTestSetup
             driver = Undo.AddComponent<LXIIAnimationTestDriver>(player);
         }
 
-        ConfigureMainCamera();
+        ConfigureMainCamera(player.transform, driver);
 
         EditorUtility.SetDirty(player);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
 
         Selection.activeGameObject = player;
-        Debug.Log("[LXII] 已在 game.unity 中接入 LXI 动作测试。按 1=Idle，2=Run，3=Action。");
+        Debug.Log("[LXII] 已在 game.unity 中接入第三人称移动测试。WASD 移动，按住鼠标右键转视角，滚轮缩放，3=Action。");
     }
 
     private static AnimatorController BuildOrUpdateController(AnimationClip idleClip, AnimationClip runClip, AnimationClip actionClip)
@@ -181,7 +182,7 @@ public static class LXIIAnimationTestSetup
         }
     }
 
-    private static void ConfigureMainCamera()
+    private static void ConfigureMainCamera(Transform player, LXIIAnimationTestDriver driver)
     {
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
@@ -198,13 +199,32 @@ public static class LXIIAnimationTestSetup
             return;
         }
 
-        Transform cameraTransform = mainCamera.transform;
-        Undo.RecordObject(cameraTransform, "Frame LXII Animation Test Camera");
-        cameraTransform.SetPositionAndRotation(new Vector3(0f, 1.18f, -3.6f), Quaternion.Euler(5f, 0f, 0f));
+        foreach (MonoBehaviour behaviour in mainCamera.GetComponents<MonoBehaviour>())
+        {
+            if (behaviour != null && behaviour.GetType().Name == "SimpleCameraController")
+            {
+                Undo.RecordObject(behaviour, "Disable Free Camera Controller");
+                behaviour.enabled = false;
+                EditorUtility.SetDirty(behaviour);
+            }
+        }
+
+        LXIIThirdPersonCameraFollow follow = mainCamera.GetComponent<LXIIThirdPersonCameraFollow>();
+        if (follow == null)
+        {
+            follow = Undo.AddComponent<LXIIThirdPersonCameraFollow>(mainCamera.gameObject);
+        }
+
+        driver.SetViewReference(mainCamera.transform);
+        follow.SetTarget(player);
+        follow.SnapBehindTarget();
 
         Undo.RecordObject(mainCamera, "Adjust LXII Animation Test Camera");
-        mainCamera.fieldOfView = 40f;
+        mainCamera.fieldOfView = 48f;
         mainCamera.nearClipPlane = 0.1f;
         mainCamera.farClipPlane = 100f;
+
+        EditorUtility.SetDirty(driver);
+        EditorUtility.SetDirty(follow);
     }
 }
