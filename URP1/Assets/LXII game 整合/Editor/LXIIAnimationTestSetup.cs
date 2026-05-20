@@ -39,6 +39,7 @@ public static class LXIIAnimationTestSetup
         EnsureFolder("Assets/LXII game 整合", "Scripts");
         EnsureFolder("Assets/LXII game 整合/Scripts", "Animation");
         EnsureFolder("Assets/LXII game 整合/Scripts", "Camera");
+        EnsureFolder("Assets/LXII game 整合/Scripts", "Player");
 
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         GameObject player = GameObject.Find(PlayerName);
@@ -64,21 +65,17 @@ public static class LXIIAnimationTestSetup
         AnimatorController controller = BuildOrUpdateController(idleClip, runClip, actionClip);
         animator.runtimeAnimatorController = controller;
         animator.applyRootMotion = false;
+        EnsurePlayerControlChain(player);
+        LXIIPlayerController playerController = player.GetComponent<LXIIPlayerController>();
 
-        LXIIAnimationTestDriver driver = player.GetComponent<LXIIAnimationTestDriver>();
-        if (driver == null)
-        {
-            driver = Undo.AddComponent<LXIIAnimationTestDriver>(player);
-        }
-
-        ConfigureMainCamera(player.transform, driver);
+        ConfigureMainCamera(player.transform, playerController);
 
         EditorUtility.SetDirty(player);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
 
         Selection.activeGameObject = player;
-        Debug.Log("[LXII] 已在 game.unity 中接入第三人称移动测试。WASD 移动，按住鼠标右键转视角，滚轮缩放，3=Action。");
+        Debug.Log("[LXII] 已在 game.unity 中接入正式第三人称角色控制。WASD 移动，Left Shift 加速，按住鼠标右键转视角，滚轮缩放，3=Action。");
     }
 
     private static AnimatorController BuildOrUpdateController(AnimationClip idleClip, AnimationClip runClip, AnimationClip actionClip)
@@ -93,13 +90,13 @@ public static class LXIIAnimationTestSetup
         {
             new AnimatorControllerParameter
             {
-                name = LXIIAnimationTestDriver.ModeParameter,
+                name = LXIIPlayerAnimationDriver.ModeParameter,
                 type = AnimatorControllerParameterType.Int,
                 defaultInt = 0
             },
             new AnimatorControllerParameter
             {
-                name = LXIIAnimationTestDriver.ActionTriggerParameter,
+                name = LXIIPlayerAnimationDriver.ActionTriggerParameter,
                 type = AnimatorControllerParameterType.Trigger
             }
         };
@@ -124,7 +121,7 @@ public static class LXIIAnimationTestSetup
         AnimatorStateTransition anyToAction = stateMachine.AddAnyStateTransition(actionState);
         anyToAction.hasExitTime = false;
         anyToAction.duration = 0.05f;
-        anyToAction.AddCondition(AnimatorConditionMode.If, 0f, LXIIAnimationTestDriver.ActionTriggerParameter);
+        anyToAction.AddCondition(AnimatorConditionMode.If, 0f, LXIIPlayerAnimationDriver.ActionTriggerParameter);
 
         AnimatorStateTransition actionToIdle = actionState.AddTransition(idleState);
         actionToIdle.hasExitTime = true;
@@ -142,7 +139,7 @@ public static class LXIIAnimationTestSetup
         AnimatorStateTransition transition = from.AddTransition(to);
         transition.hasExitTime = false;
         transition.duration = 0.08f;
-        transition.AddCondition(AnimatorConditionMode.Equals, modeValue, LXIIAnimationTestDriver.ModeParameter);
+        transition.AddCondition(AnimatorConditionMode.Equals, modeValue, LXIIPlayerAnimationDriver.ModeParameter);
     }
 
     private static void ClearStateMachine(AnimatorStateMachine stateMachine)
@@ -182,7 +179,83 @@ public static class LXIIAnimationTestSetup
         }
     }
 
-    private static void ConfigureMainCamera(Transform player, LXIIAnimationTestDriver driver)
+    private static void EnsurePlayerControlChain(GameObject player)
+    {
+        LXIIAnimationTestDriver legacyDriver = player.GetComponent<LXIIAnimationTestDriver>();
+        if (legacyDriver != null)
+        {
+            Undo.DestroyObjectImmediate(legacyDriver);
+        }
+
+        CharacterController characterController = player.GetComponent<CharacterController>();
+        if (characterController == null)
+        {
+            characterController = Undo.AddComponent<CharacterController>(player);
+            ConfigureCharacterController(player, characterController);
+        }
+
+        LXIIPlayerInputReader inputReader = player.GetComponent<LXIIPlayerInputReader>();
+        if (inputReader == null)
+        {
+            inputReader = Undo.AddComponent<LXIIPlayerInputReader>(player);
+        }
+
+        LXIIPlayerMotor motor = player.GetComponent<LXIIPlayerMotor>();
+        if (motor == null)
+        {
+            motor = Undo.AddComponent<LXIIPlayerMotor>(player);
+        }
+
+        LXIIPlayerAnimationDriver animationDriver = player.GetComponent<LXIIPlayerAnimationDriver>();
+        if (animationDriver == null)
+        {
+            animationDriver = Undo.AddComponent<LXIIPlayerAnimationDriver>(player);
+        }
+
+        LXIIPlayerController playerController = player.GetComponent<LXIIPlayerController>();
+        if (playerController == null)
+        {
+            playerController = Undo.AddComponent<LXIIPlayerController>(player);
+        }
+
+        inputReader.hideFlags = HideFlags.HideInInspector;
+        motor.hideFlags = HideFlags.HideInInspector;
+        animationDriver.hideFlags = HideFlags.HideInInspector;
+
+        EditorUtility.SetDirty(inputReader);
+        EditorUtility.SetDirty(motor);
+        EditorUtility.SetDirty(animationDriver);
+        EditorUtility.SetDirty(playerController);
+    }
+
+    private static void ConfigureCharacterController(GameObject player, CharacterController characterController)
+    {
+        Renderer[] renderers = player.GetComponentsInChildren<Renderer>(true);
+        Bounds bounds = renderers.Length > 0
+            ? renderers[0].bounds
+            : new Bounds(player.transform.position + Vector3.up * 0.9f, new Vector3(0.6f, 1.8f, 0.6f));
+
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            bounds.Encapsulate(renderers[i].bounds);
+        }
+
+        float height = Mathf.Clamp(bounds.size.y * 0.9f, 1.5f, 2.1f);
+        float radius = Mathf.Clamp(Mathf.Min(bounds.extents.x, bounds.extents.z) * 0.35f, 0.22f, 0.38f);
+        characterController.height = height;
+        characterController.radius = radius;
+        characterController.center = new Vector3(0f, height * 0.5f, 0f);
+        characterController.skinWidth = 0.03f;
+        characterController.stepOffset = 0.3f;
+        characterController.slopeLimit = 50f;
+        characterController.minMoveDistance = 0f;
+
+        Vector3 position = player.transform.position;
+        position.y = 0f;
+        player.transform.position = position;
+    }
+
+    private static void ConfigureMainCamera(Transform player, LXIIPlayerController playerController)
     {
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
@@ -215,7 +288,7 @@ public static class LXIIAnimationTestSetup
             follow = Undo.AddComponent<LXIIThirdPersonCameraFollow>(mainCamera.gameObject);
         }
 
-        driver.SetViewReference(mainCamera.transform);
+        playerController?.ConfigureForScene(mainCamera.transform);
         follow.SetTarget(player);
         follow.SnapBehindTarget();
 
@@ -224,7 +297,10 @@ public static class LXIIAnimationTestSetup
         mainCamera.nearClipPlane = 0.1f;
         mainCamera.farClipPlane = 100f;
 
-        EditorUtility.SetDirty(driver);
+        if (playerController != null)
+        {
+            EditorUtility.SetDirty(playerController);
+        }
         EditorUtility.SetDirty(follow);
     }
 }

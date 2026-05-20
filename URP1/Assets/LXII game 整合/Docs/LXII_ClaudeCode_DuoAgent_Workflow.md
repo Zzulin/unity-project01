@@ -12,18 +12,43 @@
 
 以当前仓库内容为准，LXII 目录当前状态如下：
 
-- `Assets/LXII game 整合/` 里目前只有：
+- `Assets/LXII game 整合/` 当前已经有：
   - `game.unity`
-  - `Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`
-- 还没有落地的 `Editor/`、`Scripts/`、`Materials/`、`Prefabs/`、`Settings/` 目录。
-- `game.unity` 当前只是一个轻量场景壳，根对象只有：
-  - `Main Camera`
-  - `Directional Light`
-- `Main Camera` 已挂 `Assets/Scripts/SimpleCameraController.cs`，可用于当前阶段的基础巡视与调试。
+  - `Docs/`
+  - `Editor/`
+  - `Scripts/`
+  - `Settings/`
+- 当前已存在的 LXII 适配入口包括：
+  - `Tools/LXII/Setup Nilou Humanoid In Game Scene`
+  - `Tools/LXII/Setup LXI Animation Test In Game Scene`
+  - `Tools/LXII/Setup L12 Grass In Game Scene`
+- `game.unity` 已不再是纯空壳，当前已落地：
+  - `LXII Nilou Player`
+  - `LXII L12 Grass Root`
+  - `LXII Grass Ground`
+  - `LXII Grass Field`
+- 当前角色链路已具备：
+  - 妮露 Humanoid Avatar
+  - LXI Idle / Run / Action 测试控制器
+  - 拆职责第三人称角色控制链
+  - 第三人称跟随摄像机
+- 当前第三人称控制链已经从单脚本测试驱动拆为：
+  - `LXIIPlayerInputReader`
+  - `LXIIPlayerMotor`
+  - `LXIIPlayerAnimationDriver`
+  - `LXIIPlayerController`
+- 当前 Inspector 入口已收敛：
+  - `LXIIPlayerController` 作为主要可调组件
+  - 输入、移动、动画三个内部组件默认隐藏
+  - 默认操作为 `WASD` 移动、`Left Shift` 加速、`3` 触发 Action
+- 当前 Avatar / 动作主干观察结论：
+  - 没有明显扭胯、塌肩、脚尖异常、头发链违和
+  - 仍可能存在局部穿模
+  - 衣物和头发物理模拟尚未接入
 
 这意味着：
 
-- LXII 当前重点不是“微调已完成系统”，而是先把整合层真正搭起来。
+- LXII 当前重点已经从“先把整合层真正搭起来”转成“保持现有控制链稳定，并把 L14 / L13 逐步串入同一路径”。
 - `codex/tasks.md` 中关于 LXII 的一些条目可能代表目标状态或待复核状态；是否已真实落地，必须以仓库文件、Unity Scene、Importer 状态和验证结果为准。
 
 ## 3. 硬约束
@@ -73,9 +98,11 @@ LXII 的第一版胜利条件：
   - 1 个可见雪地区，能响应交互
   - 1 组正常显示的体积云
 - 验证链条完整：
-  - `dotnet build Assembly-CSharp.csproj`
-  - `dotnet build Assembly-CSharp-Editor.csproj`
+  - Unity Editor 自动编译完成
+  - `debug_check_compilation` 返回 `isCompiling=false`、`isUpdating=false`
   - Unity Console Error 为 0
+  - 关键场景改动后能打开并保存 `game.unity`
+  - 玩法链路改动后做必要 Play Mode 短测
 
 不做的事：
 
@@ -88,43 +115,60 @@ LXII 的第一版胜利条件：
 
 ## 5. 当前最高优先级
 
-当前最高优先级不是玩法收尾，而是把“妮露能作为 Humanoid 正常接收 LXI 动作”这条链先打通。
+当前最高优先级已经不再是“先证明妮露能接收 LXI 动作”，因为这条链已经基本打通。
 
-如果这条链没验证通过，不要继续做：
+当前更高优先级的是：
 
-- 复杂场景收束
-- 终点玩法
-- UI 包装
-- 大规模材质微调
+- 保持当前 Avatar / 动作主干结论稳定
+- 保持拆职责第三人称角色控制链稳定，不回退到单脚本测试驱动
+- 保持 `LXIIPlayerController` 作为主 Inspector 入口，内部组件只做自动绑定和职责拆分
+- 处理最明显的局部穿模
+- 把 L14 雪地先接入 LXII 主路径
+- 再接 L13 云作为终点氛围层
 
-## 6. 建议目录
+当前不作为内建开发项的内容：
 
-当 LXII 开始真正落地时，目录建议如下：
+- 衣物物理模拟
+- 头发物理模拟
+
+原因：
+
+- 这两项更适合依赖 Unity 侧现成插件或成熟方案接入
+- 当前仓库没有确认好的统一物理插件基线
+- 在没有插件基线的前提下，不应在 LXII 整合阶段手写一套临时物理替代品
+
+## 6. 当前目录约定
+
+LXII 当前已经落地的目录按下面这条线维护：
 
 ```text
 Assets/LXII game 整合/
   game.unity
   Docs/
     LXII_ClaudeCode_DuoAgent_Workflow.md
-    LXII_Integration_Log.md
   Editor/
-    LXIIGameBuilder.cs
+    LXIINilouHumanoidSetup.cs
+    LXIIAnimationTestSetup.cs
+    LXIIL12GrassSetup.cs
   Scripts/
-    Core/
     Player/
+      LXIIPlayerInputReader.cs
+      LXIIPlayerMotor.cs
+      LXIIPlayerAnimationDriver.cs
+      LXIIPlayerController.cs
+    Camera/
+      LXIIThirdPersonCameraFollow.cs
     Animation/
-    Interaction/
-    World/
-    Presentation/
-  Materials/
-  Prefabs/
+      LXIIAnimationTestDriver.cs
   Settings/
+    LXII_Nilou_LXI_Test.controller
 ```
 
 目录规则：
 
-- `Editor/LXIIGameBuilder.cs` 是 LXII 场景的可重建入口。
+- `Editor/*Setup.cs` 是当前阶段的可重建入口；后续如要统一 Builder，再单独收敛，不在接 L14 / L13 时顺手重构。
 - `Scripts/*` 只放 LXII 整合层，不复制 L12/L13/L14 现有脚本。
+- `Scripts/Animation/LXIIAnimationTestDriver.cs` 是历史测试脚本，当前玩家对象应优先使用 `Scripts/Player/*` 控制链。
 - 如果必须修改外部系统脚本，先确认不会破坏原 Demo，再单独验证原场景。
 
 ## 7. Duo-Agent 模式
@@ -232,6 +276,7 @@ Agent B 禁忌：
 
 - Unity 认可 Avatar 有效。
 - 无骨骼爆炸、极端缩放、明显朝向错误。
+- 在 LXI 基础动作下没有明显扭胯、塌肩、脚尖异常。
 
 阻塞规则：
 
@@ -260,6 +305,11 @@ Agent B 禁忌：
 
 - Play Mode 中能稳定切换 Idle / Move / Action。
 - 动作不会把角色拉飞、倒置、缩放异常。
+- 允许存在少量局部穿模，但不把衣物/头发物理缺失误判为 Humanoid 主干失败。
+
+补充说明：
+
+- 如果后续需要衣物或头发物理，默认视为插件接入任务，而不是当前 Animator / Avatar 修复任务。
 
 ### Phase 4：草地与雪地交互
 
@@ -360,8 +410,19 @@ Agent B 禁忌：
 
 ### 必跑验证
 
-- `dotnet build Assembly-CSharp.csproj`
-- `dotnet build Assembly-CSharp-Editor.csproj`
+- Unity Editor 自动编译状态检查：
+  - `debug_check_compilation`
+  - 期望 `isCompiling=false`
+  - 期望 `isUpdating=false`
+- Unity Console Error 检查：
+  - `console_get_logs` 过滤 `Error`
+  - 期望 Error 数量为 0
+
+说明：
+
+- Unity 2022 生成的 `Assembly-CSharp.csproj` 是给 IDE / Rider 使用的旧式 `.NET Framework v4.7.1` 项目，不是普通 SDK-style .NET 项目。
+- 当前仓库不再把 `dotnet build Assembly-CSharp.csproj --no-restore` 作为 LXII 的硬性验证标准。
+- 如需排查特殊 C# 编译问题，优先使用 Unity Editor 编译反馈；外部 `dotnet` / `xbuild` 只能作为辅助诊断，不能替代 Unity Console。
 
 ### 条件验证
 
@@ -452,9 +513,12 @@ Agent B 禁忌：
 - 动作必须来自 `Assets/LXI 动作测试/**`。
 
 当前仓库事实：
-- `Assets/LXII game 整合/` 目前只有 `game.unity` 和 `Docs/`。
-- `game.unity` 当前根对象只有 `Main Camera` 和 `Directional Light`。
-- 这意味着 LXII 还没有真正落地 Builder、Scripts、Prefabs 等整合层。
+- `Assets/LXII game 整合/` 当前已有 `game.unity`、`Docs/`、`Editor/`、`Scripts/`、`Settings/`。
+- `game.unity` 当前已包含 `LXII Nilou Player`、L12 草地区域和第三人称摄像机链路。
+- 当前角色控制已经从 `LXIIAnimationTestDriver` 单脚本测试方案拆为 `LXIIPlayerInputReader`、`LXIIPlayerMotor`、`LXIIPlayerAnimationDriver`、`LXIIPlayerController`。
+- 当前可用操作为 `WASD` 移动、`Left Shift` 加速、自动 `Idle / Run` 切换、`3` 触发 `Action`、第三人称摄像机跟随/观察。
+- 当前 Inspector 以 `LXIIPlayerController` 为主入口，内部辅助组件默认隐藏；如需调试，可临时开启主控上的内部组件显示开关。
+- 当前 Avatar / 动作主干没有明显扭胯、塌肩、脚尖异常或头发链违和；剩余主要是局部穿模，以及衣物/头发物理尚未接入。
 
 执行方式：
 - 按单 CLI 的虚拟 duo-agent 模式工作。
@@ -467,27 +531,26 @@ Agent B 禁忌：
 - 先读 `AGENTS.md`、`codex/tasks.md`、`Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md`。
 - 优先新增 LXII 适配层，不做大范围重构。
 - 重要进度只简洁同步到 `codex/tasks.md`。
-- 每次代码改动后至少运行：
-  - `dotnet build Assembly-CSharp.csproj`
-  - `dotnet build Assembly-CSharp-Editor.csproj`
-- Unity 场景或 Importer 改动后必须检查 Console Error。
+- 每次代码改动后至少检查 Unity 编译状态：
+  - `debug_check_compilation`
+  - Unity Console Error 为 0
+- Unity 场景或 Importer 改动后必须检查 `game.unity` 状态，并按需要做 Play Mode 短测。
 
 当前最高优先级：
-先做 Agent A 侦察，确认：
-1. 妮露 FBX importer / rig 当前状态
-2. LXI 可直接用于 Humanoid retarget 的动作清单
-3. 当前仓库里是否已经存在 LXII Builder 或玩家生成逻辑
-
-然后给出最小实施步骤：
-“妮露 Humanoid Avatar -> LXI Idle 验证 -> Move/Action -> LXII Builder 场景骨架 -> 草雪交互 -> 云”
+1. 保持当前妮露 Humanoid + LXI 动作链稳定
+2. 保持拆职责第三人称角色控制链稳定，不回退到单脚本测试驱动
+3. 把 L14 雪地按 LXII 路径接入
+4. 再接 L13 云完成终点氛围
+5. 把局部穿模和展示问题控制在可接受范围
 ```
 
 ## 14. 风险清单
 
-- 妮露当前不一定已是有效 Humanoid，这是第一阻塞项。
-- LXI 动作可能存在 root motion、朝向或缩放差异。
+- 妮露 Humanoid + LXI 动作主干当前已基本打通，但后续接雪地/云/溶解时仍要防止 Animator 参数和移动链路被破坏。
+- LXI 动作仍可能在新增动作时出现 root motion、朝向或缩放差异。
 - L12 / L14 交互器可能存在静态列表生命周期问题，整合时要注意启停配对。
 - L13 体积云对编辑器性能敏感，默认不要开高质量。
+- 衣物和头发物理如果要做，当前默认需要插件或成熟现成方案，不作为本轮内建开发项。
 - 单 CLI 双 Agent 不是真并行，必须靠严格切片避免混乱。
 
 ## 15. 判断标准
