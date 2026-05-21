@@ -153,8 +153,8 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be76e5f14cfee674cb30b491fb72b09b, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   boost: 3.5
   positionLerpTime: 0.2
   middleMousePanSensitivity: 0.015
@@ -270,8 +270,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
@@ -314,8 +314,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9ed0eb80de334138b1651c9fd886edea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   target: {fileID: 356058346}
   followOffset: {x: 0, y: 1.45, z: 0}
   distance: 3.6
@@ -391,6 +391,10 @@ PrefabInstance:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: dcb23777b3b412142bcf523800704c52, type: 2}
+    - target: {fileID: -1385110455980567100, guid: 6375e930fdec61345947c2ae3a2fb417, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 5a9c2805fdc301843976564889bf188f, type: 2}
     - target: {fileID: -1385110455980567100, guid: 6375e930fdec61345947c2ae3a2fb417, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -501,8 +505,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 908ead8701e754921a78f7223c131aa3, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   radius: 0.81
   strength: 0.429
   gizmoColor: {r: 0.2, g: 0.8, b: 1, a: 0.35}
@@ -516,8 +520,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 675758619668747a28ee85c7b0f41908, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   horizontalAxis: Horizontal
   verticalAxis: Vertical
   actionKey: 51
@@ -545,8 +549,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b10a7c9ea882f4492b9817de163e97fa, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   animator: {fileID: 356058345}
 --- !u!114 &356058351
 MonoBehaviour:
@@ -558,8 +562,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51a5b684c72264fbfa79fdee7d9ed0d3, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   characterController: {fileID: 356058347}
   viewReference: {fileID: 112724876}
   walkSpeed: 3.4
@@ -578,8 +582,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f199f54da0fd41419099d6e579b80b1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   horizontalAxis: Horizontal
   verticalAxis: Vertical
   actionKey: 51
@@ -729,8 +733,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_IsGlobal: 1
   priority: 0
   blendDistance: 0
@@ -925,7 +929,7 @@ MonoBehaviour:
   bladesPerSide: 520
   fieldSize: 72
   preserveDensityWhenResized: 1
-  targetBladeSpacing: 0.09
+  targetBladeSpacing: 0.085
   maxBladesPerAxis: 3072
   chunksPerSide: 12
   bladeHeight: 0.33
