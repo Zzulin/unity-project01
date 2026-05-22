@@ -15,6 +15,8 @@ Shader "L12 Grass/Interactive GPU Grass"
         _GustSpeed ("Gust Speed", Float) = 5.8
         _GustWidth ("Gust Width", Range(0.05, 0.95)) = 0.34
         _GustNoiseScale ("Gust Noise Scale", Float) = 0.055
+        _ShapeVariation ("Shape Variation", Range(0, 1)) = 0.72
+        _TipBrightness ("Tip Brightness", Range(0.5, 2)) = 1.22
         _InteractionStrength ("Interaction Strength", Float) = 3.6
         _InteractionFlattenStrength ("Interaction Flatten Strength", Range(0, 2)) = 0.85
         _DensityTexture ("Density Texture", 2D) = "white" {}
@@ -71,6 +73,8 @@ Shader "L12 Grass/Interactive GPU Grass"
                 float _GustSpeed;
                 float _GustWidth;
                 float _GustNoiseScale;
+                float _ShapeVariation;
+                float _TipBrightness;
                 float _InteractionStrength;
                 float _InteractionFlattenStrength;
             CBUFFER_END
@@ -114,11 +118,21 @@ Shader "L12 Grass/Interactive GPU Grass"
 
                 float4 blade = _VisibleBladeData[input.instanceID];
                 float random = Hash12(blade.xy);
+                float widthRandom = Hash12(blade.xy + 17.31);
+                float leanRandom = Hash12(blade.xy + 41.73);
+                float twistRandom = Hash12(blade.xy + 83.19);
+                float colorRandom = Hash12(blade.xy + 127.53);
                 float yaw = blade.z;
                 float height01 = saturate(input.uv.y);
 
                 float3 local = input.positionOS;
-                local.xz *= _BladeWidth * lerp(0.78, 1.22, random);
+                float widthScale = lerp(1.0, lerp(0.62, 1.46, widthRandom), _ShapeVariation);
+                float twist = (twistRandom - 0.5) * _ShapeVariation * 0.78 * height01;
+                float twistS;
+                float twistC;
+                sincos(twist, twistS, twistC);
+                local.xz = float2(local.x * twistC - local.z * twistS, local.x * twistS + local.z * twistC);
+                local.xz *= _BladeWidth * widthScale;
                 local.y = height01 * _BladeHeight * blade.w;
 
                 float s;
@@ -154,6 +168,8 @@ Shader "L12 Grass/Interactive GPU Grass"
                 float3 positionWS = rootWS;
                 positionWS.xz += rotatedXZ;
                 positionWS.y += local.y;
+                float leanAngle = leanRandom * 6.2831853;
+                positionWS.xz += float2(cos(leanAngle), sin(leanAngle)) * ((colorRandom - 0.5) * _ShapeVariation * 0.18 * height01 * height01 * blade.w);
                 positionWS.xz += bendXZ * bendMask;
                 positionWS.y -= length(bendXZ) * 0.16 * height01 * height01;
                 positionWS.y -= interactionPressure * _InteractionFlattenStrength * height01 * _BladeHeight;
@@ -166,11 +182,12 @@ Shader "L12 Grass/Interactive GPU Grass"
                 half3 ambient = SampleSH(normalWS) * 0.45;
                 half shadowAttenuation = mainLight.shadowAttenuation;
                 half3 lit = ambient + mainLight.color * shadowAttenuation * (ndl * 0.72 + 0.28);
-                half3 albedo = lerp(_BaseColor.rgb, _TipColor.rgb, height01);
+                half3 tipColor = saturate(_TipColor.rgb * (half)_TipBrightness);
+                half3 albedo = lerp(_BaseColor.rgb, tipColor, smoothstep(0.0h, 1.0h, height01));
                 half densityTint = SAMPLE_TEXTURE2D_LOD(_DensityTexture, sampler_DensityTexture, fieldUV, 0).r;
                 albedo *= lerp(0.82, 1.12, densityTint);
                 albedo *= lerp(1.0, 0.72, interactionPressure * height01);
-                albedo *= lerp(0.88, 1.16, random);
+                albedo *= lerp(0.86, 1.18, random);
 
                 output.positionHCS = TransformWorldToHClip(positionWS);
                 output.color = albedo * lit;

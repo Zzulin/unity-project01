@@ -930,17 +930,20 @@ MonoBehaviour:
   fieldSize: 72
   preserveDensityWhenResized: 1
   targetBladeSpacing: 0.085
-  maxBladesPerAxis: 3072
+  maxBladesPerAxis: 373
   chunksPerSide: 12
-  bladeHeight: 0.33
-  bladeWidth: 0.03
+  bladeHeight: 0.55
+  bladeWidth: 0.05
   bladeRootWidthScale: 1
+  minBladeHeightScale: 0.49
+  maxBladeHeightScale: 1.68
+  shapeVariation: 0.781
   maxDrawDistance: 96
   cullPadding: 3
   lod0Distance: 24
   lod1Distance: 54
-  densityThreshold: 0
-  densityInfluence: 1.85
+  densityThreshold: 0.827
+  densityInfluence: 1.16
   windStrength: 0.32
   windScale: 0.18
   windSpeed: 1.8
@@ -956,6 +959,7 @@ MonoBehaviour:
   interactionFadeSpeed: 2.6
   baseColor: {r: 0.11, g: 0.34, b: 0.12, a: 1}
   tipColor: {r: 0.46, g: 0.68, b: 0.22, a: 1}
+  tipBrightness: 1.003
 --- !u!4 &2100123422
 Transform:
   m_ObjectHideFlags: 0

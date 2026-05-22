@@ -28,6 +28,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private static readonly int GustSpeedId = Shader.PropertyToID("_GustSpeed");
     private static readonly int GustWidthId = Shader.PropertyToID("_GustWidth");
     private static readonly int GustNoiseScaleId = Shader.PropertyToID("_GustNoiseScale");
+    private static readonly int ShapeVariationId = Shader.PropertyToID("_ShapeVariation");
+    private static readonly int TipBrightnessId = Shader.PropertyToID("_TipBrightness");
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly int TipColorId = Shader.PropertyToID("_TipColor");
     private static readonly int DensityTextureId = Shader.PropertyToID("_DensityTexture");
@@ -47,60 +49,104 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private static readonly int UseDensityTextureId = Shader.PropertyToID("_UseDensityTexture");
 
     [Header("渲染资源")]
+    [InspectorName("草地材质")]
     public Material grassMaterial;
+    [InspectorName("GPU 剔除计算")]
     public ComputeShader cullingCompute;
+    [InspectorName("密度贴图")]
     public Texture2D densityMap;
 
     [Header("草地规模")]
+    [InspectorName("每边基础草株数")]
     [Min(8)] public int bladesPerSide = 300;
     [Tooltip("基础草地覆盖尺寸（米）。最终范围 = Field Size * Transform Scale(XZ)。")]
+    [InspectorName("基础覆盖边长")]
     [Min(1f)] public float fieldSize = 90f;
     [Tooltip("推荐开启。缩放草地区域时自动补充实例，尽量保持草间距不变。")]
+    [InspectorName("缩放时保持密度")]
     public bool preserveDensityWhenResized = true;
     [Tooltip("目标草间距（世界米）。值越小越密；0.4 以上通常会显得过稀。0 表示按当前 Field Size / Blades Per Side 自动初始化一次。")]
+    [InspectorName("目标草间距")]
     [Range(0.01f, 0.4f)] public float targetBladeSpacing = 0f;
     [Tooltip("为防止缩放过大时显存暴涨，自动补密会受这个上限保护。")]
-    [Min(128)] public int maxBladesPerAxis = 3072;
+    [InspectorName("单轴草株上限")]
+    [Range(128, 1024)] public int maxBladesPerAxis = 1024;
+    [InspectorName("草地分块数")]
     [Range(1, 32)] public int chunksPerSide = 12;
+    [InspectorName("基础草高")]
     [Min(0.05f)] public float bladeHeight = 1.25f;
+    [InspectorName("草叶宽度")]
     [Min(0.005f)] public float bladeWidth = 0.085f;
     [Tooltip("草叶面片根部宽度倍率。数值越大，底部越宽；配合 Blade Width 控制最终宽度。")]
+    [InspectorName("根部宽度倍率")]
     [Range(0.35f, 2.5f)] public float bladeRootWidthScale = 1f;
+    [Tooltip("矮草高度倍率。与 Max Height Scale 拉开后，草海会有更明显的高低层次。")]
+    [InspectorName("高低层次：矮草倍率")]
+    [Range(0.2f, 1f)] public float minBladeHeightScale = 0.45f;
+    [Tooltip("高草高度倍率。推荐大于 1，让少量高草穿出整体草面。")]
+    [InspectorName("高低层次：高草倍率")]
+    [Range(1f, 2.5f)] public float maxBladeHeightScale = 1.55f;
+    [Tooltip("草叶形状随机强度：宽窄、顶端偏移、轻微自旋和倾斜都会随它增强。")]
+    [InspectorName("叶形随机度")]
+    [Range(0f, 1f)] public float shapeVariation = 0.72f;
 
     [Header("剔除与 LOD")]
+    [InspectorName("最远绘制距离")]
     [Min(5f)] public float maxDrawDistance = 115f;
+    [InspectorName("剔除安全边距")]
     [Min(0.1f)] public float cullPadding = 3f;
+    [InspectorName("近景精细距离")]
     [Min(1f)] public float lod0Distance = 26f;
+    [InspectorName("中景过渡距离")]
     [Min(1f)] public float lod1Distance = 62f;
+    [InspectorName("密度裁剪阈值")]
     [Range(0f, 1f)] public float densityThreshold = 0.08f;
+    [InspectorName("密度贴图影响")]
     [Range(0f, 3f)] public float densityInfluence = 1f;
 
     [Header("风")]
+    [InspectorName("微风摆动强度")]
     [Range(0f, 1.5f)] public float windStrength = 0.32f;
+    [InspectorName("风纹大小")]
     [Min(0.01f)] public float windScale = 0.18f;
+    [InspectorName("微风速度")]
     [Min(0f)] public float windSpeed = 1.8f;
+    [InspectorName("风吹方向")]
     public Vector2 windDirection = new Vector2(0.86f, 0.42f);
+    [InspectorName("阵风压弯强度")]
     [Range(0f, 2f)] public float gustStrength = 0.85f;
+    [InspectorName("阵风间距")]
     [Min(0.01f)] public float gustFrequency = 0.065f;
+    [InspectorName("阵风推进速度")]
     [Min(0f)] public float gustSpeed = 5.8f;
+    [InspectorName("阵风带宽")]
     [Range(0.05f, 0.95f)] public float gustWidth = 0.34f;
+    [InspectorName("阵风噪声碎度")]
     [Min(0.01f)] public float gustNoiseScale = 0.055f;
 
     [Header("交互压草纹理")]
     [FormerlySerializedAs("interactionTextureResolution")]
     [Tooltip("压草纹理尺寸。它影响压草边缘细腻程度，不直接改变压草强度。")]
+    [InspectorName("压草纹理精度")]
     [Range(64, 512)] public int interactionTextureSize = 256;
     [Tooltip("压草力度。数值越大，草被推倒得越明显。")]
+    [InspectorName("压草推开力度")]
     [Range(0f, 8f)] public float interactionStrength = 3.6f;
     [Tooltip("压草垂直压低强度。数值越大，走过路径越明显地塌下去。")]
+    [InspectorName("压草塌陷强度")]
     [Range(0f, 2f)] public float interactionFlattenStrength = 0.85f;
     [FormerlySerializedAs("interactionRecovery")]
     [Tooltip("压草痕迹恢复速度。0 表示几乎不恢复；1-2 保留较久；3 为常用恢复；5 为快速恢复。")]
+    [InspectorName("草痕恢复速度")]
     [Range(0f, 5f)] public float interactionFadeSpeed = 2.6f;
 
     [Header("颜色")]
+    [InspectorName("草根深色")]
     public Color baseColor = new Color(0.11f, 0.34f, 0.12f, 1f);
+    [InspectorName("草尖浅色")]
     public Color tipColor = new Color(0.46f, 0.68f, 0.22f, 1f);
+    [InspectorName("草尖发光感")]
+    [Range(0.5f, 2f)] public float tipBrightness = 1.22f;
 
     private readonly Vector4[] frustumPlaneData = new Vector4[6];
     private readonly MaterialPropertyBlock[] lodPropertyBlocks = new MaterialPropertyBlock[LodCount];
@@ -151,12 +197,20 @@ public sealed class L12GrassRenderer : MonoBehaviour
             targetBladeSpacing = fieldSize / Mathf.Clamp(bladesPerSide, 8, 1200);
         }
         targetBladeSpacing = Mathf.Clamp(targetBladeSpacing, 0.01f, 0.4f);
-        maxBladesPerAxis = Mathf.Clamp(maxBladesPerAxis, 128, 4096);
+        maxBladesPerAxis = Mathf.Clamp(maxBladesPerAxis, 128, 1024);
         chunksPerSide = Mathf.Clamp(chunksPerSide, 1, 32);
         fieldSize = Mathf.Max(1f, fieldSize);
         bladeHeight = Mathf.Max(0.05f, bladeHeight);
         bladeWidth = Mathf.Max(0.005f, bladeWidth);
         bladeRootWidthScale = Mathf.Clamp(bladeRootWidthScale, 0.35f, 2.5f);
+        minBladeHeightScale = Mathf.Clamp(minBladeHeightScale, 0.2f, 1f);
+        maxBladeHeightScale = Mathf.Clamp(maxBladeHeightScale, 1f, 2.5f);
+        if (maxBladeHeightScale < minBladeHeightScale)
+        {
+            maxBladeHeightScale = minBladeHeightScale;
+        }
+        shapeVariation = Mathf.Clamp01(shapeVariation);
+        tipBrightness = Mathf.Clamp(tipBrightness, 0.5f, 2f);
         windDirection = windDirection.sqrMagnitude < 0.001f ? new Vector2(0.86f, 0.42f) : windDirection.normalized;
         maxDrawDistance = Mathf.Max(5f, maxDrawDistance);
         lod0Distance = Mathf.Clamp(lod0Distance, 1f, maxDrawDistance);
@@ -334,7 +388,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
                         float px = (x + 0.5f) * spacingX - halfSize + jitterX;
                         float pz = (z + 0.5f) * spacingZ - halfSize + jitterZ;
                         float yaw = (float)random.NextDouble() * Mathf.PI * 2f;
-                        float scale = Mathf.Lerp(0.62f, 1.32f, (float)random.NextDouble());
+                        float heightT = Mathf.Pow((float)random.NextDouble(), 1.35f);
+                        float scale = Mathf.Lerp(minBladeHeightScale, maxBladeHeightScale, heightT);
                         bladeData[writeIndex] = new Vector4(px, pz, yaw, scale);
                         writeIndex++;
                     }
@@ -463,6 +518,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
             block.SetFloat(GustSpeedId, gustSpeed);
             block.SetFloat(GustWidthId, gustWidth);
             block.SetFloat(GustNoiseScaleId, gustNoiseScale);
+            block.SetFloat(ShapeVariationId, shapeVariation);
+            block.SetFloat(TipBrightnessId, tipBrightness);
             block.SetColor(BaseColorId, baseColor);
             block.SetColor(TipColorId, tipColor);
             block.SetTexture(DensityTextureId, densityMap != null ? densityMap : runtimeWhiteTexture);
@@ -633,7 +690,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
             ? fieldSize / baseBladesPerSide
             : Mathf.Clamp(targetBladeSpacing, 0.01f, 0.4f);
         Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
-        int maxAxis = Mathf.Clamp(maxBladesPerAxis, 128, 4096);
+        int maxAxis = Mathf.Clamp(maxBladesPerAxis, 128, 1024);
         int bladesX = Mathf.Clamp(Mathf.CeilToInt(scaledFieldSize.x / spacing), 8, maxAxis);
         int bladesZ = Mathf.Clamp(Mathf.CeilToInt(scaledFieldSize.y / spacing), 8, maxAxis);
         return new Vector2Int(bladesX, bladesZ);
@@ -643,7 +700,7 @@ public sealed class L12GrassRenderer : MonoBehaviour
     {
         ReleaseLodMeshes();
 
-        lodMeshes[0] = CreateBladeMesh(3, 5, rootWidthScale);
+        lodMeshes[0] = CreateBladeMesh(2, 5, rootWidthScale);
         lodMeshes[0].name = "L12 Grass Blade LOD0";
 
         lodMeshes[1] = CreateBladeMesh(2, 3, rootWidthScale);
