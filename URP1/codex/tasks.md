@@ -5,6 +5,10 @@
 - 当前目标：把 LXII 收敛成可演示的整合场景，不使用 L11 / StarRail，玩家固定为 L10.9 妮露 `Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx`；Humanoid + LXI 动作基础链已打通，当前继续把第三人称控制、草地、雪地、体积云串成同一条演示路径。
 
 ## 当前已确认
+- `Assets/L15 Water/L15.unity` 已生成纯水体现代二次元水体 Demo：不放水上装饰物，只保留水面、水底凹陷地形、灯光、后处理、相机和 HUD。
+- L15 当前水体链路包含：高细分水面网格、4 层 Gerstner 顶点波、深浅水吸收/分层染色、透明混合、Fresnel/高光、岸线泡沫、水底三平面动态焦散；水面网格已改为 UInt32 索引，避免 65535 顶点以上的大三角伪影。
+- L15 构建菜单：`Tools/Water/Build L15 Modern Anime Water Demo`；预览截图：`Assets/Screenshots/L15_ModernAnimeWater_caustic_voronoi_current_20260522.png`。
+- L15 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` 已重写，当前约束和推进顺序已同步。
 - LXII 当前采用 Unity 正式验证口径：
   - 以 Unity Editor 自动编译结果为准

@@ -32,6 +32,9 @@
 - LXII 方案已修正：不使用 L11/StarRail；玩家必须是 `NPC_Avatar_Girl_Sword_Nilou.fbx`，保留 L10.9 妮露材质；Humanoid Avatar、LXI Idle/Run/Action、L12 可交互草地、第三人称摄像机和拆职责角色控制链已接入 `Assets/LXII game 整合/game.unity`。
 - LXII 当前角色控制链已从单脚本测试驱动拆为 `LXIIPlayerInputReader`、`LXIIPlayerMotor`、`LXIIPlayerAnimationDriver`、`LXIIPlayerController`；Inspector 主入口收敛到 `LXIIPlayerController`，内部辅助组件默认隐藏；保留 `CharacterController` 与第三人称摄像机，当前输入为 `WASD` 移动、`Left Shift` 加速、自动 Idle/Run、`3` 触发 Action。
 - LXII 当前 Avatar / 动作主干没有明显扭胯、塌肩、脚尖异常或头发链违和；剩余主要是局部穿模，衣物和头发物理默认按 Unity 插件或成熟现成方案处理，不作为当前内建开发项。
+- `Assets/L15 Water/L15.unity` 已生成纯水体现代二次元水体 Demo：高细分水面网格 + 4 层 Gerstner 顶点波、深浅水吸收/分层染色、透明混合、Fresnel 高光、交界泡沫、水底凹陷地形和三平面投影动态焦散；不放水上装饰物，场景只保留水面、水底、灯光、后处理、相机和 HUD；水面网格已改为 UInt32 索引，避免 65535 顶点以上的大三角伪影。
+- L15 资源集中在 `Assets/L15 Water/{Scripts,Shaders,Materials,Textures,Editor}`；构建菜单为 `Tools/Water/Build L15 Modern Anime Water Demo`；预览截图为 `Assets/Screenshots/L15_ModernAnimeWater_caustic_voronoi_current_20260522.png`。
+- L15 当前校验已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - `Assets/L14 Snow/L14.unity` 已生成可交互雪地 Demo：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移；雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线，多尺度高度/法线混合，动态白色流动点和方块雪晶已移除。
 - L14 雪面光照已加入包裹漫反射、浅层透光、掠射边缘光和静态视角相关雪晶闪点；压痕区域同步改变高度、法线响应、压实色与粗糙度，压过区域会降低雪晶闪点并压低边缘堆雪亮度，避免“白色软管”感。
 - L14 场景已收敛为纯技术 Demo：玩家和两个自动移动体均改为可见小球；每个小球只保留 1 个 `L14SnowInteractor` 压痕源，玩家不再生成左右脚 stamp，所以小球轨迹是单条圆形压痕；构建菜单为 `Tools/Snow/Build L14 Interactive Snow Demo`。

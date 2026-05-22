@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: L15_Modern_Anime_Water
+  m_Shader: {fileID: 4800000, guid: bee54b749309940468da2427fefe92c5, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _CausticTex:
+        m_Texture: {fileID: 2800000, guid: 3e1795fd55a32431da25ed5a6b141ea3, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalA:
+        m_Texture: {fileID: 2800000, guid: 3d8066539bd584ca5b28cb6a3b20d05d, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalB:
+        m_Texture: {fileID: 2800000, guid: 0d2353c30e1d542c89c2883bb562e905, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _CausticScale: 0.3
+    - _CausticStrength: 0.025
+    - _DepthBandStrength: 0.34
+    - _DepthMax: 9.4
+    - _DepthSteps: 6
+    - _FoamAmount: 1.05
+    - _FoamCutoff: 0.5
+    - _FoamDepth: 1.45
+    - _FoamScale: 0.34
+    - _FresnelPower: 3.2
+    - _FresnelStrength: 0.68
+    - _NormalScaleA: 0.68
+    - _NormalScaleB: 2.2
+    - _NormalStrength: 0.52
+    - _ReflectionStrength: 0.58
+    - _RefractionStrength: 0.014
+    - _SpecularIntensity: 0.72
+    - _SpecularPower: 96
+    - _WaterOpacity: 0.38
+    m_Colors:
+    - _CausticColor: {r: 0.65, g: 1, b: 0.95, a: 1}
+    - _DeepColor: {r: 0.012, g: 0.065, b: 0.28, a: 0.94}
+    - _FoamColor: {r: 0.86, g: 1, b: 0.97999996, a: 1}
+    - _FresnelColor: {r: 0.72, g: 1, b: 1, a: 1}
+    - _HorizonColor: {r: 0.16, g: 0.64, b: 0.86, a: 1}
+    - _MidColor: {r: 0.04, g: 0.55, b: 0.92, a: 0.88}
+    - _ShallowColor: {r: 0.36, g: 0.96, b: 0.9, a: 0.82}
+    - _SkyColor: {r: 0.7, g: 0.97, b: 1, a: 1}
+    - _SpecularColor: {r: 1, g: 0.96, b: 0.78, a: 1}
+    - _Wave1: {r: 0.34, g: 12, b: 1.25, a: 0.45}
+    - _Wave2: {r: 0.18, g: 7.2, b: 1.85, a: 0.34}
+    - _Wave3: {r: 0.1, g: 3.8, b: 2.4, a: 0.2}
+    - _Wave4: {r: 0.055, g: 2.2, b: 3.15, a: 0.12}
+    - _WaveDir1: {r: 0.86, g: 0.36, b: 0, a: 0}
+    - _WaveDir2: {r: -0.38, g: 0.92, b: 0, a: 0}
+    - _WaveDir3: {r: 0.18, g: -0.98, b: 0, a: 0}
+    - _WaveDir4: {r: -0.95, g: -0.24, b: 0, a: 0}
+  m_BuildTextureStacks: []
