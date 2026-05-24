@@ -36,6 +36,7 @@
   - 妮露已挂 `CharacterController`
   - 妮露已挂 `L12GrassInteractor`
   - 角色移动时可对草地产生交互
+- L12 草地当前已补充近期构建历史文档：2-card x 5 段三角草尖近景拓扑、缩放保持密度、`targetBladeSpacing` 滑条、`maxBladesPerAxis` 上限 1024、`Tip Brightness`、高低/叶形随机、中文 Inspector，以及 `chunksPerSide` 只做性能分块预筛而非视觉块状裁剪的说明。
 - LXII 当前已经具备拆分职责的第三人称角色控制基础，不再依赖单个临时测试驱动：
   - 输入、移动、动画切换职责已拆开
   - `LXIIPlayerInputReader` 负责输入读取
@@ -74,6 +75,7 @@
 - `Assets/LXII game 整合/Scripts/Player/LXIIPlayerController.cs`
 - `Assets/LXII game 整合/Settings/LXII_Nilou_LXI_Test.controller`
 - `Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx.meta`
+- `Assets/L12 grass/Docs/L12_InteractiveGrass_Workflow.md`
 
 ## 当前待办
 - 后续每轮 LXII 代码或场景改动后，按 Unity 编译状态 + Console Error + 必要 Play Mode 验证记录结果。

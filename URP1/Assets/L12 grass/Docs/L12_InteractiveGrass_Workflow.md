@@ -12,12 +12,14 @@
 - 渲染方式：`Graphics.DrawMeshInstancedIndirect`
 - 剔除方式：CPU Chunk 粗剔除 + Compute Shader 草实例剔除
 - 草数据：CPU 生成基础草实例数据，GPU 端按可见性写入 LOD Append Buffer
-- LOD：LOD0 三面片草簇，LOD1 双面片草簇，LOD2 单面片草叶
-- 草叶 Mesh：条带主体 + 单顶点草尖收束，支持根部宽度倍率调节
+- LOD：LOD0 双交叉面片 5 段草簇，LOD1 双交叉面片 3 段草簇，LOD2 单面片草叶
+- 草叶 Mesh：条带主体 + 单顶点三角草尖收束，支持根部宽度倍率、草高随机和叶形随机调节
 - 密度控制：`L12_GrassDensity.asset` 灰度密度图控制草保留概率和颜色明暗
 - 交互：运行时交互压草贴图，支持轨迹压草、恢复速度、压低强度
 - 缩放：`Transform Scale(XZ)` 可直接放大或缩小草地区域；开启 `preserveDensityWhenResized` 时会自动补实例，尽量维持原草间距
 - 密度调参：`targetBladeSpacing` 现已改为 Inspector 滑条，推荐在 `0.06 ~ 0.18` 间使用；`0.4` 以上视觉上通常会过稀
+- 参数面板：`L12GrassRendererEditor` 提供中文 Inspector，弱化误导性参数名；`chunksPerSide` 当前标注为性能分块数，不代表画面会按块裁剪
+- 草尖表现：`tipBrightness` 可增强草尖浅色，配合 `tipColor` 做更接近二次元草海的明亮层次
 - 光照：草地 Shader 已接入 URP `Main Light Shadows / Soft Shadows`，可接收方向光和场景物体投下来的阴影
 - 风：方向风 + 阵风波带 + 局部抖动，形成一阵一阵吹过的整体感
 - 交互控制：WASD / 方向键移动交互体，右键旋转视角，滚轮缩放，中键平移，R 复位
@@ -37,6 +39,7 @@
 | 相机控制 | `Assets/L12 grass/Scripts/L12GrassCameraRig.cs` |
 | HUD | `Assets/L12 grass/Scripts/L12GrassDemoHud.cs` |
 | 构建器 | `Assets/L12 grass/Editor/L12GrassExampleBuilder.cs` |
+| 中文 Inspector | `Assets/L12 grass/Editor/L12GrassRendererEditor.cs` |
 | 草地材质 | `Assets/L12 grass/Materials/L12_InteractiveGrass.mat` |
 | 地面材质 | `Assets/L12 grass/Materials/L12_Ground.mat` |
 | 交互体材质 | `Assets/L12 grass/Materials/L12_Interactor.mat` |
@@ -126,6 +129,17 @@ DrawMeshInstancedIndirect 绘制可见草实例
 
 通过 Chunk 粗剔除，可以减少 Compute Shader 每帧需要处理的草实例范围。
 
+注意：`chunksPerSide` 不是视觉边缘控制参数。当前流程是 CPU 先按 Chunk 做视锥和距离的粗预筛，只有可能可见的 Chunk 才会 dispatch 到 Compute Shader；进入 Compute 后，仍然会对 Chunk 内每株草执行逐株距离剔除：
+
+```hlsl
+if (distanceToCamera > _MaxDrawDistance)
+{
+    return;
+}
+```
+
+因此最终可见边缘通常是围绕相机的圆弧，而不是方块状 Chunk 边界。这个设计的目的，是让 Chunk 负责减少无效计算，让逐株剔除负责平滑观感。
+
 ### 5. Compute Shader 剔除和 LOD 分类
 
 `L12GrassCull.compute` 的职责：
@@ -154,19 +168,21 @@ distance < lod1Distance  -> LOD1
 
 | LOD | Mesh 结构 | 用途 |
 | --- | --- | --- |
-| LOD0 | 3 张交叉面片，5 段高度分段 | 近景草簇，体积感最好 |
+| LOD0 | 2 张交叉面片，5 段高度分段 | 近景草簇，保留体积感并降低近景三角形数量 |
 | LOD1 | 2 张交叉面片，3 段高度分段 | 中景草簇，降低三角形数量 |
 | LOD2 | 1 张面片，1 段高度分段 | 远景草叶，最低成本 |
 
 草叶 Mesh 不是几何着色器生成的，而是在 `L12GrassRenderer.CreateBladeMesh` 中由 C# 构建。
 
-后续为了修复三面片顶部交叉感，把草叶拓扑从“顶部横边”改为：
+近景曾尝试过多段矩形草叶和顶部斜切矩形，但在近距离会出现顶部毛刺、薄片交叠和不稳定的尖边伪影。当前已回到三角草尖方案，把草叶拓扑收敛为：
 
 ```text
 条带主体 + 单个尖端顶点
 ```
 
 最后一段用三角形收束到草尖，减少近景平顶和叉口感。
+
+当前 LOD0 为 `2 card x 5 segment`：每棵草保留两张交叉草叶卡片，通过随机高度、宽窄、自旋和倾斜获得变化；相比原先 3 card 方案，近景体积感略低，但实例数较高时性能和交叠观感更稳定。
 
 ### 7. 暴露根部宽度参数
 
@@ -182,7 +198,56 @@ distance < lod1Distance  -> LOD1
 
 当 `bladeRootWidthScale` 改变时，会自动重建 LOD Mesh，并刷新 indirect args buffer。
 
-### 8. 密度图生成和绑定
+### 8. 形状、高度和草尖颜色随机
+
+为了让草地更接近开放世界二次元草海，而不是等高等宽的重复刀片，当前版本加入了少量真正影响观感的参数：
+
+- `minBladeHeightScale`：矮草高度倍率，默认 `0.45`。
+- `maxBladeHeightScale`：高草高度倍率，默认 `1.55`。
+- `shapeVariation`：草叶形状随机度，影响宽窄、自旋、轻微倾斜和顶端偏移。
+- `tipBrightness`：草尖明亮度，配合 `tipColor` 让草尖更浅、更通透。
+
+高度随机在 CPU 生成草实例时写入 `blade.w`，并使用偏向低草的随机分布，让大部分草保持正常高度，少量高草穿出整体草面。形状随机和草尖亮度在 Shader 顶点/片元阶段执行，避免增加 CPU 实例数据结构复杂度。
+
+当前不再暴露 `Card Count Near`。近景固定使用 `2 card x 5 segment`，这样参数面板不会继续堆难调项；如果后续要做质量档，可以在内部按质量预设切换，而不是让用户逐项调拓扑。
+
+### 9. 可缩放覆盖范围和密度保护
+
+草地区域支持通过 `Transform Scale(XZ)` 直接改变覆盖范围。为了避免“草地变大但实例数量不变，所以越放大越稀”，当前推荐开启：
+
+```text
+preserveDensityWhenResized = true
+```
+
+开启后，实际单轴草株数主要由 `targetBladeSpacing` 推导：
+
+```text
+scaledFieldSize / targetBladeSpacing
+```
+
+再由 `maxBladesPerAxis` 做安全上限保护。当前上限已从早期过高的 `4096` 收敛到 `1024`，避免误调后显存和实例数暴涨。
+
+参数含义：
+
+- `bladesPerSide` / 基础草株数：基础采样参考值；开启保持密度后不再是主要密度旋钮。
+- `targetBladeSpacing` / 目标草间距：主要密度旋钮，值越小越密；Inspector 使用 `0.01 ~ 0.4` 滑条。
+- `maxBladesPerAxis` / 单轴安全上限：防爆保护，不建议当作常规密度参数。
+- `chunksPerSide` / 性能分块数：影响 CPU 粗筛和 Compute dispatch 粒度，不改变逐株距离剔除的圆弧边缘。
+
+### 10. 中文 Inspector 参数面板
+
+`Assets/L12 grass/Editor/L12GrassRendererEditor.cs` 为 `L12GrassRenderer` 提供了中文 Inspector。目的不是改变运行时逻辑，而是把参数名字改成更接近调参意图的中文，减少误解。
+
+示例：
+
+- `Target Blade Spacing` -> `目标草间距`
+- `Max Blades Per Axis` -> `单轴安全上限`
+- `Chunks Per Side` -> `性能分块数`
+- `Min / Max Blade Height Scale` -> `高低层次：矮草倍率 / 高草倍率`
+- `Shape Variation` -> `叶形随机度`
+- `Tip Brightness` -> `草尖发光感`
+
+### 11. 密度图生成和绑定
 
 密度图路径：
 
@@ -218,7 +283,7 @@ Hash > survival             -> 按概率剔除
 
 草地 Shader 也会采样同一张密度图做颜色明暗变化，让稀疏和密集区域过渡更自然。
 
-### 9. 交互压草贴图
+### 12. 交互压草贴图
 
 早期交互方式是把少量球形交互体直接传给 Shader。这个方案数量有限，且难以保留轨迹。
 
@@ -245,7 +310,7 @@ Shader 中根据交互贴图：
 - `interactionFlattenStrength`：向下压低强度。
 - `interactionFadeSpeed`：压草痕迹恢复速度。
 
-### 10. 风场升级
+### 13. 风场升级
 
 第一版风是局部正弦抖动，整体性不足。后续改为：
 
@@ -258,7 +323,7 @@ Shader 中根据交互贴图：
 
 Shader 使用世界空间坐标沿风向计算阵风波带，让一片草地出现“一阵风吹过”的整体运动，而不是每棵草各自乱摆。
 
-### 11. 相机和演示控制
+### 14. 相机和演示控制
 
 运行时相机由 `L12GrassCameraRig` 控制，主交互体由 `L12GrassWalker` 控制。
 
@@ -298,6 +363,10 @@ HUD 由 `L12GrassDemoHud` 显示：
 - Exponential Fade Recovery
 - Vertex Shader Wind Bending
 - Directional Gust Wind Field
+- Height Variation / Shape Variation
+- Tip Brightness 草尖亮度控制
+- Density-preserving Resize
+- Custom Inspector 中文调参面板
 - MaterialPropertyBlock 参数推送
 
 ## 当前验证记录
@@ -313,6 +382,12 @@ HUD 由 `L12GrassDemoHud` 显示：
 - `dotnet build Assembly-CSharp.csproj`：0 error
 - `dotnet build Assembly-CSharp-Editor.csproj`：0 error
 
+2026-05-24 草叶拓扑和参数面板更新后验证：
+
+- UnitySkills `asset_refresh`：完成
+- UnitySkills `debug_check_compilation`：`isCompiling=false`，`isUpdating=false`
+- Unity Console Error：0
+
 ## 已知设计取舍
 
 - 当前是 Demo 级大规模草地，不是完整开放世界植被系统。
@@ -321,7 +396,8 @@ HUD 由 `L12GrassDemoHud` 显示：
 - 交互压草贴图由 CPU 更新，逻辑清晰，后续可迁移到 Compute Shader 或 RenderTexture stamping。
 - `DrawMeshInstancedIndirect` 主链路已经接近现代大规模草地做法，但还没有做 GPU occlusion culling、Hi-Z、cluster streaming 或 terrain tile streaming。
 - LOD 是按距离分类的 Mesh LOD，没有做淡入淡出过渡，远近切换在极端观察角度下可能仍可见。
-- 草叶使用交叉面片追求近景体积感，成本高于单面片 billboard。
+- 草叶使用交叉面片追求近景体积感，成本高于单面片 billboard；当前近景固定为 `2 card x 5 segment`，不再暴露卡片数参数。
+- `chunksPerSide` 只负责 CPU 粗剔除和 dispatch 粒度；最终画面边缘仍由 Compute 中逐株 `distanceToCamera > _MaxDrawDistance` 决定，所以可见边界通常是圆弧而不是块状。
 
 ## 后续待办
 
@@ -364,4 +440,4 @@ HUD 由 `L12GrassDemoHud` 显示：
 
 ## 视频简介可用文案
 
-Unity URP 大规模可交互草地 Demo：使用 `DrawMeshInstancedIndirect`、Compute Shader 剔除、Chunk 分块、密度图控制生成、近中远 LOD、交互压草贴图、草叶拓扑优化和方向阵风风场，实现可运行、可调参、可讲解的 GPU Driven Grass 示例。
+Unity URP 大规模可交互草地 Demo：使用 `DrawMeshInstancedIndirect`、Compute Shader 剔除、Chunk 粗分块、密度图控制生成、近中远 LOD、交互压草贴图、2-card 三角草尖草叶拓扑、缩放保持密度、中文 Inspector 调参面板和方向阵风风场，实现可运行、可调参、可讲解的 GPU Driven Grass 示例。
