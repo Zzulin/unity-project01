@@ -1,0 +1,50 @@
+#pragma kernel PopulateRain
+
+RWStructuredBuffer<float4> _RainDrops;
+
+int _Count;
+float3 _CameraPosition;
+float4 _VolumeSize;
+float _RainTime;
+float4 _Wind;
+float _FallSpeed;
+float _Seed;
+
+float Hash11(float value)
+{
+    return frac(sin(value * 17.13 + _Seed * 0.37) * 43758.5453123);
+}
+
+float3 Hash31(uint id)
+{
+    float baseValue = (float)id + 1.0;
+    return float3(
+        Hash11(baseValue * 12.9898),
+        Hash11(baseValue * 78.233),
+        Hash11(baseValue * 37.719));
+}
+
+[numthreads(64, 1, 1)]
+void PopulateRain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Count)
+    {
+        return;
+    }
+
+    float3 random = Hash31(id.x);
+    float3 size = max(_VolumeSize.xyz, 1.0.xxx);
+    float fallPhase = frac(random.y - _RainTime * (_FallSpeed / size.y) * lerp(0.72, 1.28, random.z));
+    float3 localPosition;
+    localPosition.x = (random.x - 0.5) * size.x;
+    localPosition.z = (Hash11(id.x * 5.71 + 19.2) - 0.5) * size.z;
+    localPosition.y = (fallPhase - 0.32) * size.y;
+
+    float2 windOffset = _Wind.xy * (_RainTime * 5.5 + random.z * 38.0);
+    localPosition.xz += windOffset;
+    localPosition.xz = frac(localPosition.xz / size.xz + 0.5) * size.xz - size.xz * 0.5;
+
+    float3 cameraCell = floor(_CameraPosition / 4.0) * 4.0;
+    float3 positionWS = cameraCell + localPosition + float3(0.0, size.y * 0.32, 0.0);
+    _RainDrops[id.x] = float4(positionWS, random.z);
+}

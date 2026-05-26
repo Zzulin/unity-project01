@@ -35,6 +35,9 @@
 - `Assets/L15 Water/L15.unity` 已生成纯水体现代二次元水体 Demo：高细分水面网格 + 4 层 Gerstner 顶点波、深浅水吸收/分层染色、透明混合、Fresnel 高光、交界泡沫、水底凹陷地形和三平面投影动态焦散；不放水上装饰物，场景只保留水面、水底、灯光、后处理、相机和 HUD；水面网格已改为 UInt32 索引，避免 65535 顶点以上的大三角伪影。
 - L15 资源集中在 `Assets/L15 Water/{Scripts,Shaders,Materials,Textures,Editor}`；构建菜单为 `Tools/Water/Build L15 Modern Anime Water Demo`；预览截图为 `Assets/Screenshots/L15_ModernAnimeWater_caustic_voronoi_current_20260522.png`。
 - L15 当前校验已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；`shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
+- `Assets/L16 Rain/L16.unity` 当前已收敛为只验证雨水效果的极简 Demo：Compute Shader 填充雨滴位置 + `DrawMeshInstancedIndirect` 绘制 GPU 雨线，URP Fullscreen RendererFeature 做屏幕空间雨丝/镜头雨滴/折射；湿润积水、雨滴涟漪、多灯牌、小柱子等额外展示物已移除，场景只保留普通地面、普通背景墙、一个主光、相机、Rain Volume 和 HUD。
+- L16 资源集中在 `Assets/L16 Rain/{Scripts,Shaders,Materials,Editor,Docs}`；构建菜单为 `Tools/Rain/Build L16 Advanced Rain Demo`；预览截图为 `Assets/Screenshots/L16_AdvancedRain_current_20260526.png`。
+- L16 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；L16 两个 Shader `shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
 - `Assets/L14 Snow/L14.unity` 已生成可交互雪地 Demo：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移；雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线，多尺度高度/法线混合，动态白色流动点和方块雪晶已移除。
 - L14 雪面光照已加入包裹漫反射、浅层透光、掠射边缘光和静态视角相关雪晶闪点；压痕区域同步改变高度、法线响应、压实色与粗糙度，压过区域会降低雪晶闪点并压低边缘堆雪亮度，避免“白色软管”感。
 - L14 场景已收敛为纯技术 Demo：玩家和两个自动移动体均改为可见小球；每个小球只保留 1 个 `L14SnowInteractor` 压痕源，玩家不再生成左右脚 stamp，所以小球轨迹是单条圆形压痕；构建菜单为 `Tools/Snow/Build L14 Interactive Snow Demo`。
