@@ -3,7 +3,6 @@ using UnityEngine;
 public sealed class L16RainDemoHud : MonoBehaviour
 {
     public L16RainManager rainManager;
-    public Material screenRainMaterial;
 
     private void OnGUI()
     {
@@ -25,11 +24,6 @@ public sealed class L16RainDemoHud : MonoBehaviour
             GUILayout.EndHorizontal();
             GUILayout.Label($"GPU rain streaks: {rainManager.ActiveDropCount} / {rainManager.CurrentDropCount}");
 
-            if (screenRainMaterial != null)
-            {
-                screenRainMaterial.SetFloat("_ScreenRainStrength", Mathf.Lerp(0.15f, 0.92f, rainManager.rainIntensity));
-                screenRainMaterial.SetFloat("_LensDropletStrength", Mathf.Lerp(0.02f, 0.16f, rainManager.rainIntensity));
-            }
         }
 
         GUILayout.EndArea();

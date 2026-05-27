@@ -15,9 +15,8 @@ MonoBehaviour:
   debugShaders:
     debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7, type: 3}
     hdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
-  m_RendererFeatures:
-  - {fileID: 4489612377584776028}
-  m_RendererFeatureMap: 5c3323a1ab4e4e3e
+  m_RendererFeatures: []
+  m_RendererFeatureMap: 
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -86,19 +85,3 @@ MonoBehaviour:
     cloudHeight: 100
     cloudThickness: 50
     raySteps: 64
---- !u!114 &4489612377584776028
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4eb673e1244b941c8b6d45d1f8806232, type: 3}
-  m_Name: L16RainScreenFeature
-  m_EditorClassIdentifier: 
-  m_Active: 1
-  settings:
-    material: {fileID: 2100000, guid: 28a8b8801e2d9478a942216009ffe05d, type: 2}
-    passEvent: 500

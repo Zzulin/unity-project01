@@ -66,6 +66,8 @@ public sealed class L16RainManager : MonoBehaviour
     private void OnDisable()
     {
         RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+        Shader.SetGlobalFloat(RainIntensityId, 0f);
+        Shader.SetGlobalVector(RainWindId, Vector4.zero);
         ReleaseResources();
     }
 

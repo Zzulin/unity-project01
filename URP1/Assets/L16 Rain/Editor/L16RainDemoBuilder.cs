@@ -13,7 +13,6 @@ public static class L16RainDemoBuilder
     private const string RainMaterialPath = Root + "/Materials/L16_GPU_Rain_Streak.mat";
     private const string GroundMaterialPath = Root + "/Materials/L16_Plain_Rain_Ground.mat";
     private const string BackdropMaterialPath = Root + "/Materials/L16_Plain_Rain_Backdrop.mat";
-    private const string ScreenMaterialPath = Root + "/Materials/L16_Screen_Rain.mat";
     private const string SkyboxMaterialPath = Root + "/Materials/L16_Rain_Skybox.mat";
 
     [MenuItem("Tools/Rain/Build L16 Advanced Rain Demo")]
@@ -38,9 +37,6 @@ public static class L16RainDemoBuilder
         Material rainMaterial = LoadOrCreateRainMaterial();
         Material groundMaterial = LoadOrCreatePlainLitMaterial(GroundMaterialPath, "L16_Plain_Rain_Ground", new Color(0.52f, 0.55f, 0.58f, 1f), 0f, 0.38f);
         Material backdropMaterial = LoadOrCreatePlainLitMaterial(BackdropMaterialPath, "L16_Plain_Rain_Backdrop", new Color(0.66f, 0.69f, 0.72f, 1f), 0f, 0.32f);
-        Material screenMaterial = LoadOrCreateScreenRainMaterial();
-
-        ConfigureRendererFeature(screenMaterial);
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "L16 Advanced Rain";
@@ -82,7 +78,6 @@ public static class L16RainDemoBuilder
         GameObject hud = new GameObject("Demo HUD");
         L16RainDemoHud demoHud = hud.AddComponent<L16RainDemoHud>();
         demoHud.rainManager = rainManager;
-        demoHud.screenRainMaterial = screenMaterial;
 
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
@@ -124,57 +119,6 @@ public static class L16RainDemoBuilder
 
         property.boolValue = value;
         return true;
-    }
-
-    private static void ConfigureRendererFeature(Material screenMaterial)
-    {
-        string[] guids = AssetDatabase.FindAssets("t:UniversalRendererData");
-        foreach (string guid in guids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            UniversalRendererData rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(path);
-            if (rendererData == null || !path.StartsWith("Assets/Settings/", System.StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            bool exists = false;
-            foreach (ScriptableRendererFeature feature in rendererData.rendererFeatures)
-            {
-                if (feature is L16RainScreenFeature)
-                {
-                    exists = true;
-                    SerializedObject featureSerialized = new SerializedObject(feature);
-                    SerializedProperty materialProperty = featureSerialized.FindProperty("settings").FindPropertyRelative("material");
-                    materialProperty.objectReferenceValue = screenMaterial;
-                    featureSerialized.ApplyModifiedPropertiesWithoutUndo();
-                    EditorUtility.SetDirty(feature);
-                }
-            }
-
-            if (exists)
-            {
-                continue;
-            }
-
-            L16RainScreenFeature rainFeature = ScriptableObject.CreateInstance<L16RainScreenFeature>();
-            rainFeature.name = "L16RainScreenFeature";
-            rainFeature.settings.material = screenMaterial;
-            rainFeature.settings.passEvent = RenderPassEvent.AfterRenderingTransparents;
-            AssetDatabase.AddObjectToAsset(rainFeature, rendererData);
-            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(rainFeature, out string _, out long localId);
-
-            SerializedObject serializedRenderer = new SerializedObject(rendererData);
-            SerializedProperty features = serializedRenderer.FindProperty("m_RendererFeatures");
-            SerializedProperty featureMap = serializedRenderer.FindProperty("m_RendererFeatureMap");
-            features.arraySize++;
-            features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue = rainFeature;
-            featureMap.arraySize++;
-            featureMap.GetArrayElementAtIndex(featureMap.arraySize - 1).longValue = localId;
-            serializedRenderer.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(rendererData);
-            Debug.Log($"L16 rain screen RendererFeature installed on {path}");
-        }
     }
 
     private static void ConfigureSimpleLighting()
@@ -272,24 +216,4 @@ public static class L16RainDemoBuilder
         return material;
     }
 
-    private static Material LoadOrCreateScreenRainMaterial()
-    {
-        Material material = AssetDatabase.LoadAssetAtPath<Material>(ScreenMaterialPath);
-        Shader shader = Shader.Find("Hidden/L16/Rain Screen Pass");
-        if (material == null)
-        {
-            material = new Material(shader) { name = "L16_Screen_Rain" };
-            AssetDatabase.CreateAsset(material, ScreenMaterialPath);
-        }
-        else if (shader != null)
-        {
-            material.shader = shader;
-        }
-
-        material.SetFloat("_ScreenRainStrength", 0.72f);
-        material.SetFloat("_LensDropletStrength", 0.12f);
-        material.SetFloat("_RefractionStrength", 0.010f);
-        material.SetFloat("_StreakScale", 38f);
-        return material;
-    }
 }

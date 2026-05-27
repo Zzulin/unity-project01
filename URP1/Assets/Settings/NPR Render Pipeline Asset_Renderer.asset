@@ -1,21 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-6253755141535168008
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4eb673e1244b941c8b6d45d1f8806232, type: 3}
-  m_Name: L16RainScreenFeature
-  m_EditorClassIdentifier: 
-  m_Active: 1
-  settings:
-    material: {fileID: 2100000, guid: 28a8b8801e2d9478a942216009ffe05d, type: 2}
-    passEvent: 500
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34,8 +18,7 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: 1715286648159585762}
   - {fileID: 8132779096839426648}
-  - {fileID: -6253755141535168008}
-  m_RendererFeatureMap: e2c585571eeccd175812d6cf7f6fdd70f8098624d53236a9
+  m_RendererFeatureMap: e2c585571eeccd175812d6cf7f6fdd70
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
