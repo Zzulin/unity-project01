@@ -38,6 +38,9 @@
 - `Assets/L16 Rain/L16.unity` 当前已收敛为只验证 GPU 雨幕的极简 Demo：Compute Shader 填充雨滴位置 + `DrawMeshInstancedIndirect` 绘制 GPU 雨线；屏幕滑动雨水/镜头雨痕、湿润积水、雨滴涟漪、多灯牌、小柱子等额外展示物已移除，场景只保留普通地面、普通背景墙、一个主光、相机、Rain Volume 和 HUD。
 - L16 资源集中在 `Assets/L16 Rain/{Scripts,Shaders,Materials,Editor,Docs}`；构建菜单为 `Tools/Rain/Build L16 Advanced Rain Demo`；预览截图为 `Assets/Screenshots/L16_AdvancedRain_current_20260527.png`。
 - L16 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；L16 雨线 Shader `shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
+- `Assets/L17 Volumetric Lighting/L17.unity` 已落地室内窗光体积光 Demo：局部参与介质 Box + 主光阴影图约束 ray march + Henyey-Greenstein 前向散射 + 程序化 3D value noise；场景只保留房间、窗洞、主光、体积盒和接光台。
+- L17 资源集中在 `Assets/L17 Volumetric Lighting/{Shaders,Materials,Editor,Docs}`；构建菜单为 `Tools/Volumetric Lighting/Build L17 Modern Window Shafts Demo`。
+- L17 当前静态验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；当前机器缺少项目目标 `Unity 2022.3.62f3c1` Editor，本轮未做 Unity 内 `shader_check_errors` / `scene_health_check` / Play Mode 短跑。
 - `Assets/L14 Snow/L14.unity` 已生成可交互雪地 Demo：Compute Shader 写入 1024² ARGBHalf 雪面高度/堆雪状态图，520x520 高细分网格做真实顶点位移；雪材质已改为 BaseColor/Normal/Height/Roughness/SparkleMask 贴图管线，多尺度高度/法线混合，动态白色流动点和方块雪晶已移除。
 - L14 雪面光照已加入包裹漫反射、浅层透光、掠射边缘光和静态视角相关雪晶闪点；压痕区域同步改变高度、法线响应、压实色与粗糙度，压过区域会降低雪晶闪点并压低边缘堆雪亮度，避免“白色软管”感。
 - L14 场景已收敛为纯技术 Demo：玩家和两个自动移动体均改为可见小球；每个小球只保留 1 个 `L14SnowInteractor` 压痕源，玩家不再生成左右脚 stamp，所以小球轨迹是单条圆形压痕；构建菜单为 `Tools/Snow/Build L14 Interactive Snow Demo`。

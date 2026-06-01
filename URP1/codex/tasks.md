@@ -12,6 +12,9 @@
 - `Assets/L16 Rain/L16.unity` 当前已收敛为只验证 GPU 雨幕的极简 Demo：Compute Shader + `DrawMeshInstancedIndirect` GPU 雨线、Low/Medium/High 三档和 HUD 参数面板；屏幕滑动雨水/镜头雨痕、湿润积水、雨滴涟漪、多灯牌、小柱子等额外展示物已移除。
 - L16 构建菜单：`Tools/Rain/Build L16 Advanced Rain Demo`；资源集中在 `Assets/L16 Rain/{Scripts,Shaders,Materials,Editor,Docs}`；预览截图：`Assets/Screenshots/L16_AdvancedRain_current_20260527.png`。
 - L16 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；L16 雨线 Shader `shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
+- `Assets/L17 Volumetric Lighting/L17.unity` 已新增室内窗光体积光 Demo：局部参与介质 Box 承载光束，逐步进 ray march 采样主光阴影图，配合 HG 前向散射和程序化 3D value noise 做现代实时窗光柱效果。
+- L17 构建菜单：`Tools/Volumetric Lighting/Build L17 Modern Window Shafts Demo`；资源集中在 `Assets/L17 Volumetric Lighting/{Shaders,Materials,Editor,Docs}`。
+- L17 当前静态验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；当前机器缺少项目目标 `Unity 2022.3.62f3c1` Editor，本轮未做 Unity 内 `shader_check_errors` / `scene_health_check` / Play Mode 短跑。
 - `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` 已重写，当前约束和推进顺序已同步。
 - LXII 当前采用 Unity 正式验证口径：
   - 以 Unity Editor 自动编译结果为准
@@ -79,6 +82,11 @@
 - `Assets/LXII game 整合/Settings/LXII_Nilou_LXI_Test.controller`
 - `Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx.meta`
 - `Assets/L12 grass/Docs/L12_InteractiveGrass_Workflow.md`
+- `Assets/L17 Volumetric Lighting/L17.unity`
+- `Assets/L17 Volumetric Lighting/Shaders/L17WindowVolumetricBeam.shader`
+- `Assets/L17 Volumetric Lighting/Materials/{L17_WindowBeam,L17_RoomWall,L17_DustyFloor,L17_WindowFrame}.mat`
+- `Assets/L17 Volumetric Lighting/Editor/L17VolumetricLightingDemoBuilder.cs`
+- `Assets/L17 Volumetric Lighting/Docs/L17_ModernVolumetricLighting_Workflow.md`
 
 ## 当前待办
 - 后续每轮 LXII 代码或场景改动后，按 Unity 编译状态 + Console Error + 必要 Play Mode 验证记录结果。
