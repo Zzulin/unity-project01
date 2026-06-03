@@ -12,8 +12,8 @@
 - `Assets/L16 Rain/L16.unity` 当前已收敛为只验证 GPU 雨幕的极简 Demo：Compute Shader + `DrawMeshInstancedIndirect` GPU 雨线、Low/Medium/High 三档和 HUD 参数面板；屏幕滑动雨水/镜头雨痕、湿润积水、雨滴涟漪、多灯牌、小柱子等额外展示物已移除。
 - L16 构建菜单：`Tools/Rain/Build L16 Advanced Rain Demo`；资源集中在 `Assets/L16 Rain/{Scripts,Shaders,Materials,Editor,Docs}`；预览截图：`Assets/Screenshots/L16_AdvancedRain_current_20260527.png`。
 - L16 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；L16 雨线 Shader `shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
-- `Assets/L17 Volumetric Lighting/L17.unity` 已新增室内窗光体积光 Demo：局部参与介质 Box 承载光束，逐步进 ray march 采样主光阴影图，配合 HG 前向散射和程序化 3D value noise 做现代实时窗光柱效果。
-- L17 构建菜单：`Tools/Volumetric Lighting/Build L17 Modern Window Shafts Demo`；资源集中在 `Assets/L17 Volumetric Lighting/{Shaders,Materials,Editor,Docs}`。
+- `Assets/L17 Volumetric Lighting/L17.unity` 已新增室内窗光体积光 Demo：局部参与介质体积承载光束，逐步进 ray march 采样主光阴影图，配合 HG 前向散射和程序化 3D value noise 做现代实时窗光柱效果；当前室内统一单色双面受光，主光与体积光统一为同向平行下打，4 束窗光已回退并收敛为更稳定的 `Cube Beam` 方案，去掉 `Prism/Frustum` 残留，并补上 `scene depth` 截断以压掉 beam 与墙地相交时的黑块伪影；场景新增 `L17 Lighting Controller`，Inspector 可直接调 `Step Count / Opacity / Intensity / Shadow Contrast / Ambient Boost`。
+- L17 构建菜单：`Tools/Volumetric Lighting/Build L17 Modern Window Shafts Demo`；资源集中在 `Assets/L17 Volumetric Lighting/{Shaders,Materials,Scripts,Editor,Docs}`。
 - L17 当前静态验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；当前机器缺少项目目标 `Unity 2022.3.62f3c1` Editor，本轮未做 Unity 内 `shader_check_errors` / `scene_health_check` / Play Mode 短跑。
 - `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` 已重写，当前约束和推进顺序已同步。
 - LXII 当前采用 Unity 正式验证口径：

@@ -30,8 +30,7 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap:
-    RenderType: Opaque
+  stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -39,11 +38,11 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _AmbientBoost: 1.45
-    - _Smoothness: 0.16
-    - _SpecularStrength: 0.14
-    - _WrapDiffuse: 0.38
+    - _AmbientBoost: 0.55
+    - _Smoothness: 0.12
+    - _SpecularStrength: 0.06
+    - _WrapDiffuse: 0.03
     m_Colors:
-    - _BaseColor: {r: 0.79, g: 0.73, b: 0.66, a: 1}
-    - _ShadowColor: {r: 0.62, g: 0.54, b: 0.44, a: 1}
+    - _BaseColor: {r: 0.72, g: 0.68, b: 0.6, a: 1}
+    - _ShadowColor: {r: 0.18, g: 0.16, b: 0.14, a: 1}
   m_BuildTextureStacks: []

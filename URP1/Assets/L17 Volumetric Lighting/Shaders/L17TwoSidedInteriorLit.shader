@@ -3,11 +3,11 @@ Shader "L17 Volumetric Lighting/Two Sided Interior Lit"
     Properties
     {
         _BaseColor ("Base Color", Color) = (0.8, 0.74, 0.66, 1.0)
-        _ShadowColor ("Shadow Color", Color) = (0.64, 0.57, 0.48, 1.0)
+        _ShadowColor ("Shadow Color", Color) = (0.18, 0.16, 0.14, 1.0)
         _Smoothness ("Smoothness", Range(0.0, 1.0)) = 0.18
         _SpecularStrength ("Specular Strength", Range(0.0, 2.0)) = 0.2
-        _WrapDiffuse ("Wrap Diffuse", Range(0.0, 1.0)) = 0.32
-        _AmbientBoost ("Ambient Boost", Range(0.0, 3.0)) = 1.35
+        _WrapDiffuse ("Wrap Diffuse", Range(0.0, 1.0)) = 0.06
+        _AmbientBoost ("Ambient Boost", Range(0.0, 3.0)) = 0.35
     }
 
     SubShader
@@ -58,7 +58,6 @@ Shader "L17 Volumetric Lighting/Two Sided Interior Lit"
                 float4 positionHCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
-                float4 shadowCoord : TEXCOORD2;
             };
 
             Varyings Vert(Attributes input)
@@ -69,7 +68,6 @@ Shader "L17 Volumetric Lighting/Two Sided Interior Lit"
                 output.positionHCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalInputs.normalWS;
-                output.shadowCoord = TransformWorldToShadowCoord(positionInputs.positionWS);
                 return output;
             }
 
@@ -79,19 +77,21 @@ Shader "L17 Volumetric Lighting/Two Sided Interior Lit"
                 float3 normalWS = normalize(input.normalWS * facing);
                 float3 viewDirWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));
 
-                Light mainLight = GetMainLight(input.shadowCoord);
+                float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+                Light mainLight = GetMainLight(shadowCoord);
                 float3 lightDirWS = normalize(mainLight.direction);
 
                 float ndl = dot(normalWS, lightDirWS);
                 float wrappedDiffuse = saturate((ndl + _WrapDiffuse) / (1.0 + _WrapDiffuse));
                 float shadow = mainLight.shadowAttenuation;
-                float3 litColor = lerp(_ShadowColor.rgb, _BaseColor.rgb, wrappedDiffuse * shadow);
+                float3 directDiffuse = _BaseColor.rgb * wrappedDiffuse * shadow;
 
                 float3 halfDirWS = SafeNormalize(lightDirWS + viewDirWS);
                 float specular = pow(saturate(dot(normalWS, halfDirWS)), lerp(16.0, 96.0, _Smoothness)) * _SpecularStrength * shadow;
-                float3 ambient = SampleSH(normalWS) * _AmbientBoost * _BaseColor.rgb;
+                float3 ambientTint = lerp(_ShadowColor.rgb, _BaseColor.rgb, 0.28);
+                float3 ambient = SampleSH(normalWS) * _AmbientBoost * ambientTint;
 
-                return half4(ambient + mainLight.color * litColor + specular, 1.0);
+                return half4(ambient + mainLight.color * directDiffuse + specular, 1.0);
             }
             ENDHLSL
         }
