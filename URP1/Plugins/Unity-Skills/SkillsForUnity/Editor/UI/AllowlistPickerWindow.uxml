@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElementsSchema.xsd">
+
+    <ui:VisualElement name="picker-root" class="picker-root">
+
+        <!-- Top: search -->
+        <ui:VisualElement name="picker-search-bar" class="picker-search-bar">
+            <uie:ToolbarSearchField name="picker-search" class="picker-search" />
+        </ui:VisualElement>
+
+        <!-- Middle: scrollable grouped list -->
+        <ui:ScrollView name="picker-scroll" class="picker-scroll" mode="Vertical" />
+
+        <!-- Bottom: summary + action buttons -->
+        <ui:VisualElement name="picker-footer" class="picker-footer">
+            <ui:Label name="picker-summary" class="picker-summary" />
+            <ui:Button name="picker-cancel-btn" class="picker-btn" />
+            <ui:Button name="picker-add-btn" class="picker-btn picker-btn--primary" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

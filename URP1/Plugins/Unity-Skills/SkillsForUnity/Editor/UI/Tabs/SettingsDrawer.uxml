@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../../../../../UIElementsSchema/UIElementsSchema.xsd">
+
+    <ui:VisualElement style="flex-grow: 1; flex-direction: column;">
+
+        <!-- ============ Header ============ -->
+        <ui:VisualElement name="drawer-header" class="drawer-header"
+                          style="flex-direction: row; align-items: center; flex-shrink: 0;">
+            <ui:Label name="drawer-title" class="drawer-header__title flex-grow"
+                      text="Settings" />
+            <ui:Button name="drawer-close-btn" class="icon-btn" text="✕"
+                       tooltip="Close" />
+        </ui:VisualElement>
+
+        <!-- ============ Body ============ -->
+        <ui:ScrollView name="drawer-body-scroll" class="scroll-view"
+                       style="flex-grow: 1; min-height: 0;">
+            <ui:VisualElement name="drawer-body" class="drawer-body"
+                              style="flex-direction: column;">
+
+                <!-- Permissions group (v1.9 — first group so users see it first) -->
+                <ui:VisualElement name="group-permissions" class="settings-group">
+                    <ui:Label name="group-permissions-title" class="settings-group-title"
+                              text="Permissions" />
+
+                    <ui:VisualElement name="row-operating-mode" class="setting-row"
+                                      style="flex-direction: row; align-items: center; margin-bottom: 4px;">
+                        <ui:Label name="perm-mode-label" class="setting-row__label" text="Operating Mode" />
+                        <ui:DropdownField name="perm-mode-dropdown" class="setting-row__field" />
+                    </ui:VisualElement>
+                    <ui:Label name="perm-mode-hint" class="setting-hint"
+                              style="margin-left: 0; margin-bottom: 6px;" />
+
+                    <ui:VisualElement name="row-panel-approval"
+                                      style="flex-direction: column; display: none;">
+                        <ui:Toggle name="perm-panel-approval-toggle" />
+                        <ui:Label name="perm-panel-approval-hint" class="setting-hint"
+                                  style="margin-left: 18px;" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="perm-pending-section"
+                                      style="flex-direction: column; display: none; margin-top: 4px;">
+                        <ui:Label name="perm-pending-title" class="bold-label"
+                                  style="font-size: 11px; margin-bottom: 4px;" />
+                        <ui:VisualElement name="perm-pending-list"
+                                          style="flex-direction: column;" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="perm-allowlist-section"
+                                      style="flex-direction: column; display: none; margin-top: 6px;">
+                        <ui:Foldout name="perm-allowlist-foldout" value="false"
+                                    class="perm-allowlist-foldout">
+                            <ui:VisualElement style="flex-direction: row; align-items: center; margin-bottom: 4px;">
+                                <ui:VisualElement style="flex-grow: 1;" />
+                                <ui:Button name="perm-allowlist-add-btn" class="mini-btn"
+                                           text="+ Add Skill"
+                                           style="margin-right: 4px;" />
+                                <ui:Button name="perm-allowlist-clear-btn" class="mini-btn"
+                                           text="Clear All" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="perm-allowlist-list"
+                                              style="flex-direction: column;" />
+                        </ui:Foldout>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="row-audit"
+                                      style="flex-direction: row; margin-top: 8px;">
+                        <ui:Button name="perm-view-audit-btn" class="mini-btn"
+                                   text="View Audit Log"
+                                   style="flex-grow: 1; height: 22px; margin: 0;" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- Server group -->
+                <ui:VisualElement name="group-server" class="settings-group">
+                    <ui:Label name="group-server-title" class="settings-group-title"
+                              text="Server" />
+
+                    <ui:Toggle name="autostart-toggle" />
+                    <ui:Label name="autostart-hint" class="setting-hint"
+                              style="margin-left: 18px;" />
+
+                    <ui:VisualElement name="row-port" class="setting-row"
+                                      style="flex-direction: row; align-items: center;">
+                        <ui:Label name="port-label" class="setting-row__label" text="Port" />
+                        <ui:DropdownField name="port-dropdown" class="setting-row__field" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="row-timeout" class="setting-row"
+                                      style="flex-direction: row; align-items: center;">
+                        <ui:Label name="timeout-label" class="setting-row__label" text="Timeout" />
+                        <ui:IntegerField name="timeout-field" class="setting-row__field-narrow" />
+                        <ui:Label name="timeout-unit" class="setting-row__unit" text="min" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="row-keepalive" class="setting-row"
+                                      style="flex-direction: row; align-items: center;">
+                        <ui:Label name="keepalive-label" class="setting-row__label" text="KeepAlive" />
+                        <ui:IntegerField name="keepalive-field" class="setting-row__field-narrow" />
+                        <ui:Label name="keepalive-unit" class="setting-row__unit" text="sec" />
+                    </ui:VisualElement>
+                    <ui:Label name="keepalive-hint" class="setting-hint"
+                              style="margin-left: 0;" />
+                </ui:VisualElement>
+
+                <!-- Runtime group -->
+                <ui:VisualElement name="group-runtime" class="settings-group">
+                    <ui:Label name="group-runtime-title" class="settings-group-title"
+                              text="Runtime" />
+
+                    <ui:VisualElement name="row-loglevel" class="setting-row"
+                                      style="flex-direction: row; align-items: center;">
+                        <ui:Label name="loglevel-label" class="setting-row__label" text="Log Level" />
+                        <ui:DropdownField name="loglevel-dropdown" class="setting-row__field" />
+                    </ui:VisualElement>
+
+                    <ui:Toggle name="confirm-toggle" />
+                    <ui:Label name="confirm-hint" class="setting-hint"
+                              style="margin-left: 18px;" />
+                </ui:VisualElement>
+
+                <!-- Statistics group -->
+                <ui:VisualElement name="group-stats" class="settings-group">
+                    <ui:Label name="group-stats-title" class="settings-group-title"
+                              text="Statistics" />
+                    <ui:Label name="stats-hint" class="setting-hint"
+                              style="margin-left: 0; margin-bottom: 8px;" />
+                    <ui:Button name="stats-reset-btn" class="mini-btn"
+                               text="Reset processed count"
+                               style="height: 22px; width: auto;" />
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

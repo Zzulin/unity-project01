@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../../../../../UIElementsSchema/UIElementsSchema.xsd">
+
+    <ui:VisualElement name="root" class="root" style="flex-grow: 1; flex-direction: column;">
+
+        <!-- ============================================
+             1. TOPBAR — status / url / server toggle / settings
+             ============================================ -->
+        <ui:VisualElement name="topbar" class="topbar"
+                          style="flex-shrink: 0; flex-direction: row; align-items: center;">
+            <ui:VisualElement name="status-dot" class="status-dot" />
+
+            <ui:VisualElement name="url-pill" class="url-pill"
+                              style="flex-direction: row; align-items: center;">
+                <ui:TextField name="url-field" class="url-pill__text flex-grow"
+                              readonly="true" />
+                <ui:Button name="url-copy-btn" class="url-pill__copy" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="server-switch" class="server-switch"
+                              tooltip="Toggle server"
+                              style="flex-shrink: 0; flex-direction: row;">
+                <ui:VisualElement name="server-switch-knob" class="server-switch__knob" />
+            </ui:VisualElement>
+
+            <ui:Label name="server-status-text" class="server-status-text" text="Stopped" />
+
+            <ui:Button name="perm-mode-badge" class="mini-btn"
+                       tooltip="Click to switch operating mode"
+                       style="height: 22px; margin: 0 4px 0 4px;" />
+
+            <ui:Button name="open-settings-btn" class="icon-btn"
+                       text="⚙" tooltip="Settings" />
+        </ui:VisualElement>
+
+        <!-- ============================================
+             1b. PENDING APPROVAL BANNER — global cross-tab
+             (Hidden when there are no pending grant requests.
+              Each row exposes Approve / Deny inline so the user
+              doesn't need to open the Settings drawer.)
+             ============================================ -->
+        <ui:VisualElement name="pending-banner" class="pending-banner"
+                          style="display: none; flex-direction: column; flex-shrink: 0;">
+            <ui:VisualElement class="pending-banner__header"
+                              style="flex-direction: row; align-items: center;">
+                <ui:Label name="pending-banner-title" class="pending-banner__title"
+                          text="Pending approvals" />
+                <ui:VisualElement style="flex-grow: 1;" />
+                <ui:Button name="pending-banner-settings-btn" class="mini-btn"
+                           text="Open Permissions" />
+            </ui:VisualElement>
+            <ui:VisualElement name="pending-banner-list" class="pending-banner__list" />
+        </ui:VisualElement>
+
+        <!-- ============================================
+             2. TAB BAR — 3 tabs
+             ============================================ -->
+        <ui:VisualElement name="tab-bar" class="tab-bar"
+                          style="flex-direction: row; flex-shrink: 0;">
+            <ui:VisualElement class="tab-wrap" style="flex-grow: 1; flex-direction: column;">
+                <ui:Button name="tab-btn-0" text="Skills" class="tab-btn" />
+                <ui:VisualElement name="tab-underline-0" class="tab-underline" />
+            </ui:VisualElement>
+            <ui:VisualElement class="tab-wrap" style="flex-grow: 1; flex-direction: column;">
+                <ui:Button name="tab-btn-1" text="AI Config" class="tab-btn" />
+                <ui:VisualElement name="tab-underline-1" class="tab-underline" />
+            </ui:VisualElement>
+            <ui:VisualElement class="tab-wrap" style="flex-grow: 1; flex-direction: column;">
+                <ui:Button name="tab-btn-2" text="History" class="tab-btn" />
+                <ui:VisualElement name="tab-underline-2" class="tab-underline" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- ============================================
+             3. TAB CONTENT — single child visible
+             ============================================ -->
+        <ui:VisualElement name="tab-content" class="tab-content"
+                          style="flex-grow: 1; flex-direction: column;">
+            <ui:VisualElement name="tab-content-0" class="tab-pane" style="flex-grow: 1;" />
+            <ui:VisualElement name="tab-content-1" class="tab-pane" style="flex-grow: 1;" />
+            <ui:VisualElement name="tab-content-2" class="tab-pane" style="flex-grow: 1;" />
+        </ui:VisualElement>
+
+        <!-- ============================================
+             4. FOOTER — version + live stats + language segment
+             ============================================ -->
+        <ui:VisualElement name="footer" class="footer"
+                          style="flex-direction: row; flex-shrink: 0; align-items: center;">
+            <ui:Label name="version-tag" class="version-tag" text="v1.8.4" />
+
+            <ui:VisualElement name="stats-pill" class="stats-pill"
+                              style="flex-direction: row; align-items: center;">
+                <ui:VisualElement class="stat-item" style="flex-direction: row; align-items: center;">
+                    <ui:Label class="stat-icon" text="▣" />
+                    <ui:Label name="stat-queue-value" class="stat-value" text="0" />
+                    <ui:Label name="stat-queue-label" class="stat-label" text="Pending" />
+                </ui:VisualElement>
+                <ui:VisualElement class="stat-divider" />
+                <ui:VisualElement class="stat-item" style="flex-direction: row; align-items: center;">
+                    <ui:Label class="stat-icon ok" text="✓" />
+                    <ui:Label name="stat-done-value" class="stat-value" text="0" />
+                    <ui:Label name="stat-done-label" class="stat-label" text="Done" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement style="flex-grow: 1;" />
+
+            <ui:VisualElement name="lang-segment" class="lang-segment"
+                              style="flex-direction: row;">
+                <ui:Button name="lang-seg-en" class="lang-segment__seg active" text="EN" />
+                <ui:Button name="lang-seg-cn" class="lang-segment__seg" text="中文" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- ============================================
+             5. SETTINGS DRAWER — overlay layer
+             ============================================ -->
+        <ui:VisualElement name="drawer-mask" class="drawer-mask hidden"
+                          picking-mode="Ignore"
+                          style="position: absolute; left: 0; right: 0; top: 0; bottom: 0;" />
+
+        <ui:VisualElement name="drawer" class="drawer"
+                          style="position: absolute; top: 0; right: 0; bottom: 0; flex-direction: column;" />
+
+    </ui:VisualElement>
+</ui:UXML>

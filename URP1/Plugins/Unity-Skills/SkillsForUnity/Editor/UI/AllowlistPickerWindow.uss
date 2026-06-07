@@ -1,0 +1,114 @@
+/* ===== Allowlist Picker Window ===== */
+
+.picker-root {
+    flex-grow: 1;
+    flex-direction: column;
+    background-color: rgb(40, 40, 40);
+}
+
+.picker-search-bar {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 8px;
+    background-color: rgb(50, 50, 50);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(20, 20, 20);
+    flex-shrink: 0;
+}
+
+.picker-search {
+    flex-grow: 1;
+}
+
+.picker-scroll {
+    flex-grow: 1;
+    padding: 6px 8px;
+    background-color: rgb(40, 40, 40);
+}
+
+.picker-footer {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 8px;
+    background-color: rgb(50, 50, 50);
+    border-top-width: 1px;
+    border-top-color: rgb(20, 20, 20);
+    flex-shrink: 0;
+}
+
+.picker-summary {
+    flex-grow: 1;
+    color: rgb(180, 180, 180);
+    font-size: 11px;
+}
+
+.picker-btn {
+    margin-left: 6px;
+    height: 22px;
+    padding: 0 12px;
+    font-size: 11px;
+}
+
+.picker-btn--primary {
+    background-color: rgb(60, 100, 150);
+    color: rgb(220, 235, 255);
+    border-color: rgb(80, 130, 180);
+}
+
+.picker-btn--primary:hover {
+    background-color: rgb(80, 120, 170);
+}
+
+.picker-btn--primary:disabled {
+    background-color: rgb(55, 55, 55);
+    color: rgb(120, 120, 120);
+}
+
+/* ----- Group foldout ----- */
+
+.picker-group {
+    margin-top: 2px;
+}
+
+.picker-group-ops {
+    flex-direction: row;
+    margin-bottom: 2px;
+    margin-left: 14px;
+}
+
+.picker-group-btn {
+    margin-right: 4px;
+    height: 18px;
+    padding: 0 8px;
+    font-size: 10px;
+}
+
+/* ----- Skill row ----- */
+
+.picker-row {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 18px;
+    margin-bottom: 1px;
+}
+
+.picker-row-name {
+    flex-grow: 1;
+    font-size: 11px;
+    color: rgb(220, 220, 220);
+}
+
+.picker-row-risk {
+    font-size: 9px;
+    color: rgb(243, 128, 51);
+    -unity-font-style: bold;
+    margin-left: 4px;
+}
+
+/* ----- Empty / no-match hint ----- */
+
+.picker-empty {
+    -unity-font-style: italic;
+    color: rgb(160, 160, 160);
+    margin-top: 8px;
+}

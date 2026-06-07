@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../../../../../UIElementsSchema/UIElementsSchema.xsd">
+
+    <ui:VisualElement style="flex-grow: 1; flex-direction: column; min-height: 0;">
+
+        <!-- Toolbar -->
+        <ui:VisualElement name="history-toolbar" class="history-toolbar"
+                          style="flex-direction: row; align-items: center; flex-shrink: 0;">
+            <ui:Label name="history-title" class="bold-label" text="Workflow History" />
+            <ui:VisualElement style="flex-grow: 1;" />
+            <ui:Button name="refresh-btn" class="mini-btn" text="↻" tooltip="Refresh" />
+            <ui:Button name="clear-btn" class="mini-btn danger" text="Clear All Undone" />
+        </ui:VisualElement>
+
+        <!-- Cache warning -->
+        <ui:HelpBox name="cache-warning" message-type="Warning"
+                    style="margin: 8px 10px 0 10px;" />
+
+        <!-- Scroll body -->
+        <ui:ScrollView name="history-scroll" class="history-scroll scroll-view"
+                       style="flex-grow: 1; min-height: 0;">
+            <ui:Label name="active-tasks-title" class="history-group-title accent" />
+            <ui:VisualElement name="active-tasks-container" />
+
+            <ui:Label name="undone-tasks-title" class="history-group-title"
+                      style="margin-top: 10px;" />
+            <ui:VisualElement name="undone-tasks-container" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

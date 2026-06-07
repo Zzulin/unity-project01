@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../../../../../UIElementsSchema/UIElementsSchema.xsd">
+
+    <ui:VisualElement name="audit-root" class="audit-root" style="flex-grow: 1; flex-direction: column;">
+
+        <!-- Toolbar: path + actions -->
+        <ui:VisualElement name="audit-toolbar" class="audit-toolbar">
+            <ui:Label name="audit-path-label" class="audit-path-label" text="Log:" />
+            <ui:TextField name="audit-path-field" class="audit-path-field" readonly="true" />
+            <ui:Button name="audit-reveal-btn" class="audit-btn" text="Reveal" />
+            <ui:Button name="audit-refresh-btn" class="audit-btn" text="Refresh" />
+            <ui:Button name="audit-clear-btn" class="audit-btn audit-btn--danger" text="Clear All" />
+        </ui:VisualElement>
+
+        <!-- Filter bar: search + type dropdown + count -->
+        <ui:VisualElement name="audit-filter-bar" class="audit-filter-bar">
+            <ui:TextField name="audit-search" class="audit-search" />
+            <ui:DropdownField name="audit-type-filter" class="audit-type-filter" />
+            <ui:Label name="audit-count-label" class="audit-count-label" text="0 entries" />
+        </ui:VisualElement>
+
+        <!-- Entries list -->
+        <ui:ListView name="audit-list" class="audit-list" />
+
+        <!-- Detail pane: raw JSON of the selected entry -->
+        <ui:VisualElement name="audit-detail-pane" class="audit-detail-pane">
+            <ui:Label name="audit-detail-title" class="audit-detail-title"
+                      text="Select an entry to view raw JSON" />
+            <ui:TextField name="audit-detail-json" multiline="true"
+                          class="audit-detail-json" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

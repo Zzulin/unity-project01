@@ -1,0 +1,202 @@
+/* ===== Audit Log Window — Unity Console-style layout ===== */
+
+.audit-root {
+    background-color: rgb(40, 40, 40);
+}
+
+.audit-toolbar {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px;
+    background-color: rgb(50, 50, 50);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(20, 20, 20);
+    flex-shrink: 0;
+}
+
+.audit-path-label {
+    margin-right: 6px;
+    color: rgb(180, 180, 180);
+    -unity-font-style: bold;
+    font-size: 11px;
+}
+
+.audit-path-field {
+    flex-grow: 1;
+    margin-right: 4px;
+    min-width: 100px;
+}
+
+.audit-btn {
+    margin-left: 4px;
+    height: 20px;
+    padding: 0 10px;
+    font-size: 11px;
+}
+
+/* Danger variant — for destructive actions like "Clear All".
+   Same shape as default audit-btn, only the color signals risk. */
+.audit-btn--danger {
+    background-color: rgb(110, 40, 40);
+    color: rgb(255, 200, 200);
+    border-color: rgb(150, 60, 60);
+}
+
+.audit-btn--danger:hover {
+    background-color: rgb(140, 50, 50);
+}
+
+.audit-filter-bar {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px;
+    background-color: rgb(45, 45, 45);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(20, 20, 20);
+    flex-shrink: 0;
+}
+
+.audit-search {
+    flex-grow: 1;
+    margin-right: 6px;
+}
+
+.audit-type-filter {
+    width: 140px;
+    margin-right: 10px;
+}
+
+.audit-count-label {
+    color: rgb(160, 160, 160);
+    -unity-font-style: italic;
+    font-size: 10px;
+    min-width: 100px;
+    -unity-text-align: middle-right;
+}
+
+.audit-list {
+    flex-grow: 1;
+    min-height: 100px;
+    background-color: rgb(40, 40, 40);
+}
+
+/* ----- Per-row layout ----- */
+
+.audit-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 0 6px;
+    height: 22px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(30, 30, 30);
+}
+
+.audit-row__icon {
+    width: 18px;
+    -unity-text-align: middle-center;
+    font-size: 12px;
+    margin-right: 4px;
+}
+
+.audit-row__time {
+    width: 78px;
+    color: rgb(150, 150, 150);
+    font-size: 10px;
+    -unity-text-align: middle-left;
+    margin-right: 6px;
+}
+
+.audit-row__badge {
+    min-width: 88px;
+    height: 16px;
+    padding: 0 6px;
+    margin-right: 8px;
+    border-radius: 3px;
+    font-size: 9px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+}
+
+.audit-row__skill {
+    color: rgb(220, 220, 220);
+    flex-grow: 1;
+    font-size: 11px;
+    -unity-text-align: middle-left;
+}
+
+.audit-row__suffix {
+    color: rgb(140, 200, 250);
+    margin-left: 6px;
+    font-size: 10px;
+    -unity-text-align: middle-right;
+}
+
+/* Per-row delete button — small ✕ glyph pinned at the row end.
+   Hidden by opacity until the row is hovered, so the list stays clean. */
+.audit-row__delete {
+    width: 20px;
+    height: 18px;
+    margin-left: 6px;
+    padding: 0;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: rgb(160, 110, 110);
+    opacity: 0.35;
+}
+
+.audit-row:hover .audit-row__delete {
+    opacity: 1;
+}
+
+.audit-row__delete:hover {
+    color: rgb(255, 180, 180);
+    background-color: rgb(70, 30, 30);
+    border-radius: 3px;
+}
+
+/* ----- Badge color variants — one per logical event class ----- */
+
+.badge-allow      { background-color: rgb(40, 90, 50);   color: rgb(180, 240, 180); }
+.badge-restricted { background-color: rgb(130, 100, 30); color: rgb(255, 220, 140); }
+.badge-forbidden  { background-color: rgb(130, 50, 50);  color: rgb(255, 180, 180); }
+.badge-mode       { background-color: rgb(85, 60, 130);  color: rgb(220, 200, 255); }
+.badge-grant      { background-color: rgb(40, 80, 130);  color: rgb(180, 220, 255); }
+.badge-deny       { background-color: rgb(130, 50, 50);  color: rgb(255, 180, 180); }
+.badge-revoke     { background-color: rgb(70, 70, 70);   color: rgb(200, 200, 200); }
+.badge-other      { background-color: rgb(60, 60, 60);   color: rgb(180, 180, 180); }
+
+/* ----- Detail pane (bottom) ----- */
+
+.audit-detail-pane {
+    height: 150px;
+    flex-shrink: 0;
+    flex-direction: column;
+    border-top-width: 1px;
+    border-top-color: rgb(20, 20, 20);
+    background-color: rgb(38, 38, 38);
+    padding: 4px 6px;
+}
+
+.audit-detail-title {
+    color: rgb(180, 180, 200);
+    -unity-font-style: bold;
+    font-size: 10px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+
+.audit-detail-json {
+    flex-grow: 1;
+}
+
+.audit-detail-json > .unity-base-text-field__input {
+    background-color: rgb(28, 28, 28);
+    color: rgb(220, 220, 220);
+    font-size: 10px;
+    white-space: normal;
+    padding: 4px;
+    border-width: 1px;
+    border-color: rgb(20, 20, 20);
+}

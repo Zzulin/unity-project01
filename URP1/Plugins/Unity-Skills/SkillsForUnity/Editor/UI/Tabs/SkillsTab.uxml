@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../../../../../UIElementsSchema/UIElementsSchema.xsd">
+
+    <ui:VisualElement name="skills-layout"
+                      style="flex-grow: 1; flex-direction: row; min-height: 0;">
+
+        <!-- ============================
+             LEFT — list pane
+             ============================ -->
+        <ui:VisualElement name="skills-list-pane" class="skills-list-pane"
+                          style="flex-direction: column; min-height: 0;">
+
+            <ui:VisualElement name="list-toolbar" class="list-toolbar"
+                              style="flex-direction: row; align-items: center; flex-shrink: 0;">
+                <ui:TextField name="search-field" class="search-field flex-grow"
+                              tooltip="Search skills" />
+                <ui:Button name="refresh-btn" class="mini-btn" text="↻" tooltip="Refresh" />
+                <ui:Button name="validate-btn" class="mini-btn" text="✓" tooltip="Validate" />
+            </ui:VisualElement>
+
+            <ui:Label name="skills-count-bar" class="skills-count-bar" text="" />
+
+            <ui:ScrollView name="skills-scroll" class="scroll-view"
+                           style="flex-grow: 1; min-height: 0;">
+                <ui:VisualElement name="skills-container" />
+            </ui:ScrollView>
+
+        </ui:VisualElement>
+
+        <!-- ============================
+             RIGHT — detail pane
+             ============================ -->
+        <ui:VisualElement name="skills-detail-pane" class="skills-detail-pane"
+                          style="flex-direction: column; min-height: 0;">
+
+            <!-- Empty placeholder (visible when no skill selected) -->
+            <ui:Label name="detail-empty" class="detail-empty"
+                      text="Select a skill to view details and run it." />
+
+            <!-- Detail content (hidden until selection) -->
+            <ui:VisualElement name="detail-content"
+                              style="flex-grow: 1; flex-direction: column; min-height: 0; display: none;">
+
+                <ui:VisualElement name="detail-header" class="detail-header"
+                                  style="flex-shrink: 0; flex-direction: column;">
+                    <ui:Label name="skill-title" class="skill-title" text="" />
+                    <ui:VisualElement name="skill-meta" class="skill-meta"
+                                      style="flex-direction: row;" />
+                    <ui:Label name="skill-desc" class="skill-desc" text="" />
+                </ui:VisualElement>
+
+                <ui:ScrollView name="detail-body-scroll" class="scroll-view"
+                               style="flex-grow: 1; min-height: 0;">
+                    <ui:VisualElement name="detail-body" class="detail-body"
+                                      style="flex-direction: column;">
+
+                        <ui:Label name="detail-params-label" class="form-label"
+                                  text="Parameters (JSON)" />
+                        <ui:TextField name="detail-params-field" class="json-editor"
+                                      multiline="true" />
+
+                        <ui:VisualElement name="detail-actions" class="detail-actions"
+                                          style="flex-direction: row; align-items: center;">
+                            <ui:Button name="detail-execute-btn" class="btn-primary"
+                                       text="▶ Execute" />
+                            <ui:Button name="detail-dryrun-btn" class="btn-ghost"
+                                       text="DryRun Preview" />
+                            <ui:VisualElement style="flex-grow: 1;" />
+                            <ui:Button name="detail-clear-btn" class="btn-ghost"
+                                       text="Clear" />
+                        </ui:VisualElement>
+
+                        <ui:Label name="detail-result-label" class="form-label"
+                                  text="Result" />
+                        <ui:TextField name="detail-result-field" class="result-block"
+                                      multiline="true" readonly="true" />
+
+                    </ui:VisualElement>
+                </ui:ScrollView>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../../../../../UIElementsSchema/UIElementsSchema.xsd">
+
+    <ui:ScrollView name="config-scroll" class="config-scroll scroll-view">
+
+        <!-- Container for dynamically generated agent cards.
+             Controller builds: Claude Code / Codex / Antigravity / Cursor
+             + the custom-agent card at the bottom. -->
+        <ui:VisualElement name="agents-container" />
+
+        <!-- Help text — explains scope distinctions -->
+        <ui:HelpBox name="help-box" message-type="Info" style="margin-top: 4px;" />
+
+    </ui:ScrollView>
+</ui:UXML>

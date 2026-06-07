@@ -1,0 +1,1297 @@
+/* =====================================================================
+ * UnitySkills Global Theme stylesheet — v2 layout
+ *
+ * Layout principle: structural flex (direction / shrink / grow) is written
+ * INLINE in UXML as a safety net. USS handles theming (colors, fonts,
+ * transitions, hover states, animations). This avoids the entire UI
+ * collapsing if a USS class fails to apply due to load order or asset
+ * cache issues.
+ *
+ * Trap: UXML inline style="..." cannot use var(--xxx). CloneTree resolves
+ * inline styles before the element is attached to the tree, so external
+ * stylesheet variables aren't visible yet and StyleVariableResolver throws
+ * NullReferenceException. Always reference variables from USS classes only.
+ *
+ * v2 changes:
+ *  - Topbar: status dot + url pill + server toggle + status text + settings
+ *  - Tabs reduced to 3 (Skills / AI Config / History)
+ *  - Skills layout: master-detail (list left, detail right)
+ *  - AIConfig: 4 brand cards + custom; PNG icon via Image
+ *  - Settings moved into right-side drawer (slide-in)
+ *  - Footer: version + live stats pill + segmented language switch
+ * ===================================================================== */
+
+/* ---------- Theme Variables — Dark (default) ---------- */
+:root {
+    --color-bg: #232323;
+    --color-chrome-bg: #1c1c1c;
+    --color-panel: #2a2a2a;
+    --color-card-bg: #2c2c2c;
+    --color-card-bg-hover: #353535;
+    --color-card-bg-selected: #2c5d87;
+    --color-card-header-bg: #353535;
+    --color-card-border: #3a3a3a;
+    --color-border-hard: #1a1a1a;
+
+    --color-tab-hover-bg: rgba(255, 255, 255, 0.06);
+
+    --color-success: #6ec46e;
+    --color-success-hover: #82d182;
+    --color-error: #e06464;
+    --color-error-hover: #ec7e7e;
+    --color-warning: #e0b04a;
+    --color-warning-hover: #eac06a;
+    --color-accent: #4a9eff;
+    --color-accent-hover: #5cacff;
+    --color-accent-dark: #2f6db8;
+    --color-muted: #7a7a7a;
+    --color-danger-dark: #7a3a3a;
+    --color-danger-darker: #5c2c2c;
+
+    --color-text: #dddddd;
+    --color-text-hover: #ffffff;
+    --color-text-secondary: #a0a0a0;
+    --color-text-tab-idle: #a0a0a0;
+    --color-text-on-accent: #ffffff;
+
+    --color-button-bg: #3d3d3d;
+    --color-button-hover: #4a4a4a;
+    --color-input-bg: #1f1f1f;
+    --color-input-border: #2a2a2a;
+    --color-input-focus: #4a9eff;
+    --color-drawer-bg: #2a2a2a;
+}
+
+/* ---------- Theme Variables — Light ---------- */
+.unity-theme-light :root,
+.unity-theme-light {
+    --color-bg: #c8c8c8;
+    --color-chrome-bg: #b0b0b0;
+    --color-panel: #d4d4d4;
+    --color-card-bg: #e2e2e2;
+    --color-card-bg-hover: #d0d0d0;
+    --color-card-bg-selected: #6ba8e0;
+    --color-card-header-bg: #d4d4d4;
+    --color-card-border: #a8a8a8;
+    --color-border-hard: #888888;
+
+    --color-tab-hover-bg: rgba(0, 0, 0, 0.06);
+
+    --color-success: #1e7e34;
+    --color-success-hover: #2d9748;
+    --color-error: #bd2130;
+    --color-error-hover: #d63540;
+    --color-warning: #d39e00;
+    --color-warning-hover: #e2ad11;
+    --color-accent: #0066cc;
+    --color-accent-hover: #1f7ad8;
+    --color-accent-dark: #004c99;
+    --color-muted: #6c757d;
+    --color-danger-dark: #c46060;
+    --color-danger-darker: #aa4848;
+
+    --color-text: #212529;
+    --color-text-hover: #000000;
+    --color-text-secondary: #555555;
+    --color-text-tab-idle: #555555;
+    --color-text-on-accent: #ffffff;
+
+    --color-button-bg: #d0d0d0;
+    --color-button-hover: #bcbcbc;
+    --color-input-bg: #ffffff;
+    --color-input-border: #b0b0b0;
+    --color-input-focus: #0066cc;
+    --color-drawer-bg: #d8d8d8;
+}
+
+/* ---------- Root Container ---------- */
+.root {
+    background-color: var(--color-bg);
+}
+
+/* ---------- Generic Layout Helpers ---------- */
+.scroll-view {
+    flex-grow: 1;
+}
+
+.horizontal-layout {
+    flex-direction: row;
+    align-items: center;
+}
+
+.flex-grow {
+    flex-grow: 1;
+}
+
+/* ===================================================================
+ * 1. TOPBAR — persistent server status & quick actions
+ * =================================================================== */
+.topbar {
+    background-color: var(--color-chrome-bg);
+    height: 36px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-border-hard);
+    padding: 0 8px;
+    min-width: 0;
+}
+
+.status-dot {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    margin-right: 8px;
+    background-color: var(--color-muted);
+}
+
+.status-dot.success {
+    background-color: var(--color-success);
+}
+
+.status-dot.error {
+    background-color: var(--color-error);
+}
+
+.status-dot.warn {
+    background-color: var(--color-warning);
+}
+
+.url-pill {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 9999px;
+    height: 22px;
+    background-color: var(--color-input-bg);
+    border-width: 1px;
+    border-color: var(--color-card-border);
+    border-radius: 2px;
+    padding: 0 4px 0 8px;
+    margin: 0 6px;
+}
+
+.url-pill__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    -unity-text-align: middle-left;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.url-pill__text > .unity-text-field__input,
+.url-pill__text > .unity-base-text-field__input,
+.url-pill__text > .unity-base-field__input {
+    min-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    padding: 0;
+    margin: 0;
+}
+
+.url-pill__copy {
+    flex-shrink: 0;
+    min-width: 58px;
+    height: 16px;
+    margin: 0 0 0 4px;
+    padding: 0 6px;
+    font-size: 10px;
+    background-color: var(--color-button-bg);
+    border-width: 1px;
+    border-color: var(--color-border-hard);
+    border-radius: 2px;
+    color: var(--color-text);
+}
+
+.url-pill__copy:hover {
+    background-color: var(--color-button-hover);
+}
+
+/* Server Toggle Switch — slider style (uiverse adaptation) */
+.server-switch {
+    flex-shrink: 0;
+    width: 32px;
+    height: 18px;
+    margin: 0 6px 0 4px;
+    background-color: var(--color-button-bg);
+    border-width: 1px;
+    border-color: var(--color-border-hard);
+    border-radius: 9px;
+    transition-property: background-color, border-color;
+    transition-duration: 0.32s;
+}
+
+.server-switch__knob {
+    width: 14px;
+    height: 14px;
+    margin-top: 1px;
+    margin-left: 1px;
+    background-color: #f0f0f0;
+    border-radius: 7px;
+    transition-property: translate, background-color;
+    transition-duration: 0.32s;
+    transition-timing-function: ease-out;
+    translate: 0 0;
+}
+
+.server-switch.on {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent-dark);
+}
+
+.server-switch.on .server-switch__knob {
+    translate: 14px 0;
+}
+
+.server-switch.starting {
+    background-color: var(--color-warning);
+    border-color: var(--color-warning);
+}
+
+.server-status-text {
+    flex-shrink: 0;
+    min-width: 46px;
+    margin-right: 4px;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+.server-status-text.on  { color: var(--color-success); }
+.server-status-text.off { color: var(--color-muted); }
+
+#perm-mode-badge {
+    flex-shrink: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#perm-mode-badge.perm-mode-badge--fallback {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
+    padding: 0 6px;
+}
+
+#perm-mode-badge.perm-mode-badge--fallback .perm-mode-badge__dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-right: 4px;
+    background-color: var(--color-muted);
+}
+
+#perm-mode-badge.perm-mode-badge--fallback .perm-mode-badge__label {
+    flex-shrink: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 10px;
+    color: var(--color-text);
+    -unity-text-align: middle-left;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#perm-mode-badge.perm-mode-badge--fallback.perm-mode-badge--approval .perm-mode-badge__dot {
+    background-color: var(--color-warning);
+}
+
+#perm-mode-badge.perm-mode-badge--fallback.perm-mode-badge--auto .perm-mode-badge__dot {
+    background-color: var(--color-accent);
+}
+
+#perm-mode-badge.perm-mode-badge--fallback.perm-mode-badge--bypass .perm-mode-badge__dot {
+    background-color: #18d59a;
+}
+
+.topbar--compact .url-pill {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 70px;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin: 0 4px;
+}
+
+.topbar--compact .url-pill__text {
+    display: none;
+}
+
+.topbar--compact .url-pill__copy {
+    margin-left: 0;
+}
+
+.topbar--compact .status-dot {
+    display: none;
+}
+
+.topbar--compact .server-switch {
+    margin: 0 4px 0 2px;
+}
+
+.topbar--compact .server-status-text {
+    min-width: 42px;
+    margin-right: 2px;
+}
+
+.topbar--compact #perm-mode-badge {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+}
+
+.topbar--compact #perm-mode-badge.perm-mode-badge--native {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+}
+
+.topbar--narrow .url-pill,
+.topbar--narrow .status-dot {
+    display: none;
+}
+
+.topbar--narrow .server-switch {
+    margin-left: 0;
+}
+
+/* Icon button (gear, close, etc.) */
+.icon-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0);
+    border-radius: 2px;
+    color: var(--color-text-secondary);
+    -unity-text-align: middle-center;
+}
+
+.icon-btn:hover {
+    background-color: var(--color-button-bg);
+    border-color: var(--color-border-hard);
+    color: var(--color-text);
+}
+
+/* ===================================================================
+ * 2. TAB BAR — 3 tabs
+ * =================================================================== */
+.tab-bar {
+    background-color: var(--color-panel);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-border-hard);
+}
+
+.tab-btn {
+    flex-grow: 1;
+    height: 30px;
+    margin: 0;
+    padding: 0 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    color: var(--color-text-tab-idle);
+    transition-property: background-color, color;
+    transition-duration: 0.12s;
+}
+
+.tab-btn:hover {
+    color: var(--color-text-hover);
+    background-color: var(--color-tab-hover-bg);
+}
+
+.tab-btn.tab-active,
+.tab-btn.tab-active:focus,
+.tab-btn.tab-active:active {
+    color: var(--color-accent);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.tab-btn.tab-active:hover {
+    color: var(--color-accent-hover);
+    background-color: var(--color-tab-hover-bg);
+}
+
+.tab-underline {
+    height: 2px;
+    margin: 0 0 -1px 0;
+    background-color: rgba(0, 0, 0, 0);
+    transition-property: background-color;
+    transition-duration: 0.12s;
+}
+
+.tab-underline.active {
+    background-color: var(--color-accent);
+}
+
+/* ---------- Tab Content area ---------- */
+.tab-content {
+    background-color: var(--color-bg);
+}
+
+.tab-pane {
+    background-color: var(--color-bg);
+}
+
+/* ===================================================================
+ * 3. SKILLS TAB — master-detail
+ * =================================================================== */
+.skills-list-pane {
+    width: 45%;
+    min-width: 180px;
+    border-right-width: 1px;
+    border-right-color: var(--color-border-hard);
+    background-color: var(--color-panel);
+}
+
+.skills-detail-pane {
+    flex-grow: 1;
+    background-color: var(--color-panel);
+}
+
+.list-toolbar {
+    height: 28px;
+    padding: 4px 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+    background-color: var(--color-panel);
+}
+
+.search-field {
+    flex-grow: 1;
+    height: 20px;
+    margin: 0 4px 0 0;
+}
+
+.search-field > .unity-text-field__input {
+    background-color: var(--color-input-bg);
+    border-color: var(--color-card-border);
+    border-radius: 2px;
+    color: var(--color-text);
+    font-size: 11px;
+    padding: 0 6px;
+}
+
+.search-field > .unity-text-field__input:focus {
+    border-color: var(--color-accent);
+}
+
+.mini-btn {
+    height: 20px;
+    margin: 0 0 0 2px;
+    padding: 0 6px;
+    font-size: 10px;
+    background-color: var(--color-button-bg);
+    border-width: 1px;
+    border-color: var(--color-border-hard);
+    border-radius: 2px;
+    color: var(--color-text);
+}
+
+.mini-btn:hover {
+    background-color: var(--color-button-hover);
+}
+
+.mini-btn:disabled {
+    opacity: 0.35;
+}
+
+.skills-count-bar {
+    padding: 4px 8px;
+    font-size: 10px;
+    color: var(--color-muted);
+    background-color: var(--color-panel);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+}
+
+.category-header {
+    padding: 4px 8px;
+    background-color: var(--color-panel);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+    font-size: 11px;
+    color: var(--color-text);
+    flex-direction: row;
+    align-items: center;
+}
+
+.category-header:hover {
+    background-color: var(--color-card-bg-hover);
+}
+
+.chevron {
+    width: 12px;
+    margin-right: 4px;
+    font-size: 9px;
+    color: var(--color-muted);
+    -unity-text-align: middle-center;
+}
+
+.cat-count {
+    color: var(--color-muted);
+    font-size: 10px;
+    -unity-text-align: middle-right;
+}
+
+.skill-row {
+    padding: 5px 8px 5px 26px;
+    font-size: 11px;
+    color: var(--color-text);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 0, 0, 0.15);
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.skill-row:hover {
+    background-color: var(--color-card-bg-hover);
+}
+
+.skill-row.selected {
+    background-color: var(--color-card-bg-selected);
+}
+
+.skill-row.selected .skill-row__name {
+    color: var(--color-text-on-accent);
+}
+
+.skill-row__name {
+    flex-grow: 1;
+    font-size: 11px;
+    -unity-text-align: middle-left;
+    color: var(--color-text);
+    margin: 0;
+    padding: 0;
+}
+
+.risk-badge {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    background-color: var(--color-error);
+    color: white;
+    -unity-text-align: middle-center;
+}
+
+/* Detail pane */
+.detail-empty {
+    flex-grow: 1;
+    color: var(--color-muted);
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    padding: 20px;
+    white-space: normal;
+}
+
+.detail-header {
+    padding: 10px 12px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+}
+
+.skill-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.skill-meta {
+    flex-direction: row;
+    margin-bottom: 6px;
+}
+
+.tag {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    margin-right: 4px;
+    background-color: var(--color-button-bg);
+    color: var(--color-text-secondary);
+    border-width: 1px;
+    border-color: var(--color-border-hard);
+}
+
+.tag-danger {
+    background-color: var(--color-error);
+    color: white;
+    border-color: var(--color-danger-darker);
+}
+
+.tag-async {
+    background-color: var(--color-accent-dark);
+    color: white;
+    border-color: var(--color-accent-dark);
+}
+
+.skill-desc {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    white-space: normal;
+}
+
+.detail-body {
+    padding: 10px 12px;
+}
+
+.form-label {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    -unity-font-style: bold;
+    margin-bottom: 2px;
+}
+
+.json-editor {
+    margin-bottom: 8px;
+}
+
+.json-editor > .unity-text-field__input {
+    background-color: var(--color-input-bg);
+    border-color: var(--color-card-border);
+    border-radius: 2px;
+    color: var(--color-text);
+    font-size: 11px;
+    padding: 6px 8px;
+    min-height: 80px;
+    white-space: normal;
+}
+
+.json-editor > .unity-text-field__input:focus {
+    border-color: var(--color-accent);
+}
+
+.detail-actions {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.btn-primary {
+    background-color: var(--color-accent);
+    color: var(--color-text-on-accent);
+    border-width: 1px;
+    border-color: var(--color-accent-dark);
+    border-radius: 2px;
+    padding: 4px 14px;
+    -unity-font-style: bold;
+    height: 24px;
+    margin: 0 6px 0 0;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-accent-hover);
+}
+
+.btn-ghost {
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--color-text-secondary);
+    border-width: 1px;
+    border-color: var(--color-border-hard);
+    border-radius: 2px;
+    padding: 4px 10px;
+    height: 24px;
+    margin: 0 6px 0 0;
+}
+
+.btn-ghost:hover {
+    color: var(--color-text);
+    border-color: var(--color-muted);
+}
+
+.result-block {
+    margin-top: 4px;
+}
+
+.result-block > .unity-text-field__input {
+    background-color: var(--color-input-bg);
+    border-color: var(--color-card-border);
+    border-radius: 2px;
+    color: var(--color-success);
+    font-size: 11px;
+    padding: 6px 8px;
+    min-height: 60px;
+    white-space: normal;
+}
+
+.result-block.error > .unity-text-field__input {
+    color: var(--color-error);
+}
+
+/* ===================================================================
+ * 4. AI CONFIG TAB — agent brand cards
+ * =================================================================== */
+.config-scroll {
+    padding: 10px;
+}
+
+.agent-card {
+    background-color: var(--color-card-bg);
+    border-width: 1px;
+    border-color: var(--color-border-hard);
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+.agent-card-head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.agent-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 2px;
+    margin-right: 8px;
+}
+
+.agent-icon.brand-claudecode  { background-color: #FFF8F4; }
+.agent-icon.brand-codex       { background-color: #ffffff; }
+.agent-icon.brand-antigravity { background-color: #ffffff; }
+.agent-icon.brand-cursor      { background-color: #ffffff; }
+.agent-icon.brand-custom {
+    background-color: var(--color-button-bg);
+    -unity-text-align: middle-center;
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: var(--color-text-secondary);
+}
+
+.agent-name {
+    flex-grow: 1;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--color-text);
+}
+
+.agent-status {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.agent-status.installed {
+    background-color: var(--color-success);
+    color: #1a3a1a;
+}
+
+.agent-status.not-installed {
+    background-color: var(--color-button-bg);
+    color: var(--color-muted);
+}
+
+.agent-card-actions {
+    flex-direction: row;
+    margin: 0 -2px;
+}
+
+.agent-card-actions > .mini-btn {
+    flex-grow: 1;
+    height: 22px;
+    font-size: 11px;
+    margin: 0 2px;
+}
+
+.mini-btn.update {
+    background-color: var(--color-button-bg);
+    color: var(--color-text);
+}
+
+.mini-btn.install {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent-dark);
+    color: var(--color-text-on-accent);
+    -unity-font-style: bold;
+}
+
+.mini-btn.install:hover {
+    background-color: var(--color-accent-hover);
+}
+
+.mini-btn.uninstall {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: var(--color-danger-dark);
+    color: #d68888;
+}
+
+.mini-btn.uninstall:hover {
+    background-color: var(--color-danger-dark);
+    color: white;
+}
+
+/* ===================================================================
+ * 5. HISTORY TAB
+ * =================================================================== */
+.history-toolbar {
+    height: 32px;
+    padding: 5px 10px;
+    background-color: var(--color-panel);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+    flex-direction: row;
+    align-items: center;
+}
+
+.history-scroll {
+    padding: 8px 10px;
+}
+
+.history-group-title {
+    font-size: 10px;
+    color: var(--color-muted);
+    -unity-font-style: bold;
+    margin: 4px 0 6px 0;
+}
+
+.history-group-title.accent {
+    color: var(--color-accent);
+}
+
+.task-card {
+    background-color: var(--color-card-bg);
+    border-width: 1px;
+    border-color: var(--color-border-hard);
+    border-radius: 3px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+}
+
+.task-card.undone {
+    opacity: 0.55;
+}
+
+.task-card__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.task-card__name {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--color-text);
+}
+
+.task-card__time {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--color-muted);
+}
+
+.task-card__summary {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+    white-space: normal;
+}
+
+.task-card__actions {
+    flex-direction: row;
+}
+
+.task-card__actions > .mini-btn {
+    margin-right: 4px;
+}
+
+.mini-btn.danger {
+    background-color: var(--color-danger-dark);
+    border-color: var(--color-danger-darker);
+    color: white;
+}
+
+.mini-btn.danger:hover {
+    background-color: var(--color-error-hover);
+}
+
+/* ===================================================================
+ * 6. FOOTER — version + stats pill + segmented language
+ * =================================================================== */
+.footer {
+    background-color: var(--color-chrome-bg);
+    height: 26px;
+    border-top-width: 1px;
+    border-top-color: var(--color-border-hard);
+    padding: 0 8px;
+}
+
+.version-tag {
+    font-size: 10px;
+    color: var(--color-muted);
+    margin-right: 8px;
+}
+
+.stats-pill {
+    height: 18px;
+    padding: 0 3px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 1px;
+    border-color: var(--color-card-border);
+    border-radius: 9px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.stat-item {
+    flex-direction: row;
+    align-items: center;
+    margin: 0 5px;
+}
+
+.stat-icon {
+    width: 10px;
+    margin-right: 4px;
+    font-size: 10px;
+    color: var(--color-muted);
+    -unity-text-align: middle-center;
+}
+
+.stat-icon.ok { color: var(--color-success); }
+
+.stat-value {
+    -unity-font-style: bold;
+    color: var(--color-text);
+    font-size: 10px;
+    min-width: 14px;
+    -unity-text-align: middle-right;
+    margin-right: 2px;
+}
+
+.stat-value.busy {
+    color: var(--color-warning);
+}
+
+.stat-label {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    margin-right: 2px;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 10px;
+    background-color: var(--color-card-border);
+    margin: 0 6px 0 0;
+}
+
+/* Segmented Language Switch */
+.lang-segment {
+    flex-direction: row;
+    height: 18px;
+    background-color: var(--color-input-bg);
+    border-width: 1px;
+    border-color: var(--color-card-border);
+    border-radius: 9px;
+    padding: 0;
+}
+
+.lang-segment__seg {
+    margin: 0;
+    padding: 0 8px;
+    min-width: 32px;
+    height: 16px;
+    font-size: 10px;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 8px;
+    color: var(--color-text-secondary);
+    transition-property: background-color, color;
+    transition-duration: 0.2s;
+}
+
+.lang-segment__seg:hover {
+    color: var(--color-text);
+}
+
+.lang-segment__seg.active {
+    background-color: var(--color-accent);
+    color: white;
+    -unity-font-style: bold;
+}
+
+/* ===================================================================
+ * 7. SETTINGS DRAWER — slide-in from right
+ * =================================================================== */
+.drawer-mask {
+    background-color: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.18s;
+}
+
+.drawer-mask.open {
+    opacity: 1;
+}
+
+.drawer-mask.hidden {
+    display: none;
+}
+
+.drawer {
+    width: 320px;
+    background-color: var(--color-drawer-bg);
+    border-left-width: 1px;
+    border-left-color: var(--color-border-hard);
+    translate: 320px 0;
+    transition-property: translate;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.drawer.open {
+    translate: 0 0;
+}
+
+.drawer-header {
+    height: 36px;
+    background-color: var(--color-chrome-bg);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-border-hard);
+    padding: 0 10px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.drawer-header__title {
+    flex-grow: 1;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--color-text);
+}
+
+.drawer-body {
+    padding: 12px;
+}
+
+.settings-group {
+    margin-bottom: 16px;
+}
+
+.settings-group-title {
+    font-size: 10px;
+    color: var(--color-muted);
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+}
+
+.setting-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.setting-row__label {
+    flex-grow: 1;
+    font-size: 11px;
+    color: var(--color-text);
+}
+
+.setting-row__field {
+    width: 120px;
+    height: 20px;
+    margin: 0;
+}
+
+.setting-row__field-narrow {
+    width: 80px;
+    height: 20px;
+    margin: 0;
+}
+
+.setting-row__unit {
+    margin-left: 6px;
+    font-size: 10px;
+    color: var(--color-muted);
+}
+
+.setting-hint {
+    font-size: 10px;
+    color: var(--color-muted);
+    margin: -2px 0 8px 0;
+    white-space: normal;
+}
+
+/* ===================================================================
+ * 8. CARDS (legacy compat — used by some inner pieces) and Inputs
+ * =================================================================== */
+.card {
+    background-color: var(--color-card-bg);
+    border-width: 1px;
+    border-color: var(--color-card-border);
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+.card-header {
+    background-color: var(--color-card-header-bg);
+    margin: -10px -10px 8px -10px;
+    padding: 6px 10px;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+    flex-direction: row;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--color-accent);
+}
+
+.bold-label {
+    -unity-font-style: bold;
+    color: var(--color-text);
+}
+
+.muted-label {
+    color: var(--color-muted);
+    font-size: 11px;
+    white-space: normal;
+}
+
+.accent-title { color: var(--color-accent); }
+.muted-title  { color: var(--color-muted); }
+
+.unity-text-field__input,
+.unity-integer-field__input,
+.unity-dropdown-field__input,
+.unity-enum-field__input,
+.unity-base-text-field__input,
+.unity-base-popup-field__input {
+    background-color: var(--color-input-bg);
+    border-color: var(--color-input-border);
+    color: var(--color-text);
+    border-radius: 2px;
+}
+
+.unity-text-field__input:focus,
+.unity-integer-field__input:focus,
+.unity-base-text-field__input:focus {
+    border-color: var(--color-input-focus);
+}
+
+/* ---------- Foldout (legacy) ---------- */
+.unity-foldout__toggle {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.unity-foldout__content {
+    margin-left: 12px;
+    padding-top: 4px;
+}
+
+/* ---------- Spacing Helpers ---------- */
+.space-xs { height: 4px; }
+.space-sm { height: 8px; }
+.space-md { height: 12px; }
+
+/* ---------- Divider Helpers ---------- */
+.divider-top {
+    border-top-width: 1px;
+    border-top-color: var(--color-card-border);
+}
+
+.divider-bottom {
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-card-border);
+}
+
+/* ---------- Pending Approval Banner (v1.9) ---------- */
+
+.pending-banner {
+    background-color: rgb(78, 60, 26);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(40, 30, 12);
+}
+
+.pending-banner__header {
+    padding: 4px 8px;
+}
+
+.pending-banner__title {
+    -unity-font-style: bold;
+    color: rgb(255, 220, 140);
+    font-size: 11px;
+}
+
+.pending-banner__list {
+    flex-direction: column;
+    padding: 0 8px 6px 8px;
+}
+
+.pending-banner__card {
+    background-color: rgb(56, 42, 22);
+    border-left-width: 3px;
+    border-left-color: rgb(220, 170, 60);
+    padding: 4px 6px;
+    margin-top: 4px;
+    flex-direction: column;
+}
+
+.pending-banner__card-head {
+    flex-direction: row;
+    align-items: center;
+}
+
+.pending-banner__skill {
+    color: rgb(245, 230, 200);
+    -unity-font-style: bold;
+    font-size: 11px;
+    flex-grow: 1;
+}
+
+.pending-banner__expires {
+    color: rgb(200, 180, 140);
+    font-size: 10px;
+    margin-right: 6px;
+}
+
+.pending-banner__args {
+    color: rgb(180, 170, 140);
+    font-size: 10px;
+    margin-top: 2px;
+    white-space: normal;
+}
+
+.pending-banner__actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.pending-banner__overflow {
+    color: rgb(200, 180, 140);
+    font-size: 10px;
+    -unity-font-style: italic;
+    margin-top: 4px;
+    -unity-text-align: middle-center;
+}
