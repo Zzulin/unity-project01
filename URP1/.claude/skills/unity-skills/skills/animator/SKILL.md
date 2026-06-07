@@ -1,15 +1,18 @@
 ---
 name: unity-animator
-description: "Unity Animator Controller management. Use when users want to create animation controllers, add parameters, play animations, or control animation state machines. Triggers: animation, animator, controller, parameter, state machine, blend tree, animation clip, 动画, 动画控制器, 状态机."
+description: "Unity Animator Controller editing and runtime parameter control: create controllers, add states/transitions/parameters, play animation states, drive triggers/floats/bools. Triggers: animation, animator, Animator Controller, controller, state, state machine, transition, layer, parameter, trigger, float, int, bool, blend tree, animation clip, exit time, has exit time, 动画, 动画控制器, 状态机, 状态, 状态转移, 转移, 图层, 参数, 触发器, 混合树, 动画片段."
 ---
 
 # Unity Animator Skills
 
-Control Unity's animation system - create controllers, manage parameters, and control playback.
+Control Unity's Mecanim system — create Animator Controllers, add layers' states / transitions / parameters, assign controllers to GameObjects, set parameters at runtime, and play states.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：查询类 skill（`animator_get_parameters` / `animator_get_info` / `animator_list_states`，源码标 `SkillMode.SemiAuto`）直接执行；其余变更类（create_controller / add_parameter / set_parameter / play / assign_controller / add_state / add_transition，标 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**：所有 skill 直接执行；Auto 走 AI 自我评估，Bypass 全放行。
+- 本模块**不含** Delete / PlayMode / Reload / 高危 skill，无 Bypass-only 拦截项。
+- `animator_set_parameter` / `animator_play` 作用于场景中已挂 Animator 的 GameObject；如果当前不在 Play mode，状态机只在 Editor 预览模式推进，效果与 runtime 不完全等价。
 
 **DO NOT** (common hallucinations):
 - `animator_create_clip` / `animator_add_clip` do not exist → AnimationClips are created via Unity Editor or asset import
@@ -79,48 +82,60 @@ Get all parameters from a controller.
 |-----------|------|----------|-------------|
 | `controllerPath` | string | Yes | Controller asset path |
 
-**Returns**: `{success, parameters: [{name, type, defaultFloat/defaultBool/...}]}`
+**Returns**: `{controller, parameters: [{name, type, defaultFloat, defaultInt, defaultBool}]}`
 
 ### animator_set_parameter
-Set a parameter value at runtime.
+Set a parameter value at runtime (supports `name`/`instanceId`/`path`).
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `name` | string | Yes | GameObject name |
+| `name` | string | No* | GameObject name |
+| `instanceId` | int | No* | GameObject instance ID |
+| `path` | string | No* | GameObject hierarchy path |
 | `paramName` | string | Yes | Parameter name |
 | `paramType` | string | Yes | float/int/bool/trigger |
 | `floatValue` | float | No* | Float value |
 | `intValue` | int | No* | Integer value |
 | `boolValue` | bool | No* | Boolean value |
 
-*Use the appropriate value for paramType (trigger doesn't need a value)
+*At least one identifier required. Use the appropriate value for paramType (trigger doesn't need a value).
 
 ### animator_play
-Play a specific animation state.
+Play a specific animation state (supports `name`/`instanceId`/`path`).
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `name` | string | Yes | - | GameObject name |
+| `name` | string | No* | - | GameObject name |
+| `instanceId` | int | No* | 0 | GameObject instance ID |
+| `path` | string | No* | null | GameObject hierarchy path |
 | `stateName` | string | Yes | - | Animation state name |
 | `layer` | int | No | 0 | Animator layer |
 | `normalizedTime` | float | No | 0 | Start time (0-1) |
 
+*At least one identifier required.
+
 ### animator_get_info
-Get Animator component information.
+Get Animator component information (supports `name`/`instanceId`/`path`).
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `name` | string | Yes | GameObject name |
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | string | No | null | GameObject name |
+| `instanceId` | int | No | 0 | GameObject instance ID |
+| `path` | string | No | null | GameObject hierarchy path |
 
-**Returns**: `{success, hasController, controllerName, parameters, currentState}`
+**Returns**: `{gameObject, instanceId, hasController, controllerPath, speed, applyRootMotion, updateMode, cullingMode, layerCount, parameterCount}`
 
 ### animator_assign_controller
-Assign a controller to a GameObject.
+Assign a controller to a GameObject (supports `name`/`instanceId`/`path`).
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `name` | string | Yes | GameObject name |
+| `name` | string | No* | GameObject name |
+| `instanceId` | int | No* | GameObject instance ID |
+| `path` | string | No* | GameObject hierarchy path |
 | `controllerPath` | string | Yes | Controller asset path |
+
+*At least one identifier required.
 
 ### animator_list_states
 List all states in a controller layer.
@@ -130,7 +145,7 @@ List all states in a controller layer.
 | `controllerPath` | string | Yes | - | Controller asset path |
 | `layer` | int | No | 0 | Layer index |
 
-**Returns**: `{success, states: [{name, tag, speed}]}`
+**Returns**: `{controller, layer, layerName, stateCount, states: [{name, tag, speed, hasMotion}]}`
 
 ### animator_add_state
 Add a state to an Animator Controller layer.

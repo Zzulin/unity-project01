@@ -1,6 +1,6 @@
 ---
 name: unity-xr
-description: "XR Interaction Toolkit skills for VR/AR development. Use when users want to set up XR rigs, add grab interactions, configure teleportation, continuous locomotion, XR UI, or diagnose XR scenes. Triggers: XR, VR, AR, grab, teleport, XR Origin, XR Rig, hand tracking, controller, interactor, interactable, locomotion, 抓取, 传送, 手柄, 头盔, 虚拟现实. Requires com.unity.xr.interaction.toolkit package. Reflection-based: compatible with XRI 2.x (Unity 2022) and XRI 3.x (Unity 6+)."
+description: "XR Interaction Toolkit (XRI) skills for VR/AR development. Use when users want to set up XR rigs, add grab/socket/ray interactors, attach grab interactables, configure teleportation, continuous locomotion, snap/smooth turn, XR-aware Canvas/EventSystem, haptics, InteractionLayerMask, or diagnose XR scenes. Triggers: XR, XRI, XR Interaction Toolkit, VR, AR, XR Origin, XR Rig, XRRayInteractor, XRDirectInteractor, XRSocketInteractor, XRGrabInteractable, XRSimpleInteractable, TeleportationProvider, TeleportationArea, TeleportationAnchor, ContinuousMoveProvider, SnapTurnProvider, ContinuousTurnProvider, XRUIInputModule, TrackedPoseDriver, grab, teleport, hand tracking, controller, interactor, interactable, locomotion, haptics, InteractionLayerMask, 抓取, 传送, 手柄, 头盔, 虚拟现实, 增强现实, XR 交互, XR 设置. Requires com.unity.xr.interaction.toolkit; reflection-based bridge supports XRI 2.x (Unity 2022) and XRI 3.x (Unity 6+). Missing-package calls return a diagnostic stub."
 ---
 
 # Unity XR Interaction Toolkit Skills
@@ -12,7 +12,12 @@ Use this module for XR Interaction Toolkit setup and configuration. All `xr_*` s
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query/list/info skills (`xr_check_setup`, `xr_get_scene_report`, `xr_list_interactors`, `xr_list_interactables`) run directly. Create/modify skills are FullAuto — on `MODE_RESTRICTED`, run the grant protocol; a successful `/permission/grant` executes the skill server-side and returns the result in the same response.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- This module contains **no** Delete / PlayMode / Reload / `RiskLevel="high"` skills, so nothing is auto-classified as forbidden — every skill is reachable via grant.
+- When `com.unity.xr.interaction.toolkit` is missing, every `xr_*` skill returns the `NoXRI()` install instruction instead of executing.
+- **Reflection-sensitive**: property names on XRI components must match XRI 2.x/3.x exactly. A wrong field name on `xr_configure_interactable` / `xr_configure_haptics` / `xr_configure_interaction_layers` is silently ignored. Load `API_REFERENCE.md` before issuing detailed property edits.
 
 **DO NOT** (common hallucinations):
 - `XRHand`, `XRPlayer`, `XRTeleporter`, `GrabInteractor`, `VRController`, `XRLocomotion`, and `XRManager` are not the runtime classes you want here

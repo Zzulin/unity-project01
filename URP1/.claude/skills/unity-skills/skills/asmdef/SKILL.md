@@ -33,7 +33,7 @@ Use this skill when the project is large enough that compile boundaries and depe
 
 ## Guardrails
 
-**Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 - Do not introduce `asmdef` fragmentation for a tiny prototype.
 - Do not create circular dependencies or force everything through a shared dumping-ground assembly.

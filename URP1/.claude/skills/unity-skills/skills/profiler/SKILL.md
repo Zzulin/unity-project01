@@ -1,15 +1,17 @@
 ---
 name: unity-profiler
-description: "Performance profiling. Use when users want to get FPS, memory usage, or performance statistics. Triggers: profiler, performance, FPS, memory, stats, benchmark, Unity性能, Unity帧率, Unity内存."
+description: "Read-only Unity runtime performance snapshots — FPS, frame time, batches, draw calls, triangles, vertices, memory (total/reserved/mono heap), per-asset memory (textures, meshes, materials, audio), object count by type, AssetBundle stats. Triggers: profiler, performance, performance snapshot, FPS, frame rate, frame time, memory usage, memory snapshot, total allocated memory, reserved memory, mono heap, mono used, runtime memory, texture memory, VRAM, mesh memory, material memory, audio memory, audio clip size, object count, loaded objects, asset bundle, batches, draw calls, set pass calls, triangles, vertices, rendering stats, shadow casters, benchmark, hotspot, profiler_get_stats, profiler_get_memory, profiler_get_rendering_stats, 性能, 性能快照, 帧率, FPS, 帧时间, 内存, 内存占用, Mono 堆, 显存, 纹理内存, 网格内存, 材质内存, 音频内存, 对象统计, 加载对象, AssetBundle, 批次, 绘制调用, DrawCall, SetPass, 三角面, 顶点, 渲染统计, 阴影投射."
 ---
 
 # Profiler Skills
 
 Get performance statistics.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval / Auto / Bypass**: 所有 skill 直接执行。本模块**全部**标 `ReadOnly = true, Mode = SkillMode.SemiAuto`，三档模式下都不需要 grant。
+- **本模块不含 Delete / PlayMode / Reload / RiskLevel=high 类 skill** —— 没有 `IsForbiddenInSemi` 拦截。
+- 注：本组 skill 仅做"瞬时快照"读取，不是 Profiler 录制控制；持续采样请用 Unity Profiler 窗口。
 
 **DO NOT** (common hallucinations):
 - `profiler_start` / `profiler_stop` do not exist → profiler skills are read-only snapshots, not recording controls

@@ -1,19 +1,22 @@
 ---
 name: unity-physics
-description: "Unity physics operations. Use when users want to perform raycasts, overlap checks, or configure gravity. Triggers: physics, raycast, overlap, gravity, collision, layer mask, 物理, 射线检测, 重力, 碰撞."
+description: "Unity physics queries and editor-time configuration: raycasts/spherecast/boxcast, overlap checks, gravity, PhysicMaterial assets, layer collision matrix. Triggers: physics, raycast, spherecast, boxcast, overlap, sphere overlap, box overlap, gravity, collision, rigidbody, collider, physics material, PhysicMaterial, PhysicsMaterial, layer mask, layer collision matrix, 物理, 射线检测, 球形射线, 盒形射线, 重叠检测, 重力, 碰撞, 刚体, 碰撞器, 物理材质, 图层碰撞."
 ---
 
 # Physics Skills
 
-Raycasts, overlap checks, and gravity settings.
+Editor-time physics queries (raycast / overlap), gravity, PhysicMaterial assets, and layer collision matrix.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：查询类 skill（`physics_raycast` / `physics_check_overlap` / `physics_get_gravity` / `physics_get_layer_collision` 等，源码标 `SkillMode.SemiAuto`）直接执行；变更类（`physics_set_gravity` / `physics_create_material` / `physics_set_material` / `physics_set_layer_collision`，标 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**：所有 skill 直接执行；Auto 走 AI 自我评估，Bypass 全放行。
+- 本模块**不含** Delete / PlayMode / Reload / 高危 skill，无 Bypass-only 拦截项。
+- 注意：所有 skill 都在编辑器线程同步运行。真实物理模拟（积分、碰撞响应）仅在 Play mode 下推进；本模块只做单帧 query + 资产/全局设置写入，不会启动模拟。
 
 **DO NOT** (common hallucinations):
 - `physics_add_rigidbody` / `physics_add_collider` do not exist → use `component_add` with componentType "Rigidbody"/"BoxCollider"/etc.
-- `physics_simulate` does not exist → physics simulation runs during Play mode
+- `physics_simulate` does not exist → physics simulation runs during Play mode; this module does not step the simulation
 - Raycast results use world-space coordinates
 
 **Routing**:

@@ -68,7 +68,7 @@ A missing guard is the difference between "doesn't run yet" (safe) and "runs wit
 
 ## Guardrails
 
-**Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 - Do not start from a giant reusable framework unless the project truly needs it.
 - Do not add layers just to satisfy textbook SOLID wording.

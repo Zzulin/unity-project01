@@ -12,9 +12,9 @@
 - `Assets/L16 Rain/L16.unity` 当前已收敛为只验证 GPU 雨幕的极简 Demo：Compute Shader + `DrawMeshInstancedIndirect` GPU 雨线、Low/Medium/High 三档和 HUD 参数面板；屏幕滑动雨水/镜头雨痕、湿润积水、雨滴涟漪、多灯牌、小柱子等额外展示物已移除。
 - L16 构建菜单：`Tools/Rain/Build L16 Advanced Rain Demo`；资源集中在 `Assets/L16 Rain/{Scripts,Shaders,Materials,Editor,Docs}`；预览截图：`Assets/Screenshots/L16_AdvancedRain_current_20260527.png`。
 - L16 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；L16 雨线 Shader `shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
-- `Assets/L17 Volumetric Lighting/L17.unity` 已新增室内窗光体积光 Demo：局部参与介质体积承载光束，逐步进 ray march 采样主光阴影图，配合 HG 前向散射和程序化 3D value noise 做现代实时窗光柱效果；当前室内统一单色双面受光，主光与体积光统一为同向平行下打，4 束窗光已回退并收敛为更稳定的 `Cube Beam` 方案，去掉 `Prism/Frustum` 残留，并补上 `scene depth` 截断以压掉 beam 与墙地相交时的黑块伪影；场景新增 `L17 Lighting Controller`，Inspector 可直接调 `Step Count / Opacity / Intensity / Shadow Contrast / Ambient Boost`。
+- `Assets/L17 Volumetric Lighting/L17.unity` 已重做为现代 URP RendererFeature 体积光 Demo：不再手摆 cube 光束，改为低分辨率 froxel/integrated buffer fullscreen 管线，使用 scene depth、主光 shadowmap、sun direction、blue-noise jitter、temporal reprojection、双边上采样，并在 Bloom / ACES Tonemapping 前合成；场景已简化为房间整体、窗户结构和 2 个室内接光物，主要通过窗框和墙体自然切出窗光束。
 - L17 构建菜单：`Tools/Volumetric Lighting/Build L17 Modern Window Shafts Demo`；资源集中在 `Assets/L17 Volumetric Lighting/{Shaders,Materials,Scripts,Editor,Docs}`。
-- L17 当前静态验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；当前机器缺少项目目标 `Unity 2022.3.62f3c1` Editor，本轮未做 Unity 内 `shader_check_errors` / `scene_health_check` / Play Mode 短跑。
+- L17 当前验证：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 warning / 0 error；UnitySkills `debug_check_compilation` 未处于编译/刷新状态，Console Error 0，`scene_health_check` 0 findings。`Hidden/L17/Froxel Volumetric Composite` 的 `shader_check_errors` 仍返回 `messageCount=1`，但 Unity Console Warning/Error 均为 0，当前按 ShaderUtil 内部 message 残留记录。
 - `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` 已重写，当前约束和推进顺序已同步。
 - LXII 当前采用 Unity 正式验证口径：
   - 以 Unity Editor 自动编译结果为准
@@ -62,6 +62,12 @@
   - 没有明显扭胯、塌肩、脚尖异常、头发链违和
   - 仍可能存在局部穿模
   - 衣物和头发物理模拟尚未接入
+- L17 已重做为现代 URP RendererFeature 体积光 Demo：
+  - 不再手摆 cube 光束
+  - 低分辨率 froxel/integrated buffer fullscreen 管线已接入 RendererFeature
+  - 使用 scene depth、主光 shadowmap、sun direction、blue-noise jitter、temporal reprojection、双边上采样和 Bloom/ACES 前合成
+  - 场景改为窗框、墙体和外部树叶阴影自然切出光束
+  - 当前验证：C# 双程序集 0 warning / 0 error，Unity Console Error 0，`scene_health_check` 0 findings；合成 shader 的 `shader_check_errors` 仍有 1 条 ShaderUtil 内部 message，但 Console Warning/Error 为 0
 
 ## 当前进度判断
 - LXII 已经从“空场景 + 单角色写入”推进到“妮露 + Humanoid + LXI 动作测试 + Inspector 收敛后的拆职责第三人称角色控制 + 第三人称摄像机 + L12 可交互草地已接入”的阶段。
@@ -83,8 +89,13 @@
 - `Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx.meta`
 - `Assets/L12 grass/Docs/L12_InteractiveGrass_Workflow.md`
 - `Assets/L17 Volumetric Lighting/L17.unity`
-- `Assets/L17 Volumetric Lighting/Shaders/L17WindowVolumetricBeam.shader`
-- `Assets/L17 Volumetric Lighting/Materials/{L17_WindowBeam,L17_RoomWall,L17_DustyFloor,L17_WindowFrame}.mat`
+- `Assets/L17 Volumetric Lighting/Shaders/L17TwoSidedInteriorLit.shader`
+- `Assets/L17 Volumetric Lighting/Scripts/L17VolumetricLightingController.cs`
+- `Assets/L17 Volumetric Lighting/Scripts/L17FrustumVolumetricRendererFeature.cs`
+- `Assets/L17 Volumetric Lighting/Shaders/L17FrustumVolumetricLighting.shader`
+- `Assets/L17 Volumetric Lighting/Textures/L17_BlueNoise64.asset`
+- `Assets/L17 Volumetric Lighting/Materials/L17_PostProcessProfile.asset`
+- `Assets/L17 Volumetric Lighting/Materials/{L17_RoomWall,L17_DustyFloor,L17_WindowFrame}.mat`
 - `Assets/L17 Volumetric Lighting/Editor/L17VolumetricLightingDemoBuilder.cs`
 - `Assets/L17 Volumetric Lighting/Docs/L17_ModernVolumetricLighting_Workflow.md`
 

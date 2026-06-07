@@ -44,7 +44,7 @@ Mixing the three lifecycles is what turns a clean class into a god object. A `Mo
 
 ## Guardrails
 
-**Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 - Prefer descriptive names over local shorthand.
 - Do not “optimize” readability away for imagined productivity gains.

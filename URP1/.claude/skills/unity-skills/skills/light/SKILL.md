@@ -1,15 +1,20 @@
 ---
 name: unity-light
-description: "Unity lighting control. Use when users want to create or configure lights (Directional, Point, Spot, Area). Triggers: light, lighting, directional light, point light, spot light, shadows, intensity, 灯光, 光照, 阴影."
+description: "Unity lighting / scene lights / reflection probes / light probe groups. Use when users want to create or configure Unity Directional / Point / Spot / Area lights, batch-toggle scene lights, place reflection probes, place light probe grids, or inspect Lightmap baking settings. Triggers (EN): Unity light, scene light, directional light, point light, spot light, area light, intensity, shadows, light range, light color, reflection probe, light probe group, lightmap, baked GI. Triggers (ZH): 灯光, 光源, 光照, 阴影, 方向光, 点光源, 聚光灯, 面光源, 反射探针, 光照探针, 烘焙, 全局光照, 实时光, GI."
 ---
 
 # Unity Light Skills
 
 > **BATCH-FIRST**: Use `*_batch` skills when operating on 2+ lights.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval** (default): mutating skills (`light_create`, `light_set_properties`, `light_set_properties_batch`, `light_set_enabled`, `light_set_enabled_batch`, `light_add_probe_group`, `light_add_reflection_probe`) need user grant; grant triggers a single server-side execution that returns the result.
+- **Auto / Bypass**: those skills execute directly.
+- Query skills (`light_get_info`, `light_find_all`, `light_get_lightmap_settings`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- This module contains **no** Delete / PlayMode / Reload / high-risk skills (no NeverInSemi); to remove a Light, call `gameobject_delete` from the `gameobject` module.
+
+## Guardrails
 
 **DO NOT** (common hallucinations):
 - `light_add` does not exist → use `light_create` (creates a new light GameObject)
@@ -35,6 +40,9 @@ description: "Unity lighting control. Use when users want to create or configure
 - `light_create` - Create a light
 - `light_get_info` - Get light information
 - `light_find_all` - Find all lights (returns list)
+- `light_add_probe_group` - Add a Light Probe Group with optional grid layout
+- `light_add_reflection_probe` - Create a Reflection Probe at a position
+- `light_get_lightmap_settings` - Inspect Lightmap baking settings
 
 ---
 
@@ -77,10 +85,17 @@ Configure light properties.
 | `r`, `g`, `b` | float | No | Color (0-1) |
 | `intensity` | float | No | Light intensity |
 | `range` | float | No | Range (Point/Spot) |
+| `spotAngle` | float | No | Cone angle (Spot only) |
 | `shadows` | string | No | none/hard/soft |
+
+**Returns**: `{success, name, lightType, color, intensity, range, spotAngle, shadows}`
 
 ### light_set_properties_batch
 Configure multiple lights. Each item accepts: `name`/`instanceId`/`path` (identifier) + `r`, `g`, `b`, `intensity`, `range`, `shadows` (all optional).
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, name}]}`
 
@@ -103,6 +118,10 @@ Enable or disable a light.
 
 ### light_set_enabled_batch
 Enable or disable multiple lights.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, name, enabled}]}`
 
@@ -122,7 +141,7 @@ Get detailed light information.
 | `name` | string | No* | Light object name |
 | `instanceId` | int | No* | Instance ID |
 
-**Returns**: `{name, instanceId, path, lightType, color, intensity, range, spotAngle, shadows, enabled}`
+**Returns**: `{name, instanceId, path, lightType, color, intensity, range, spotAngle, shadows, enabled, cullingMask, bounceIntensity}`
 
 ### light_find_all
 Find all lights in scene.

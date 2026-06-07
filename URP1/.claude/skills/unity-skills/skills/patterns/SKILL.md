@@ -9,7 +9,7 @@ Use this skill to decide whether a pattern is justified. Do not recommend every 
 
 ## Guardrails
 
-**Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 - Recommend at most 1-3 patterns, and explain why simpler options are not enough.
 

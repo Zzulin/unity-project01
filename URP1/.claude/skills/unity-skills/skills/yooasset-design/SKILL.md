@@ -7,7 +7,7 @@ description: "Source-anchored design rules for YooAsset v2.3.18. Load this befor
 
 Advisory module. Every rule is distilled from YooAsset **v2.3.18** (2025-12-04) source at `Assets/YooAsset/`. Each rule cites a concrete file/line so the reasoning is auditable and the AI does not improvise against stale memory.
 
-> **Mode**: Both (Semi-Auto + Full-Auto) — documentation only, no REST skills.
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 ## When to Load This Module
 

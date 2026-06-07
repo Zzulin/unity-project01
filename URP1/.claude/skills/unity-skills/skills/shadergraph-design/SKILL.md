@@ -1,13 +1,13 @@
 ---
 name: unity-shadergraph-design
-description: "Source-anchored Shader Graph design rules for Unity 2022.3 / ShaderGraph 14 and Unity 6 current Graphics. Load before proposing graph structure, node chains, SubGraph boundaries, keyword strategy, or ShaderGraph editing plans. Triggers: ShaderGraph design, shadergraph architecture, shadergraph recipe, shadergraph pitfalls, ShaderGraph 方案, ShaderGraph 设计, ShaderGraph 审查."
+description: "Source-anchored Shader Graph design rules for Unity 2022.3 / ShaderGraph 14 and Unity 6 current Graphics. Load before proposing graph structure, node chains, SubGraph boundaries, keyword strategy, property/blackboard layout, or ShaderGraph editing plans. Triggers: ShaderGraph, Shader Graph, shadergraph design, shadergraph architecture, shadergraph recipe, shadergraph pitfalls, shadergraph review, SubGraph, Master Stack, Blackboard, Keyword, Boolean Keyword, Enum Keyword, Material Keyword, Shader Keyword, PropertyNode, Custom Function Node, Sample Texture 2D, Sample Texture 2D Array, Sample Cubemap, Lerp, Step, Smoothstep, Remap, OneMinus, Normalize, Saturate, Time, UV, Tiling And Offset, Normal Vector, World Position, Object Position, Screen Position, Fresnel Effect, NormalFromHeight, Vertex stage, Fragment stage, Lit Target, Unlit Target, Sprite Lit Target, Fullscreen Target, URP shader, HDRP shader, Built-in shader, ShaderGraph 14, com.unity.shadergraph, shadergraph_list_supported_nodes, shadergraph_get_structure, nodeId, slotId, 着色器图, 着色器节点, 子图, 节点图, 节点连线, 主节点堆栈, 黑板属性, 关键字, 自定义节点, 顶点着色器, 片元着色器, 片段着色器, 表面着色器, URP 着色器, HDRP 着色器, 着色器属性, shadergraph 设计, shadergraph 方案, shadergraph 审查."
 ---
 
 # ShaderGraph - Design Rules
 
 Advisory module. Read this before giving Shader Graph guidance. The goal is to keep recommendations anchored to actual package/source behavior, not stale model memory.
 
-> **Mode**: Both. Documentation only, no REST skills.
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 ## Source Scope
 

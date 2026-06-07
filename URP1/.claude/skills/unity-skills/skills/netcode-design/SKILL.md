@@ -1,13 +1,13 @@
 ---
 name: unity-netcode-design
-description: "Source-anchored design rules for Netcode for GameObjects. Load this before writing any NetworkBehaviour / RPC / NetworkVariable / Spawn code to avoid hallucinated APIs and lifecycle-ordering bugs. Triggers: netcode, NGO, multiplayer, NetworkManager, NetworkObject, NetworkBehaviour, ServerRpc, ClientRpc, NetworkVariable, Spawn, Despawn, host, client, transport, relay, 网络同步, 多人游戏, 服务器权威, 主机, 客户端, RPC, 网络游戏, netcode 设计."
+description: "Source-anchored design rules for Netcode for GameObjects 2.x. Load this before writing any NetworkBehaviour / RPC / NetworkVariable / Spawn code to avoid hallucinated APIs and lifecycle-ordering bugs. Triggers: netcode, NGO, NetworkManager, NetworkObject, NetworkBehaviour, NetworkVariable, NetworkList, NetworkSceneManager, NetworkPrefabsList, NetworkConfig, ServerRpc, ClientRpc, Rpc, SendTo, RpcTarget, RpcInvokePermission, INetworkSerializable, OnNetworkSpawn, OnNetworkDespawn, OnNetworkObjectParentChanged, Spawn, Despawn, SpawnAsPlayerObject, SpawnWithOwnership, ChangeOwnership, RemoveOwnership, TrySetParent, IsOwner, IsServer, IsHost, IsClient, IsLocalPlayer, GlobalObjectIdHash, UnityTransport, SetRelayServerData, SetConnectionData, DebugSimulator, DistributedAuthority, multiplayer, host, client, server, transport, relay, 网络同步, 多人游戏, 联机, 服务器权威, 分布式权威, 主机, 客户端, 服务端, 网络对象, 网络变量, 网络列表, 网络场景管理, 远程过程调用, RPC 调用, 所有权, 生成对象, 销毁对象, 网络游戏, netcode 设计, 网络架构, NGO 2.x."
 ---
 
 # Netcode for GameObjects - Design Rules
 
 Advisory module. Every rule is distilled from `com.unity.netcode.gameobjects` 2.x source. Each rule cites a concrete file/line so the reasoning is auditable.
 
-> **Mode**: Both (Semi-Auto + Full-Auto) — documentation only, no REST skills.
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 ## When to Load This Module
 

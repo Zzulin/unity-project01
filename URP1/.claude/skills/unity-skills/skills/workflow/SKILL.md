@@ -1,6 +1,6 @@
 ---
 name: unity-workflow
-description: "Operation history and rollback. Use when users want to track changes, create snapshots, or undo operations. Triggers: undo, redo, snapshot, rollback, history, revert, session, 工作流, Unity快照, Unity回滚, Unity撤销."
+description: "Persistent operation history, snapshots, task/session undo, bookmarks, and batch planning/retry. Use when users want to record a task, snapshot before modification, undo/redo by task or session (conversation-level), list/delete tasks, manage scene-view bookmarks, generate combined execution plans, query assets pre-batch, or retry failed batch items. Triggers: workflow, task, task start, task end, session, session undo, session-level undo, conversation undo, snapshot, snapshot object, rollback, revert, persistent history, undo task, redo task, bookmark, save bookmark, goto bookmark, list bookmarks, plan skills, batch retry, retry failed, batch query assets, 工作流, 任务, 任务快照, 会话, 会话撤销, 对话级撤销, 快照, 回滚, 还原, 持久历史, 撤销任务, 重做任务, 书签, 保存书签, 跳转书签, 列出书签, 技能计划, 批量重试."
 ---
 
 # Workflow Skills
@@ -10,9 +10,13 @@ Allows tagging tasks, snapshotting objects before modification, and undoing spec
 
 **NEW: Session-level undo** - Group all changes from a conversation and undo them together.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Semi-Auto (available by default)
+- **Approval**：本模块大部分 skill 标 `SkillMode.SemiAuto`（bookmark / history / task / session 系列 + `workflow_plan`，后者 ReadOnly=true 仅生成聚合计划），可直接执行。少数写类 skill (`workflow_snapshot_object` / `workflow_snapshot_created` / `batch_retry_failed`) 走默认 `SkillMode.FullAuto`，需 grant。
+- **Auto / Bypass**：FullAuto 直接执行。
+- **含 NeverInSemi 高危 skill**：`bookmark_delete` / `workflow_delete_task`（标 Operation.Delete，删除书签/任务记录）。这些在 Approval/Auto 下返 `MODE_FORBIDDEN`，仅 Bypass 或 Allowlist 命中可调。
+
+> 注意：`workflow_undo_task` / `workflow_session_undo` 不是 Delete operation（标的是 Modify/Execute），它们能在 Approval/Auto 直接撤销已记录任务。
 
 **DO NOT** (common hallucinations):
 - `workflow_save` does not exist → use `workflow_task_end` to end and save a task

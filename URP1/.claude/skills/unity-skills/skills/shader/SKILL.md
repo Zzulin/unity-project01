@@ -1,15 +1,19 @@
 ---
 name: unity-shader
-description: "Shader creation and management. Use when users want to create or inspect shaders. Triggers: shader, HLSL, ShaderLab, Unlit, Standard, custom shader, 着色器, 创建Shader."
+description: "HLSL / ShaderLab shader file management. Use when users want to create / read / list / find / delete `.shader` files, inspect shader properties or keywords, check compilation errors, count variants, toggle global shader keywords, or create a URP shader from template. Triggers (EN): Unity shader, .shader file, ShaderLab, HLSL, Unlit shader, Standard shader, Transparent shader, URP shader, shader template, shader properties, shader keywords, global shader keyword, shader variants, shader compilation errors. Triggers (ZH): 着色器, Shader 文件, 自定义 Shader, 创建 Shader, Shader 模板, 关键字, 全局关键字, Shader 变体, 编译错误, URP Shader."
 ---
 
 # Unity Shader Skills
 
-Work with shaders - create shader files, read source code, and list available shaders.
+Work with `.shader` HLSL/ShaderLab files (create from templates, read source, list, find, get keywords/properties/variants, check errors, delete, toggle global keywords). For node-based ShaderGraph use the `shadergraph` module.
+
+## Operating Mode
+
+- Query skills (`shader_read`, `shader_list`, `shader_find`, `shader_get_properties`, `shader_check_errors`, `shader_get_keywords`, `shader_get_variant_count`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- Mutating skills (`shader_create`, `shader_create_urp`, `shader_set_global_keyword`) are `SkillMode.FullAuto` — under **Approval** they need user grant (grant triggers one server-side execute returning the result); under **Auto** / **Bypass** they execute directly.
+- `shader_delete` carries `SkillOperation.Delete` and is **auto-forbidden** in Approval / Auto modes (NeverInSemi). Only **Bypass** or the user-managed **Allowlist** can run it.
 
 ## Guardrails
-
-**Mode**: Full-Auto required
 
 **DO NOT** (common hallucinations):
 - `shader_set_property` does not exist → use `material_set_float`/`material_set_color`/etc. on the material, not the shader
@@ -43,20 +47,15 @@ Work with shaders - create shader files, read source code, and list available sh
 ## Skills
 
 ### shader_create
-Create a shader file from template.
+Create a shader file. The `template` parameter is **raw shader source code** that gets written verbatim into the `.shader` file — it is **not** a preset name. If you pass `template="Standard"` the literal string `Standard` will be written to disk and the shader will fail to compile.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `shaderName` | string | Yes | - | Shader name (e.g., "Custom/MyShader") |
-| `savePath` | string | Yes | - | Save path |
-| `template` | string | No | "Unlit" | Template type |
+| `shaderName` | string | Yes | - | Shader name written into the `Shader "..."` declaration (e.g., "Custom/MyShader") |
+| `savePath` | string | Yes | - | Save path (e.g., "Assets/Shaders/My.shader") |
+| `template` | string | No | `null` | Full ShaderLab/HLSL source string. When omitted, a built-in **Unlit** template (`_MainTex` + `_Color`, single CGPROGRAM pass) is used. There are no other built-in presets. |
 
-**Templates**:
-| Template | Description |
-|----------|-------------|
-| `Unlit` | Basic unlit shader |
-| `Standard` | PBR surface shader |
-| `Transparent` | Alpha blended |
+> For a URP Unlit / Lit preset, use **`shader_create_urp`** (`type: "Unlit" | "Lit"`) instead — it actually selects a template by name.
 
 ### shader_read
 Read shader source code.
@@ -65,7 +64,7 @@ Read shader source code.
 |-----------|------|----------|-------------|
 | `shaderPath` | string | Yes | Shader asset path |
 
-**Returns**: `{success, path, content}`
+**Returns**: `{path, lines, content}`
 
 ### shader_list
 List all shaders in project.
@@ -75,7 +74,7 @@ List all shaders in project.
 | `filter` | string | No | null | Name filter |
 | `limit` | int | No | 100 | Max results |
 
-**Returns**: `{success, count, shaders: [{name, path}]}`
+**Returns**: `{count, shaders: [{path, name, propertyCount}]}`
 
 ### shader_find
 Find a shader by name.
@@ -84,7 +83,7 @@ Find a shader by name.
 |-----------|------|----------|-------------|
 | `searchName` | string | Yes | Shader name to find |
 
-**Returns**: `{success, name, path, propertyCount}`
+**Returns**: `{found, name, path}`
 
 ### shader_delete
 Delete a shader file.

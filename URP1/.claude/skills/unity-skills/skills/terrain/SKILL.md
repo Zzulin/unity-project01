@@ -1,15 +1,18 @@
 ---
 name: unity-terrain
-description: "Unity Terrain operations. Use when users want to create terrain, set heights, paint textures, or add trees. Triggers: terrain, heightmap, landscape, paint, trees, grass, 地形, 高度图, 纹理绘制, 树木."
+description: "Unity Terrain operations: create TerrainData, sculpt heights, paint texture layers, smooth/flatten regions, generate Perlin landscapes, add hills. Use when users want to create terrain, set heights, paint textures, smooth or sculpt landscapes. Triggers: terrain, Terrain, TerrainData, heightmap, height map, landscape, sculpt, paint, splat, brush, hill, plateau, Perlin, perlin noise, procedural terrain, smooth, flatten, texture layer, terrain layer, 地形, 高度图, 地图, 山, 山丘, 平原, 高原, 涂刷, 纹理绘制, 程序地形, 柏林噪声, 雕刻."
 ---
 
 # Unity Terrain Skills
 
-> **Note**: Terrain operations require an existing Terrain in the scene, or use `terrain_create` to generate one.
-
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query skills (`terrain_get_info`, `terrain_get_height`) run directly. Create/modify skills (`terrain_create`, `terrain_set_height`, `terrain_set_heights_batch`, `terrain_add_hill`, `terrain_generate_perlin`, `terrain_smooth`, `terrain_flatten`, `terrain_paint_texture`) are FullAuto — on `MODE_RESTRICTED`, run the grant protocol; `/permission/grant` executes the skill server-side and returns the result.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- This module contains **no** Delete / PlayMode / Reload / `RiskLevel="high"` skills — nothing auto-classifies as forbidden. To remove a terrain delete the asset via `asset_delete` (subject to its own forbidden rules).
+
+> **Note**: All sculpt/paint operations require an existing Terrain in the scene, or use `terrain_create` to generate one.
 
 **DO NOT** (common hallucinations):
 - `terrain_set_texture` does not exist → use `terrain_paint_texture` with layer index and brush parameters
@@ -64,7 +67,7 @@ Get terrain information.
 
 *If neither provided, uses first terrain in scene
 
-**Returns**: `{success, name, size, heightmapResolution, alphamapResolution, terrainLayerCount, layers}`
+**Returns**: `{success, name, instanceId, position, size, heightmapResolution, alphamapResolution, detailResolution, terrainLayerCount, layers}`
 
 ### terrain_get_height
 Get terrain height at world position.
@@ -86,6 +89,7 @@ Set height at normalized coordinates.
 | `normalizedZ` | float | Yes | Z position (0-1) |
 | `height` | float | Yes | Height value (0-1) |
 | `name` | string | No | Terrain name |
+| `instanceId` | int | No | Terrain instance ID |
 
 **Returns**: `{success, normalizedX, normalizedZ, height, pixelX, pixelZ}`
 
@@ -98,6 +102,7 @@ Set height at normalized coordinates.
 | `startZ` | int | Yes | Start Z pixel index |
 | `heights` | float[][] | Yes | 2D array [z][x] with values 0-1 |
 | `name` | string | No | Terrain name |
+| `instanceId` | int | No | Terrain instance ID |
 
 **Returns**: `{success, startX, startZ, modifiedWidth, modifiedLength, totalPointsModified}`
 
@@ -118,6 +123,7 @@ call_skill("terrain_set_heights_batch", startX=50, startZ=50, heights=heights)
 | `height` | float | No | 0.5 | Hill height (0-1) |
 | `smoothness` | float | No | 1.0 | Smoothness factor (higher = smoother) |
 | `name` | string | No | null | Terrain name |
+| `instanceId` | int | No | 0 | Terrain instance ID |
 
 **Returns**: `{success, centerX, centerZ, radius, height, affectedArea}`
 
@@ -175,6 +181,7 @@ call_skill("terrain_generate_perlin",
 | `radius` | float | No | 0.1 | Smoothing radius (0-1) |
 | `iterations` | int | No | 1 | Number of smoothing passes |
 | `name` | string | No | null | Terrain name |
+| `instanceId` | int | No | 0 | Terrain instance ID |
 
 **Returns**: `{success, centerX, centerZ, radius, iterations, affectedArea}`
 
@@ -196,6 +203,7 @@ call_skill("terrain_smooth",
 | `radius` | float | No | 0.1 | Flatten radius (0-1) |
 | `strength` | float | No | 1.0 | Flatten strength (0-1) |
 | `name` | string | No | null | Terrain name |
+| `instanceId` | int | No | 0 | Terrain instance ID |
 
 **Returns**: `{success, centerX, centerZ, targetHeight, radius, strength}`
 
@@ -217,8 +225,9 @@ Paint terrain texture layer. Requires terrain layers already configured.
 | `strength` | float | No | 1.0 | Paint strength |
 | `brushSize` | int | No | 10 | Brush size in pixels |
 | `name` | string | No | null | Terrain name |
+| `instanceId` | int | No | 0 | Terrain instance ID |
 
-**Returns**: `{success, layerIndex, layerName, centerX, centerZ}`
+**Returns**: `{success, layerIndex, layerName, centerX, centerZ, brushSize, strength}`
 
 ---
 

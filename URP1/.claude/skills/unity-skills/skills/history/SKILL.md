@@ -1,15 +1,15 @@
 ---
 name: unity-history
-description: "Undo/redo history management. Use when users want to undo, redo, or check edit history. Triggers: history, undo, redo, revert, previous state, Unity历史, Unity撤销, Unity重做."
+description: "Undo/redo history management (Unity Editor native undo stack). Use when users want to undo or redo one or many steps, or get current undo group name. Triggers: history, undo, redo, undo steps, redo steps, undo history, revert, previous state, current undo group, 历史, 撤销, 重做, 多步撤销, 多步重做, 撤销历史, 上一步, 当前撤销组."
 ---
 
 # History Skills
 
 Manage Unity Editor undo/redo history.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+本模块全部 3 个 skill (`history_undo` / `history_redo` / `history_get_current`) 均标 `SkillMode.SemiAuto`，Approval / Auto / Bypass 三档下都可直接执行。**不含 NeverInSemi 高危 skill**。
 
 **DO NOT** (common hallucinations):
 - `history_list` / `history_get` do not exist → use `history_get_current` for current undo group
@@ -25,11 +25,13 @@ Manage Unity Editor undo/redo history.
 
 ### `history_undo`
 Undo the last operation.
-**Parameters:** None.
+**Parameters:**
+- `steps` (int, optional, default 1): Number of operations to undo.
 
 ### `history_redo`
 Redo the last undone operation.
-**Parameters:** None.
+**Parameters:**
+- `steps` (int, optional, default 1): Number of operations to redo.
 
 ### `history_get_current`
 Get current undo history state.

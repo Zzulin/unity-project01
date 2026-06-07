@@ -1,15 +1,23 @@
 ---
 name: unity-volume
-description: "SRP Volume framework management. Use when users want to create VolumeProfiles, create global/local Volumes, add/remove VolumeComponents, or set override parameters. Triggers: volume, volume profile, post-processing profile, override, VolumeComponent, 后处理配置, Volume, VolumeProfile."
+description: "SRP Volume framework (VolumeProfile + Volume GameObject + VolumeComponent overrides) for URP / HDRP projects. Use when users want to create / load VolumeProfile assets, create global or local Volume GameObjects, add / remove / inspect VolumeComponent overrides, or set their parameters. For high-level effect helpers (Bloom, DOF, Vignette, Color Adjustments…) prefer the `postprocess` module. Triggers (EN): Volume, VolumeProfile, post-processing profile, VolumeComponent, override, parameter override, global volume, local volume, blend distance. Triggers (ZH): Volume, 后处理配置, 后处理 Profile, 体积, 全局 Volume, 局部 Volume, 覆盖参数, 覆盖, VolumeProfile, VolumeComponent."
 ---
 
 # Volume Skills
 
-Shared SRP Volume framework skills for Unity 2022.3+.
+Shared SRP Volume framework skills for Unity 2022.3+ — works in URP and HDRP via SRP Core.
+
+## Operating Mode
+
+- Query skills (`volume_list_component_types`, `volume_get_component`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- Mutating skills (`volume_profile_create`, `volume_create`, `volume_set_profile`, `volume_add_component`, `volume_set_parameter`, `volume_set_parameter_batch`) are `SkillMode.FullAuto` — under **Approval** they need user grant (grant triggers one server-side execute returning the result); under **Auto** / **Bypass** they execute directly.
+- `volume_remove_component` carries `SkillOperation.Delete` and is **auto-forbidden** in Approval / Auto modes (NeverInSemi). Only **Bypass** or the user-managed **Allowlist** can run it.
+
+## SRP Package Stub
+
+This module is compiled against `com.unity.render-pipelines.core` (`SRP_CORE`). When neither URP nor HDRP is installed (no SRP Core), **every** skill returns a stub `{ error: "Scriptable Render Pipeline Core package … is not installed." }` (`RenderPipelineSkillsCommon.NoSRP()`). The stub is a diagnostic payload, not a permission denial — it does **not** require grant and is **not** treated as NeverInSemi. Inspect `project_get_render_pipeline` first when you see this error.
 
 ## Guardrails
-
-**Mode**: Full-Auto required
 
 **Routing**:
 - For Volume container/profile CRUD: use this module

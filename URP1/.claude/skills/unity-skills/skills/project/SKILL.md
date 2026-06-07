@@ -1,15 +1,17 @@
 ---
 name: unity-project
-description: "Project information. Use when users want to get project info, packages, player settings, layers, tags, or shader lists. Triggers: project, settings, build, configuration, Unity项目, Unity设置, Unity构建."
+description: "Project information. Use when users want to read project metadata (Unity version, render pipeline), list shaders/UPM packages, read Layer/Tag definitions, add a custom Tag, read build settings, or read Player Settings. Triggers: project info, project settings, Unity version, render pipeline, list shaders, UPM packages, package manifest, layers, tags, add tag, build settings, player settings, scripting backend, api compatibility, 项目信息, 项目设置, Unity 版本, 渲染管线, 着色器列表, UPM 包列表, 包清单, 图层列表, 标签列表, 添加标签, 构建设置, 玩家设置, 脚本后端."
 ---
 
 # Project Skills
 
 Project information and configuration.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+本模块除 `project_add_tag`（`Operation = Create`，未设 Mode 字段，默认 FullAuto，Approval 模式下需 grant）外，其余 8 个 skill（`project_get_info` / `project_get_render_pipeline` / `project_list_shaders` / `project_get_build_settings` / `project_get_packages` / `project_get_layers` / `project_get_tags` / `project_get_player_settings`）均标 `SkillMode.SemiAuto` 且为只读 Query，Approval / Auto / Bypass 三档下都可直接执行。**不含 NeverInSemi 高危 skill**。
+
+> Player Settings、Build Settings、Layer 通过本模块只读获取；如需编辑，请使用 `editor_execute_menu` 打开 `Edit/Project Settings...` 或 `File/Build Settings...`（菜单本身在 editor 模块为 SemiAuto，可直接执行）。
 
 **DO NOT** (common hallucinations):
 - `project_save` does not exist → use `scene_save` (scene module) or `editor_execute_menu` menuPath="File/Save"

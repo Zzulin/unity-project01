@@ -1,15 +1,20 @@
 ---
 name: unity-camera
-description: "Scene View camera control. Use when users want to move, rotate, or align the editor camera view. Triggers: camera, view, scene view, look at, align, viewport, 相机, 摄像机, 视角."
+description: "Unity Scene View + Game Camera control. Use when users want to move/rotate the editor view, create or configure scene cameras, change FOV / clip planes / culling mask, switch orthographic vs perspective, or capture a screenshot. Triggers (EN): Unity camera, scene camera, Game Camera, Scene View, viewport, FOV, field of view, near/far clip, culling mask, orthographic, perspective, look at, align view, screenshot, render to file. Triggers (ZH): 相机, 摄像机, 视角, 视野, 场景视图, 游戏相机, 截图, 渲染截图, 正交, 透视, 裁剪面, 剔除遮罩."
 ---
 
 # Camera Skills
 
-Control the Scene View camera.
+Control the Scene View camera and Game Cameras (creation, transform, properties, screenshot, culling, orthographic toggle).
+
+## Operating Mode
+
+- **Approval** (default): mutating skills (`camera_set_transform`, `camera_create`, `camera_set_properties`, `camera_set_culling_mask`, `camera_screenshot`, `camera_set_orthographic`, `camera_align_view_to_object`, `camera_look_at`) need user grant; grant triggers a single server-side execution that returns the result.
+- **Auto / Bypass**: those skills execute directly.
+- Query skills (`camera_get_info`, `camera_get_properties`, `camera_list`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- This module contains **no** Delete / PlayMode / Reload / high-risk skills (no NeverInSemi).
 
 ## Guardrails
-
-**Mode**: Full-Auto required
 
 **DO NOT** (common hallucinations):
 - `camera_move` / `camera_rotate` do not exist → use `camera_set_transform` (Scene View) or `gameobject_set_transform` (Game Camera)
@@ -40,7 +45,7 @@ Set Scene View camera position/rotation manually.
 **Parameters:**
 - `posX`, `posY`, `posZ` (float): Position.
 - `rotX`, `rotY`, `rotZ` (float): Rotation (Euler).
-- `size` (float, optional): Orthographic size or distance.
+- `size` (float, optional): Orthographic size or pivot distance (default 5).
 - `instant` (bool, optional): Move instantly (default true).
 
 ### `camera_look_at`
@@ -58,6 +63,7 @@ Create a new Game Camera.
 | x | float | No | 0 | Position X |
 | y | float | No | 1 | Position Y |
 | z | float | No | -10 | Position Z |
+| addAudioListener | bool | No | false | Also attach an `AudioListener` component |
 
 **Returns:** `{ success, name, instanceId }`
 

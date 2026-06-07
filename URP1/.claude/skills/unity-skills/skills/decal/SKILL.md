@@ -1,15 +1,23 @@
 ---
 name: unity-decal
-description: "URP Decal Projector management. Use when users want to create, inspect, configure, batch edit, or validate DecalProjectors and DecalRendererFeature setup. Triggers: decal, decal projector, URP decal, DecalRendererFeature, 贴花, DecalProjector."
+description: "URP Decal Projector creation and configuration plus DecalRendererFeature setup. Use when users want to create, inspect, configure, batch-edit, delete or validate URP DecalProjectors in the scene, or ensure the active URP renderer has DecalRendererFeature attached. HDRP decal APIs are out of scope. Triggers (EN): decal, Decal Projector, DecalProjector, URP decal, DecalRendererFeature, decal renderer feature, decal material, projector. Triggers (ZH): 贴花, 贴花投射器, 投影贴花, URP 贴花, DecalProjector, 贴花渲染器特性."
 ---
 
 # Decal Skills
 
-URP decal projector creation and configuration.
+URP Decal Projector creation and configuration (URP only; HDRP decal APIs are not covered here).
+
+## Operating Mode
+
+- Query skills (`decal_get_info`, `decal_find_all`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- Mutating skills (`decal_create`, `decal_set_properties`, `decal_set_properties_batch`, `decal_ensure_renderer_feature`) are `SkillMode.FullAuto` — under **Approval** they need user grant (grant triggers one server-side execute returning the result); under **Auto** / **Bypass** they execute directly.
+- `decal_delete` carries `SkillOperation.Delete` and is **auto-forbidden** in Approval / Auto modes (NeverInSemi). Only **Bypass** or the user-managed **Allowlist** can run it.
+
+## URP Package Stub
+
+This module is compiled against `com.unity.render-pipelines.universal` (`URP`). When URP is not installed, **every** skill returns a stub `{ error: "Universal Render Pipeline package … is not installed." }` (`RenderPipelineSkillsCommon.NoURP()`). The stub is a diagnostic payload, not a permission denial — it does **not** require grant and is **not** treated as NeverInSemi.
 
 ## Guardrails
-
-**Mode**: Full-Auto required
 
 **Routing**:
 - For renderer feature management in general: `urp`

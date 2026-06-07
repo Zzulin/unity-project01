@@ -1,25 +1,27 @@
 ---
 name: unity-scene
-description: "Unity scene management. Use when users want to create, load, save scenes, or get scene hierarchy. Triggers: scene, load scene, save scene, hierarchy, screenshot, Unity场景, Unity加载场景, Unity保存场景, Unity截图."
+description: "Unity scene management. Use when users want to create, load (single or additive), save, unload, switch active scene, get scene info or hierarchy, capture screenshot, or search objects in scene. Triggers: scene, new scene, create scene, load scene, save scene, additive scene, unload scene, multi-scene, active scene, scene hierarchy, hierarchy tree, screenshot, game view screenshot, scene find objects, 场景, 新建场景, 创建场景, 加载场景, 保存场景, 加性加载, 卸载场景, 多场景, 活动场景, 场景层级, 层级树, 截图, 截屏, 场景查找对象."
 ---
 
 # Unity Scene Skills
 
 Control Unity scenes - the containers that hold all your GameObjects.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Semi-Auto (available by default)
+- **Approval**：本模块 Mixed —— `scene_get_info` / `scene_get_hierarchy` / `scene_get_loaded` / `scene_find_objects` 标 `SkillMode.SemiAuto`，可直接执行；`scene_screenshot` / `scene_unload` / `scene_set_active` 未设 Mode 字段（默认 FullAuto），Approval 模式下需 grant。
+- **Auto / Bypass**：FullAuto 直接执行。
+- **含 NeverInSemi 高危 skill**：`scene_create` / `scene_load` / `scene_save`（标 `RiskLevel="high"`，因为切换/覆盖整个场景文件影响范围极大）。这些在 Approval/Auto 下返 `MODE_FORBIDDEN`，仅 Bypass 或 Allowlist 命中可调。
 
 **DO NOT** (common hallucinations):
 - `scene_delete` / `scene_rename` do not exist → delete scene files via `asset_delete`, rename via `asset_move`
 - `scene_list` does not exist → use `scene_get_loaded` (loaded scenes) or `asset_find` with `t:Scene` (all scene assets)
-- `scene_find_objects` is a simple name/tag/component filter; for regex/layer/path search use `gameobject_find` (Full-Auto)
+- `scene_find_objects` is a simple name/tag/component filter; for regex/layer/path search use `gameobject_find` (SkillMode.FullAuto)
 
 **Routing**:
 - For detailed hierarchy tree → use `perception` module's `hierarchy_describe`
 - For scene statistics → use `perception` module's `scene_summarize`
-- For screenshot → `scene_screenshot` (this module) or `camera_screenshot` (camera module, Full-Auto)
+- For screenshot → `scene_screenshot` (this module) or `camera_screenshot` (camera module, SkillMode.FullAuto)
 
 ## Skills Overview
 

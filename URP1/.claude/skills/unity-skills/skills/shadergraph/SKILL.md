@@ -7,9 +7,21 @@ description: "Shader Graph asset creation, structure inspection, constrained bla
 
 Shader Graph asset workflows for Unity 2022.3+ with source-backed template handling, MultiJson inspection, and constrained internal-editor reflection writes.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- Query skills (`shadergraph_list_templates`, `shadergraph_list_assets`, `shadergraph_get_info`, `shadergraph_get_structure`, `shadergraph_list_supported_nodes`, `shadergraph_list_properties`, `shadergraph_list_keywords`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- All other mutators (create graph / subgraph, add/move/connect/disconnect node, set node defaults/settings, add/update property/keyword, reimport) are `SkillMode.FullAuto` — under **Approval** they need user grant (grant triggers one server-side execute returning the result); under **Auto** / **Bypass** they execute directly.
+- `shadergraph_remove_node`, `shadergraph_remove_property`, `shadergraph_remove_keyword` carry `SkillOperation.Delete` and are **auto-forbidden** in Approval / Auto modes (NeverInSemi). Only **Bypass** or the user-managed **Allowlist** can run them.
+
+## Reflection Fragility
+
+This module reaches into `UnityEditor.ShaderGraph` and `UnityEditor.ShaderGraph.Internal` via reflection (see `ShaderGraphReflectionHelper.cs` and `ShaderGraphNodeRegistry.cs`). The supported node whitelist, slot layout, and settings keys are version-pinned to `com.unity.shadergraph` 14.0.x (Unity 2022.3) with limited Unity 6 coverage. Treat the following as a hard contract:
+
+- Never assume an internal type, field, or slot id exists from memory — always cross-check with `shadergraph_list_supported_nodes` and `shadergraph_get_structure` first.
+- If a Shader Graph package update changes internal types or `MultiJson` schema, mutators may fail or silently no-op until the registry is updated.
+- If a skill returns an error mentioning a reflection / type lookup failure, do not retry with different argument shapes — report the version mismatch and stop.
+
+## Guardrails
 
 **Routing**:
 - HLSL text shaders: use `shader_*`

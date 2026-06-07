@@ -1,6 +1,6 @@
 ---
 name: unity-importer
-description: "Asset import settings. Use when users want to configure texture, audio, or model import settings. Triggers: import settings, texture settings, audio settings, model settings, compression, max size, 导入设置, 纹理设置, Unity压缩."
+description: "Asset import settings — texture, audio, model importers + sprite settings + per-platform overrides + reimport. Use when users want to configure import settings, change texture type/maxSize/compression/filter/mipmap/sRGB/wrap, audio loadType/compressionFormat/quality/forceToMono, model scale/meshCompression/animationType/rig/clip splits, sprite PPU/mode, per-platform overrides, or reimport assets. Triggers: import, importer, import settings, reimport, AssetImporter, TextureImporter, ModelImporter, AudioImporter, FBX, AudioClip, sprite, PPU, pixelsPerUnit, textureType, NormalMap, Sprite, maxSize, filterMode, mipmap, sRGB, compression, loadType, Streaming, DecompressOnLoad, CompressedInMemory, Vorbis, ADPCM, PCM, animationType, Humanoid, Generic, meshCompression, generateSecondaryUV, materialImportMode, platform override, Standalone, iPhone, Android, WebGL, 导入设置, 纹理设置, 模型设置, 音频设置, 重新导入, 重导入, 压缩, 法线贴图, 精灵, 平台覆盖."
 ---
 
 # Unity Importer Skills
@@ -11,7 +11,11 @@ Use this module to change import **settings** for textures, audio, and models th
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query/getter skills (`texture_get_settings`, `texture_get_info`, `texture_find_assets`, `texture_find_by_size`, `texture_get_platform_settings`, `texture_get_import_settings`, `audio_get_settings`, `audio_get_clip_info`, `audio_find_clips`, `audio_find_sources_in_scene`, `audio_get_source_info`, `audio_get_import_settings`, `model_get_settings`, `model_find_assets`, `model_get_mesh_info`, `model_get_materials_info`, `model_get_animations_info`, `model_get_rig_info`, `model_get_import_settings`, `asset_get_labels`) run directly. Setters / reimport are FullAuto — on `MODE_RESTRICTED`, run the grant protocol.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- This module contains **no** Delete / PlayMode / Reload / `RiskLevel="high"` skills — nothing auto-classifies as forbidden. Importer mutations are reachable via grant in Approval mode.
+- Setting changes do not always apply in memory immediately; call `asset_reimport` / `asset_reimport_batch` when Unity needs to fully refresh the asset.
 
 **DO NOT** (common hallucinations):
 - `importer_import` does not exist -> use `asset_import` in the `asset` module to bring files into the project

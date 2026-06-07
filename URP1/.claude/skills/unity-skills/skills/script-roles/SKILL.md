@@ -30,7 +30,7 @@ Turn a rough script list into explicit roles so AI does not generate everything 
 
 ## Guardrails
 
-**Mode**: Both (Semi-Auto + Full-Auto) — advisory only, no REST skills
+> **Mode**: Documentation only — no REST skills to gate; load freely under any operating mode (Approval / Auto / Bypass).
 
 - Do not make every class a `MonoBehaviour`.
 - Do not force `ScriptableObject` onto runtime state that should stay in memory-only objects.

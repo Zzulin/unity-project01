@@ -1,6 +1,6 @@
 ---
 name: unity-uitoolkit
-description: "UI Toolkit (UITK) for Unity — create/edit USS stylesheets and UXML layouts, configure UIDocument in scenes. Triggers: UI Toolkit, UITK, UXML, USS, UIDocument, PanelSettings, VisualElement, stylesheet, runtime UI, EditorWindow UI, 界面工具包, UI样式, 样式表, 可视化元素."
+description: "UI Toolkit (UITK) for Unity — create/edit USS stylesheets and UXML layouts, configure UIDocument + PanelSettings in scenes, generate EditorWindow / runtime UI scaffolds. This is the UXML/USS/VisualElement system; for Canvas-based UGUI use the `ui` module. Triggers: UI Toolkit, UITK, UXML, USS, UIDocument, PanelSettings, VisualElement, stylesheet, design token, CSS variable, flex, flexbox, flex-direction, runtime UI, EditorWindow UI, ScaleWithScreenSize, ConstantPixelSize, scaleMode, 界面工具包, UI样式, 样式表, 可视化元素, 弹性布局, 编辑器窗口, 设计令牌."
 ---
 
 # Unity UI Toolkit Skills
@@ -10,9 +10,12 @@ Use this module for Unity UI Toolkit only: `UXML` for structure, `USS` for styli
 > **Requires Unity 2022.3+**. Do not mix this module with `ui_*` UGUI/Canvas skills.
 > **Localization**: Match visible UI text to the user's language. Chinese conversation -> Chinese labels/placeholders/button text. USS class names and CSS variables stay English.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：查询类 skill（`uitk_read_file` / `uitk_find_files` / `uitk_get_panel_settings` / `uitk_list_documents` / `uitk_inspect_uxml` / `uitk_list_uss_variables` / `uitk_inspect_document`，源码标 `SkillMode.SemiAuto`）直接执行；其余文件/场景写入类（`uitk_create_*` / `uitk_write_file` / `uitk_add_*` / `uitk_modify_element` 等，标 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**：未被禁列表拦截的 skill 直接执行。
+- 本模块**含 Delete 类 skill**：`uitk_delete_file`、`uitk_remove_element`、`uitk_remove_uss_rule` 标记为 `SkillOperation.Delete`，被 `IsForbiddenInSemi` 静态拦截 —— 仅 **Bypass** 模式或加入 **Allowlist** 才能调用。
+- **Asset 重导行为**：所有写文件/删文件 skill 通过 `AssetDatabase.ImportAsset(path)` 对单个 USS/UXML 资产单独触发导入，**不会**调 `AssetDatabase.Refresh()` 触发全项目扫描；批量创建依次单独 Import。但 USS/UXML 是 ScriptedImporter 类型，Import 仍会重建依赖此资产的 PanelSettings/UIDocument 引用，触发 IMGUI 检查器刷新与场景视图重绘。
 
 **DO NOT** (common hallucinations):
 - `uitoolkit_create_button` / `uitoolkit_create_label` do not exist -> use `uitk_add_element`

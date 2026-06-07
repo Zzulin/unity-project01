@@ -1,20 +1,24 @@
 ---
 name: unity-cinemachine
-description: "Cinemachine virtual camera control. Use when users want to create cinematic cameras, set follow/look targets, or configure camera behaviors. Triggers: cinemachine, virtual camera, vcam, follow, look at, dolly, freelook, 虚拟相机, 跟随, 轨道."
+description: "Cinemachine Virtual Camera setup and configuration for cinematic / gameplay cameras: VCam, FreeLook, ClearShot, StateDriven, Sequencer, MixingCamera, Body/Aim/Noise pipeline, Impulse system, target groups, splines, blends, CinemachineBrain. Triggers: cinemachine, virtual camera, vcam, CinemachineBrain, brain, FreeLook, ClearShot, StateDriven, Sequencer, MixingCamera, follow, look at, dolly, spline, target group, Body, Aim, Noise, OrbitalFollow, ThirdPersonFollow, PositionComposer, FramingTransposer, RotationComposer, Composer, PanTilt, POV, blend, impulse, shake, confiner, deoccluder, 虚拟相机, 跟随, 轨道, 镜头, 混合, 抖动, 相机模糊."
 ---
 
 # Cinemachine Skills
 
-Control Cinemachine Virtual Cameras and settings (Cinemachine 2.x / 3.x).
+Control Cinemachine Virtual Cameras and brain settings. Works with Cinemachine **2.x and 3.x** through a runtime reflection adapter (`CinemachineAdapter` / `CinemachineSkills`).
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：查询类 skill（`cinemachine_inspect_vcam` / `cinemachine_list_components` / `cinemachine_get_brain_info`，源码标 `SkillMode.SemiAuto`）直接执行；其余配置/创建类（`cinemachine_create_vcam` / `cinemachine_set_targets` / `cinemachine_set_lens` / `cinemachine_configure_body` / `cinemachine_configure_aim` 等，标 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**：未被禁列表拦截的 skill 直接执行。
+- 本模块**含 Delete 类 skill**：`cinemachine_set_component`（替换/移除 pipeline component）、`cinemachine_target_group_remove_member`、`cinemachine_remove_extension` 标记为 `SkillOperation.Delete`，被 `IsForbiddenInSemi` 静态拦截 —— 仅 **Bypass** 模式或加入 **Allowlist** 才能调用。
+- **包依赖**：必须安装 `com.unity.cinemachine` 包（CM 2.x 或 3.x）。未安装时所有 skill 返回 `{ error = "Cinemachine 未安装..." }` 的 stub —— 调用方应先用 `package_*` 系列 skill 确认安装状态。
+- **反射脆弱性**：CM2 ↔ CM3 之间 API 名变化大（`CinemachineVirtualCamera` → `CinemachineCamera`，`CinemachineComponentBase` 改名等）。本模块通过 `CinemachineAdapter` 反射桥接，遇 CM 早期预览版（< `3.0.0-pre.5`）可能因 API 漂移返回失败 —— 优先用 `cinemachine_inspect_vcam` 探测当前可用字段，再决定 `propertyName`。
 
 **DO NOT** (common hallucinations):
 - `cinemachine_create` does not exist → use `cinemachine_create_vcam` for virtual cameras
 - `cinemachine_set_target` / `cinemachine_set_follow` / `cinemachine_set_lookat` do not exist → use `cinemachine_set_targets` (sets both Follow and LookAt in one call)
-- `cinemachine_add_brain` does not exist → CinemachineBrain is auto-added to Main Camera
+- `cinemachine_add_brain` does not exist → CinemachineBrain is auto-added to Main Camera on first VCam creation
 - Cinemachine 2.x uses `CinemachineVirtualCamera`; Cinemachine 3.x uses `CinemachineCamera` — skills handle this automatically
 
 Additional compatibility notes:

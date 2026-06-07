@@ -1,15 +1,15 @@
 ---
 name: unity-prefab
-description: "Prefab management. Use when users want to create, instantiate, apply, or unpack prefabs. Triggers: prefab, instantiate, spawn, apply, unpack, variant, 预制体, 实例化, 生成."
+description: "Prefab management. Use when users want to create, instantiate, apply, unpack, find instances, edit prefab assets, or create variants. Triggers: prefab, instantiate prefab, spawn, create prefab, apply prefab, unpack prefab, variant, prefab override, revert override, prefab asset, find instances, set prefab property, 预制体, 实例化, 生成预制体, 创建预制体, 应用预制体, 解包, 变体, 预制体覆盖, 还原覆盖, 查找实例, 修改预制体."
 ---
 
 # Unity Prefab Skills
 
 > **BATCH-FIRST**: Use `prefab_instantiate_batch` when spawning 2+ prefab instances.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+Approval 模式下本模块为 Mixed —— 只读 skill `prefab_get_overrides` / `prefab_find_instances`（标 `ReadOnly = true`, `Mode = SkillMode.SemiAuto`）可直接执行；其余 9 个写类 skill (`prefab_create` / `prefab_instantiate` / `prefab_instantiate_batch` / `prefab_apply` / `prefab_unpack` / `prefab_revert_overrides` / `prefab_apply_overrides` / `prefab_create_variant` / `prefab_set_property`) 为 `SkillMode.FullAuto`，需用户 grant 单次执行返结果。Auto / Bypass 直接执行。本模块**不含 NeverInSemi 高危 skill**（无 Delete / PlayMode / Reload）。
 
 **DO NOT** (common hallucinations):
 - `prefab_create_from_object` does not exist → use `prefab_create` (takes scene object name/instanceId and savePath)
@@ -49,10 +49,11 @@ Create a prefab from a scene GameObject.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `name` | string | No* | Source object name |
-| `instanceId` | int | No* | Instance ID |
+| `instanceId` | int | No* | Instance ID (preferred) |
 | `path` | string | No* | Object path |
-| `instanceId` | int | No* | Instance ID |
 | `savePath` | string | Yes | Prefab save path |
+
+*At least one source identifier required.
 
 **Returns**: `{success, prefabPath, sourceObject}`
 
@@ -95,9 +96,10 @@ Apply instance changes back to the prefab asset.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `name` | string | No* | Prefab instance name |
-| `instanceId` | int | No* | Instance ID |
+| `instanceId` | int | No* | Instance ID (preferred) |
 | `path` | string | No* | Object path |
-| `instanceId` | int | No* | Instance ID |
+
+*At least one identifier required.
 
 **Returns**: `{success, gameObject, prefabPath}`
 
@@ -107,10 +109,11 @@ Unpack a prefab instance (break prefab connection).
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `name` | string | No* | - | Prefab instance name |
-| `instanceId` | int | No* | - | Instance ID |
+| `instanceId` | int | No* | - | Instance ID (preferred) |
 | `path` | string | No* | - | Object path |
-| `instanceId` | int | No* | - | Instance ID |
 | `completely` | bool | No | false | Unpack all nested prefabs |
+
+*At least one identifier required.
 
 **Returns**: `{success, gameObject, mode}`
 

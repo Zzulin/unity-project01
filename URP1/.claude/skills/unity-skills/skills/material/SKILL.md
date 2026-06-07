@@ -1,15 +1,20 @@
 ---
 name: unity-material
-description: "Unity material and shader properties. Use when users want to create materials, set colors, textures, emission, or shader properties. Triggers: material, shader, color, texture, emission, albedo, metallic, smoothness, 材质, 颜色, 纹理, 发光."
+description: "Unity material asset & shader property editing (Built-in / URP / HDRP). Use when users want to create / duplicate / assign materials, set color or emission, set textures (and tiling/offset), change shader, set float/int/vector properties, toggle shader keywords, set render queue, or change GI flags. Triggers (EN): material, .mat, shader, set color, set texture, emission, albedo, base color, metallic, smoothness, glossiness, normal map, render queue, shader keyword, tiling, offset, HDR color, bloom emission, PBR. Triggers (ZH): 材质, 材质球, 材质属性, Shader, 着色器, 颜色, 纹理, 贴图, 法线贴图, 发光, 自发光, 金属度, 光滑度, Render Queue, 渲染队列, 关键字, 平铺, 偏移."
 ---
 
 # Unity Material Skills
 
 > **BATCH-FIRST**: Use `*_batch` skills when operating on 2+ objects/materials.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval** (default): all mutating skills (`material_create`, `material_create_batch`, `material_assign`, `material_assign_batch`, `material_duplicate`, `material_set_color` / `_emission` / `_texture` / `_float` / `_int` / `_vector` / `_keyword` / `_render_queue` / `_shader` / `_texture_offset` / `_texture_scale` / `_gi_flags`, and the `*_batch` variants) need user grant; grant triggers a single server-side execution that returns the result.
+- **Auto / Bypass**: those skills execute directly.
+- Query skills (`material_get_properties`, `material_get_keywords`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- This module contains **no** Delete / PlayMode / Reload / high-risk skills (no NeverInSemi); to delete a material asset, call the `asset` module.
+
+## Guardrails
 
 **DO NOT** (common hallucinations):
 - `material_set_metallic` / `material_set_smoothness` do not exist → use `material_set_float` with `propertyName="_Metallic"` or `"_Glossiness"` (Standard) / `"_Smoothness"` (URP)
@@ -22,7 +27,9 @@ description: "Unity material and shader properties. Use when users want to creat
 - For texture tiling → `material_set_texture_scale` / `material_set_texture_offset`
 - Pipeline-specific property names differ: check Render Pipeline Compatibility table in this doc
 
-> **Object Targeting**: Single-object skills accept `name` (GameObject name) or `path` (material asset path like `Assets/Materials/X.mat`). For asset-based operations, prefer `path`.
+> **Object Targeting**: Most single-object skills accept `name` (GameObject name) **or** `path`. Behaviour of `path`:
+> - In `material_set_*` / `material_get_*` (color/emission/texture/float/int/vector/keyword/shader/render_queue/gi_flags/properties), `path` may be either a **GameObject hierarchy path** *or* a **material asset path** like `Assets/Materials/X.mat` — the skill auto-detects (paths starting with `Assets/` or ending with `.mat` are treated as material assets).
+> - In `material_assign`, `path` is a **GameObject hierarchy path only**; the material to assign goes in the separate `materialPath` parameter.
 
 ## Skills Overview
 
@@ -58,6 +65,10 @@ Create a new material (auto-detects render pipeline).
 
 ### material_create_batch
 Create multiple materials.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, name, path}]}`
 
@@ -76,11 +87,15 @@ Assign material to object's renderer.
 |-----------|------|----------|-------------|
 | `name` | string | No* | GameObject name |
 | `instanceId` | int | No* | Instance ID |
-| `path` | string | No* | Material asset path (for asset) |
-| `materialPath` | string | Yes | Material to assign |
+| `path` | string | No* | GameObject hierarchy path |
+| `materialPath` | string | Yes | Material asset to assign (e.g. `Assets/Materials/X.mat`) |
 
 ### material_assign_batch
 Assign materials to multiple objects.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, name, materialPath}]}`
 
@@ -104,7 +119,12 @@ Set material color with optional HDR intensity.
 | `intensity` | float | No | 1.0 | HDR intensity (>1 for bloom) |
 
 ### material_set_colors_batch
-Set colors on multiple objects.
+Set colors on multiple objects. Each item accepts: identifier (`name`/`instanceId`/`path`) + `r`, `g`, `b`, `a`, optional per-item `propertyName`.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of `{name|instanceId|path, r, g, b, a}` per-item objects (see example below) |
+| `propertyName` | string | No | auto-detect | Default color property applied to all items unless overridden |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, name}]}`
 
@@ -129,6 +149,10 @@ Set emission color with auto-enable keyword.
 
 ### material_set_emission_batch
 Set emission on multiple objects.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, name}]}`
 
@@ -189,7 +213,7 @@ Get all material properties.
 | `name` | string | No* | GameObject name |
 | `path` | string | No* | Material asset path |
 
-**Returns**: `{colors, floats, vectors, textures, integers, keywords, renderQueue}`
+**Returns**: `{success, target, shader, renderQueue, keywords, giFlags, properties: {colors, floats, vectors, textures, integers}}`
 
 ### material_get_keywords
 Get all enabled shader keywords on a material.
@@ -262,8 +286,8 @@ Set material global illumination flags.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `name` | string | No* | GameObject name |
-| `path` | string | No* | Material asset path |
-| `flags` | string | Yes | GI flags (None/Emissive/RealtimeEmissive/BakedEmissive)
+| `path` | string | No* | GameObject hierarchy path or material asset path |
+| `flags` | string | Yes | GI flags: `None` / `RealtimeEmissive` / `BakedEmissive` / `EmissiveIsBlack` / `AnyEmissive` (default `RealtimeEmissive` if omitted in code; required here)
 
 ---
 

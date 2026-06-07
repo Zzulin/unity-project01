@@ -22,7 +22,7 @@ import threading
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
-__version__ = "1.8.0"
+__version__ = "2.0.1"
 
 UNITY_URL = "http://localhost:8090"
 DEFAULT_PORT = 8090
@@ -364,6 +364,11 @@ class UnitySkills:
         return self.call('job_logs', jobId=job_id, limit=limit)
 
     def wait_for_job(self, job_id: str, timeout: float = 60.0) -> Dict[str, Any]:
+        """Block via the job_wait skill until the job ends or `timeout` elapses.
+
+        `timeout` (default 60s) is converted to ms and passed explicitly as job_wait's
+        `timeoutMs`, overriding job_wait's own REST default of 10000 (10s).
+        """
         timeout_ms = max(1000, int(timeout * 1000))
         result = self.call('job_wait', jobId=job_id, timeoutMs=timeout_ms)
         if isinstance(result, dict) and result.get('reportId'):
@@ -371,6 +376,68 @@ class UnitySkills:
             if isinstance(report, dict) and report.get('success'):
                 result['report'] = report
         return result
+
+    def get_job(self, job_id: str) -> Dict[str, Any]:
+        """Read a job snapshot via GET /jobs/{id} (lightweight, bypasses skill router)."""
+        try:
+            resp = self._session.get(f"{self.url}/jobs/{job_id}", timeout=HEALTH_TIMEOUT)
+            return resp.json()
+        except Exception as exc:
+            return {'status': 'error', 'error': str(exc)}
+
+    def list_jobs(self, limit: int = 50) -> Dict[str, Any]:
+        """List recent jobs via GET /jobs."""
+        try:
+            resp = self._session.get(f"{self.url}/jobs?limit={int(limit)}", timeout=HEALTH_TIMEOUT)
+            return resp.json()
+        except Exception as exc:
+            return {'status': 'error', 'error': str(exc)}
+
+    def get_job_progress(self, job_id: str, offset: int = 0) -> Dict[str, Any]:
+        """Read fine-grained progress events via GET /jobs/{id}/progress?offset=N."""
+        try:
+            resp = self._session.get(f"{self.url}/jobs/{job_id}/progress?offset={int(offset)}", timeout=HEALTH_TIMEOUT)
+            return resp.json()
+        except Exception as exc:
+            return {'status': 'error', 'error': str(exc)}
+
+    def poll_job(self, job_id: str, interval: float = 0.5, timeout: float = 300.0,
+                 on_progress=None, max_interval: float = 5.0) -> Dict[str, Any]:
+        """
+        Poll GET /jobs/{id} until the job reaches a terminal state or timeout elapses.
+        Designed as the lightweight alternative to wait_for_job (which holds a worker slot).
+
+        Args:
+            job_id: Job identifier returned by an async skill (e.g. script_create).
+            interval: Initial seconds between polls. Default 0.5s; after each poll it grows by
+                1.5x up to max_interval, so a long-running job is not polled hundreds of times.
+            timeout: Total wait budget in seconds. Default 5 min.
+            on_progress: Optional callback (snapshot_dict) -> None invoked after each poll.
+            max_interval: Upper bound (seconds) for the backoff interval. Default 5s.
+
+        Returns the final snapshot dict (with `terminal=True` on natural completion).
+        """
+        deadline = time.time() + max(0.0, timeout)
+        last = None
+        cur = max(0.05, interval)
+        while True:
+            last = self.get_job(job_id)
+            if isinstance(last, dict):
+                if on_progress:
+                    try:
+                        on_progress(last)
+                    except Exception:
+                        pass
+                if last.get('terminal') is True:
+                    return last
+                if last.get('errorCode') in ('NOT_FOUND', 'INTERNAL'):
+                    return last
+            if time.time() >= deadline:
+                if isinstance(last, dict):
+                    last['_pollTimeout'] = True
+                return last or {'status': 'error', 'error': 'poll_job timed out'}
+            time.sleep(cur)
+            cur = min(max_interval, cur * 1.5)
 
 
 # Global Default Client (lazy initialization)
@@ -487,8 +554,42 @@ def get_job_logs(job_id: str, limit: int = 100) -> Dict[str, Any]:
 
 
 def wait_for_job(job_id: str, timeout: float = 60.0) -> Dict[str, Any]:
-    """Wait for a UnitySkills job and include the final batch report when available."""
+    """Wait for a UnitySkills job and include the final batch report when available.
+
+    `timeout` defaults to 60s and is passed to the server as job_wait's timeoutMs,
+    overriding job_wait's own REST default of 10s.
+    """
     return _get_default_client().wait_for_job(job_id, timeout=timeout)
+
+
+def get_job(job_id: str) -> Dict[str, Any]:
+    """Lightweight GET /jobs/{id} snapshot — preferred for high-frequency progress polling."""
+    return _get_default_client().get_job(job_id)
+
+
+def list_jobs(limit: int = 50) -> Dict[str, Any]:
+    """List recent jobs via GET /jobs."""
+    return _get_default_client().list_jobs(limit=limit)
+
+
+def get_job_progress(job_id: str, offset: int = 0) -> Dict[str, Any]:
+    """Read fine-grained progress events via GET /jobs/{id}/progress?offset=N."""
+    return _get_default_client().get_job_progress(job_id, offset=offset)
+
+
+def poll_job(job_id: str, interval: float = 0.5, timeout: float = 300.0, on_progress=None) -> Dict[str, Any]:
+    """Block until a job reaches a terminal state, polling GET /jobs/{id} every `interval` seconds."""
+    return _get_default_client().poll_job(job_id, interval=interval, timeout=timeout, on_progress=on_progress)
+
+
+def diagnose(error_limit: int = 20, include_warnings: bool = True, include_recent_jobs: bool = True) -> Dict[str, Any]:
+    """One-shot Editor health snapshot — call this FIRST when triaging problems."""
+    return _get_default_client().call(
+        'unity_diagnose',
+        errorLimit=error_limit,
+        includeWarnings=include_warnings,
+        includeRecentJobs=include_recent_jobs,
+    )
 
 
 class WorkflowContext:
@@ -592,28 +693,35 @@ def workflow_context(tag: str, description: str = '') -> WorkflowContext:
     return WorkflowContext(tag, description)
 
 def call_skill_with_retry(skill_name: str, max_retries: int = 3, retry_delay: float = 2.0, **kwargs) -> Dict[str, Any]:
-    """Call a Unity skill with automatic retry logic for Domain Reload scenarios.
+    """Call a Unity skill with single-layer retry tuned for Domain Reload scenarios.
+
+    Retry lives in ONE layer: the underlying client call runs with `_retries=0`, and this
+    function handles transient transport errors (compile-time TCP refusal / timeout) by polling
+    /health until the server recovers, then re-sending once. This avoids the old nested-retry
+    product (outer x inner) that could fire up to 16 requests and trip the rate limiter.
 
     Args:
         skill_name: Name of the Unity skill to call.
         max_retries: Maximum number of retry attempts after the initial call (default: 3, total attempts: 4).
-        retry_delay: Delay in seconds between retry attempts.
+        retry_delay: Base seconds budget per recovery wait (used as the /health poll window).
         **kwargs: Additional arguments passed to call_skill.
 
     Returns:
         The result from call_skill, or the last result if all retries are exhausted.
     """
     last_result = None
+    # 收敛为单层重试：底层 call 不再自重试（_retries=0），Domain Reload 容错统一在此处理。
+    kwargs.setdefault('_retries', 0)
     for attempt in range(1 + max_retries):
         result = call_skill(skill_name, **kwargs)
 
-        is_connection_error = _is_retryable_transport_error(result)
-        if not is_connection_error:
+        if not _is_retryable_transport_error(result):
             return result
 
         last_result = result
         if attempt < max_retries:
-            time.sleep(retry_delay)
+            # 编译期 TCP 被拒/超时：轮询 /health 等服务恢复后再单次重发，避免盲目重试撞限流（100 req/s）。
+            wait_for_unity(timeout=max(retry_delay, 1.0) * 3, check_interval=0.5)
     return last_result
 
 def get_skills(category: str = None, operation: str = None, tags: str = None,
@@ -642,17 +750,36 @@ def get_skills(category: str = None, operation: str = None, tags: str = None,
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-def get_skill_schema() -> Dict[str, Any]:
-    """Get the canonical machine-readable skill schema.
+# Process-wide schema cache: /skills/schema is ~578 KB; re-fetching it per call is the
+# single biggest client-side token sink. Cache a successful result per server URL for a
+# short TTL and reuse it within a session.
+_schema_cache: Dict[str, Dict[str, Any]] = {}
+_SCHEMA_CACHE_TTL = 300.0  # seconds
+
+
+def get_skill_schema(force_refresh: bool = False) -> Dict[str, Any]:
+    """Get the canonical machine-readable skill schema (process-cached).
 
     This is the preferred source for exact skill names, parameters, and metadata
     when prompt/token budget matters more than loading large SKILL.md files.
+
+    The full schema is large (~578 KB), so a successful result is cached per server URL
+    for `_SCHEMA_CACHE_TTL` seconds. Pass force_refresh=True to bypass the cache (e.g. after
+    adding/renaming skills and recompiling).
     """
     try:
         client = _get_default_client()
+        key = client.url or "default"
+        now = time.time()
+        cached = _schema_cache.get(key)
+        if not force_refresh and cached and (now - cached["ts"]) < _SCHEMA_CACHE_TTL:
+            return cached["data"]
         response = client._session.get(f"{client.url}/skills/schema", timeout=client.timeout)
         response.encoding = 'utf-8'
-        return response.json()
+        data = response.json()
+        if isinstance(data, dict) and data.get("totalSkills") is not None:
+            _schema_cache[key] = {"ts": now, "version": data.get("version"), "data": data}
+        return data
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
@@ -728,6 +855,189 @@ def get_server_status() -> Dict[str, Any]:
         return {'status': 'offline', 'reason': 'Server not running or Unity recompiling'}
     except Exception as e:
         return {'status': 'error', 'reason': str(e)}
+
+
+# ============================================================
+# Permission System (v1.9.0+)
+# ============================================================
+
+def _permission_get(path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """内部辅助：向 /permission/* GET 端点发起请求并返回 JSON。"""
+    client = _get_default_client()
+    qs = f"?{urlencode(params)}" if params else ""
+    response = client._session.get(f"{client.url}{path}{qs}", timeout=client.timeout)
+    response.encoding = 'utf-8'
+    return response.json()
+
+
+def _permission_post(path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """内部辅助：向 /permission/* POST 端点发送 JSON body 并返回响应 JSON。"""
+    client = _get_default_client()
+    json_data = json.dumps(payload, ensure_ascii=False)
+    response = client._session.post(
+        f"{client.url}{path}",
+        data=json_data.encode('utf-8'),
+        headers={'Content-Type': 'application/json; charset=utf-8'},
+        timeout=client.timeout,
+    )
+    response.encoding = 'utf-8'
+    return response.json()
+
+
+def get_permission_status(token: str = None) -> Dict[str, Any]:
+    """获取权限系统状态（当前模式、已授权、待批列表等）。
+
+    返回内容含 ``mode``、``panelApprovalRequired``、``granted``、``forbidden``、
+    ``pending``、``counts``。若传入 ``token``，响应会额外包含 ``focus`` 字段
+    （含 ``approvedByPanel``、``skill`` 等），用于查询特定 grant 请求的状态——
+    Panel 渠道下轮询审批结果时常用。
+
+    Args:
+        token: 可选，传入查询特定 grant 请求状态。
+    """
+    try:
+        params = {'token': token} if token else None
+        return _permission_get('/permission/status', params)
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def grant_permission(skill: str, token: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    """单次一步执行 grant：AI 用此把 ``MODE_RESTRICTED`` 的请求换成执行结果。
+
+    ``args`` 必须与原 skill 调用一致（不含 ``_confirm``），服务端会用其重算
+    hash 校验 token-args 绑定，防止 AI 拿一个 token 套到其它 skill 调用上。
+
+    **响应结构（v1.9 重构后）**：成功时返回
+    ``{ok: True, executed: True, skill, result: <原 skill 的 Execute 输出>}``。
+    服务端在 grant 通过的同一次请求里直接执行了该 skill，**AI 不需要再调一次
+    原 skill 端点** —— 直接消费 ``result`` 即可。grant 不再写入永久白名单，
+    同一 skill 第二次调用仍会触发 ``MODE_RESTRICTED``，需要重新走 grant。
+
+    Panel 渠道下若 AI 在用户点 Approve 之前调用，会返回
+    ``{ok: False, reason: "GRANT_PENDING_APPROVAL"}``，应提示用户去 Unity
+    面板点 Approve，再用 ``get_permission_status(token=...)`` 轮询审批结果，
+    确认后再调一次 ``grant_permission`` 拿 ``result``。
+
+    Example::
+
+        resp = grant_permission(skill="scene_save", token=tk, args={"path": "..."})
+        if resp.get("ok") and resp.get("executed"):
+            return resp["result"]  # 直接拿 skill 执行结果，不需要再调 scene_save
+
+    Args:
+        skill: 待授权并执行的 skill 名。
+        token: 服务端在 ``MODE_RESTRICTED`` 错误响应里发的 ``grantRequestToken``。
+        args: 原 skill 调用参数（dict），不含 ``_confirm``。
+    """
+    try:
+        return _permission_post('/permission/grant',
+                                {'skill': skill, 'token': token, 'args': args})
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def approve_grant(token: str) -> Dict[str, Any]:
+    """Panel 渠道用：面板按钮触发，仅标记本次 grant 已批准（单次有效，不写永久白名单）。
+
+    主要给测试用；生产流程下应由 Unity 面板用户点 [Approve] 触发。
+    """
+    try:
+        return _permission_post('/permission/approve', {'token': token})
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def deny_grant(token: str) -> Dict[str, Any]:
+    """Panel 渠道用：拒绝 grant 请求并清除 token。"""
+    try:
+        return _permission_post('/permission/deny', {'token': token})
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def revoke_permission(skill: str = None, all: bool = False) -> Dict[str, Any]:
+    """[Deprecated] 请改用 ``remove_from_allowlist``。
+
+    撤销单个 skill 或全部白名单条目。``skill`` 与 ``all`` 二选一。
+    v1.9 起 ``/permission/revoke`` 仅作为 ``/permission/allowlist/remove`` 的
+    转发别名，下一个 minor 版本会移除。
+
+    Args:
+        skill: 待撤销的 skill 名，与 ``all`` 互斥。
+        all: 设为 True 时撤销所有白名单条目（忽略 ``skill`` 参数）。
+    """
+    try:
+        payload: Dict[str, Any] = {'all': True} if all else {'skill': skill}
+        return _permission_post('/permission/revoke', payload)
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def list_allowlist() -> Dict[str, Any]:
+    """GET /permission/allowlist —— 列出当前用户白名单 skill。
+
+    返回 ``{allowlist: [...], count: N}``。白名单 skill 跳过 Approval/MODE_RESTRICTED
+    门禁直接放行，可覆盖 Delete / PlayMode / Reload / RiskLevel=high 等 ModeGate 高危拦截；
+    但**不绕过** ConfirmationToken 二次确认（若 RequireConfirmation 开启，仍需 _confirm 重放）。
+    白名单由用户在 Unity 面板手动管理；AI 一般不应调用 add/remove。
+    """
+    try:
+        return _permission_get('/permission/allowlist')
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def add_to_allowlist(skill: str) -> Dict[str, Any]:
+    """POST /permission/allowlist/add —— 把 skill 加入白名单。
+
+    注意：白名单命中后该 skill 在所有模式下绕过 Approval/MODE_RESTRICTED 门禁，
+    **包括 Delete / PlayMode / Reload / RiskLevel=high 等 ModeGate 高危拦截**；但**不绕过**
+    ConfirmationToken 二次确认（高危 skill 在 RequireConfirmation 开启时仍走 _confirm 握手）。
+    建议仅在用户明确授权的会话场景使用
+    （例如批量任务前用户同意把若干 skill 加白名单方便后续直接调）。
+
+    Args:
+        skill: 待加入白名单的 skill 名。
+    """
+    try:
+        return _permission_post('/permission/allowlist/add', {'skill': skill})
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def remove_from_allowlist(skill: str = None, all: bool = False) -> Dict[str, Any]:
+    """POST /permission/allowlist/remove —— 从白名单移除一项或全部。
+
+    传 ``skill="..."`` 移除单项；传 ``all=True`` 清空全部。
+
+    Args:
+        skill: 待移除的 skill 名，与 ``all`` 互斥。
+        all: 设为 True 时清空全部白名单（忽略 ``skill`` 参数）。
+    """
+    try:
+        payload: Dict[str, Any] = {'all': True} if all else {'skill': skill}
+        return _permission_post('/permission/allowlist/remove', payload)
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def get_audit_log(limit: int = 100) -> List[Dict[str, Any]]:
+    """读取审计日志最近 N 条。
+
+    每条是 dict（来自 jsonl），含 ``ts``、``type``、``skill``、``token`` 等字段。
+    审计日志在所有模式下都会写入，可用于反查 AI 行为合规性。
+
+    请求失败时返回单元素列表 ``[{"status": "error", "error": "..."}]``，
+    便于调用方在不引入额外判空逻辑的前提下感知错误。
+    """
+    try:
+        data = _permission_get('/permission/audit', {'limit': str(limit)})
+        if isinstance(data, dict):
+            return data.get('entries', [])
+        return data if isinstance(data, list) else []
+    except Exception as e:
+        return [{"status": "error", "error": str(e)}]
 
 
 def create_script(name: str, template: str = 'MonoBehaviour', wait_for_compile: bool = True) -> Dict[str, Any]:

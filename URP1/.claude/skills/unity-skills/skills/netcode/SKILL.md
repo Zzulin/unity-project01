@@ -1,6 +1,6 @@
 ---
 name: unity-netcode
-description: "Netcode for GameObjects (NGO) multiplayer automation. Create NetworkManager, register NetworkPrefabsList, attach NetworkObject/NetworkTransform, generate NetworkBehaviour templates, and run Host/Server/Client lifecycle control. Triggers: netcode, NGO, multiplayer, NetworkManager, NetworkObject, NetworkBehaviour, NetworkTransform, NetworkVariable, ServerRpc, ClientRpc, Spawn, Despawn, host, client, server, relay, transport, 多人, 联机, 主机, 客户端, 服务器. Requires com.unity.netcode.gameobjects (2.x)."
+description: "Netcode for GameObjects (NGO 2.x) multiplayer automation. Create NetworkManager + UnityTransport, edit NetworkConfig (TickRate / ConnectionApproval / EnableSceneManagement / NetworkTopology / ClientSynchronizationMode), configure direct/Relay transport, attach NetworkObject / NetworkTransform / NetworkRigidbody(2D) / NetworkAnimator, manage NetworkPrefabsList + PlayerPrefab, generate NetworkBehaviour script templates, run Host/Server/Client lifecycle in PlayMode. Triggers: Unity netcode, com.unity.netcode.gameobjects, NGO, NetworkManager, NetworkObject, NetworkBehaviour, NetworkTransform, NetworkRigidbody, NetworkAnimator, NetworkVariable, ServerRpc, ClientRpc, NetworkPrefabsList, PlayerPrefab, UnityTransport, Relay, Spawn, Despawn, host, client, server, ConnectionApproval, NetworkTopology, ClientSynchronizationMode, tick rate, 多人, 联机, 联机同步, 多人游戏, 主机, 客户端, 服务器, 网络同步, 网络对象, 网络组件, 中继, 大厅."
 ---
 
 # Unity Netcode for GameObjects Skills
@@ -12,7 +12,16 @@ Automation for Netcode for GameObjects (NGO) multiplayer setup and operations. E
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query/list/info skills (`netcode_check_setup`, `netcode_get_manager_info`, `netcode_get_transport_info`, `netcode_list_network_objects`, `netcode_get_network_object_info`, `netcode_list_network_prefabs`, `netcode_list_network_behaviours`, `netcode_get_spawn_manager_info`, `netcode_get_scene_manager_info`, `netcode_get_status`) run directly. Mutators (create/configure/attach/add) are FullAuto — on `MODE_RESTRICTED`, run the grant protocol.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- Auto-forbidden in this module:
+  - `SkillOperation.Delete` → `netcode_remove_manager`, `netcode_remove_network_object`, `netcode_remove_from_prefabs_list`
+  - `MayTriggerReload = true` → `netcode_add_network_behaviour_script` (writes a new `.cs`, forces script compile + Domain Reload)
+  - `MayEnterPlayMode = true` → `netcode_start_host`, `netcode_start_server`, `netcode_start_client`, `netcode_shutdown`
+  
+  These are reachable only under Bypass mode or via a user-managed Allowlist entry; the grant flow returns `MODE_FORBIDDEN`. Runtime control + Behaviour-script generation are the practical reason this module is gated.
+- When `com.unity.netcode.gameobjects` is missing, every skill returns a `NoNetcode()` error with install instructions.
 
 **DO NOT** (common hallucinations):
 - `netcode_spawn_object` / `netcode_spawn_player` — do not exist. Spawn must happen in runtime code (NetworkBehaviour) via `.Spawn()` or `NetworkManager.SpawnManager.InstantiateAndSpawn`. Skills do not proxy Spawn because Spawn requires a running NetworkManager.

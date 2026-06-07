@@ -1,6 +1,6 @@
 ---
 name: unity-script
-description: "C# script management — create, read, replace, and analyze Unity scripts. Triggers: script, C#, create script, write code, MonoBehaviour, ScriptableObject, class, code generation, script_create, script_replace, 脚本, 创建脚本, C#代码, 编写代码, 生成脚本, 代码模板."
+description: "C# script CRUD and analysis — create, read, replace, append, search, rename, move, delete Unity scripts and surface compile feedback / Domain Reload state. Triggers: script, C# code, csharp, MonoBehaviour, ScriptableObject, Editor, EditorWindow, namespace, class, create script, read script, write code, edit script, replace text, find in scripts, regex search, rename script, move script, append code, delete script, batch create, compile feedback, compile errors, Domain Reload, code generation, code template, script_create, script_create_batch, script_replace, script_append, script_read, script_rename, script_move, script_delete, script_get_compile_feedback, 脚本, C# 代码, 创建脚本, 批量创建, 读取脚本, 修改脚本, 替换脚本, 查找替换, 搜索脚本, 重命名脚本, 移动脚本, 追加代码, 删除脚本, 编写代码, 生成脚本, 代码模板, 编译反馈, 编译错误, 域重载, 重编译."
 ---
 
 # Unity Script Skills
@@ -8,9 +8,11 @@ description: "C# script management — create, read, replace, and analyze Unity 
 > **BATCH-FIRST**: Use `script_create_batch` when creating 2+ scripts.
 > **DESIGN-FIRST**: Before creating gameplay scripts, actively consider coupling, performance, and maintainability. In an existing project, load `../project-scout/SKILL.md` first. If the user is asking for architecture or refactoring advice, load `../architecture/SKILL.md` and then `../patterns/SKILL.md`, `../async/SKILL.md`, `../inspector/SKILL.md`, `../performance/SKILL.md`, `../script-roles/SKILL.md`, `../scene-contracts/SKILL.md`, `../testability/SKILL.md`, or `../scriptdesign/SKILL.md` as needed.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Semi-Auto (available by default)
+- **Approval**: 只读类 skill（`script_read` / `script_list` / `script_find_in_file` / `script_get_info` / `script_get_compile_feedback`，标 `SkillMode.SemiAuto`）直接执行；写型 skill（`script_create` / `script_create_batch` / `script_replace` / `script_append` / `script_rename` / `script_move` / `script_delete`，默认 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**: 直接执行。
+- **本模块含 Delete / Reload 类高危 skill**：`script_create` / `script_create_batch` / `script_replace` / `script_append` / `script_delete` 会触发 Domain Reload（且多标 `RiskLevel=high`），`script_delete` 同时是 Delete 操作 —— 这些 skill 在 Approval / Auto 下被 `IsForbiddenInSemi` 自动拦截，**仅 Bypass 或 Allowlist 命中可执行**。
 
 **DO NOT** (common hallucinations):
 - `script_edit` / `script_update` do not exist → use `script_replace` for find-and-replace
@@ -54,14 +56,9 @@ Create a C# script from template.
 
 **Templates**: MonoBehaviour, ScriptableObject, Editor, EditorWindow
 
-**Returns**: `{success, path, className, namespaceName, designReminder, compilation?}`
+**Returns**: `{success, status, path, jobId, className, namespaceName, designReminder, serverAvailability?}`
 
-`compilation` includes:
-- `isCompiling`
-- `hasErrors`
-- `errorCount`
-- `errors[]`
-- `nextAction`
+Poll the returned `jobId` (or call `script_get_compile_feedback`) to obtain compile diagnostics — they are not embedded in the synchronous response. `serverAvailability` carries the transient-unavailable hint when Unity is about to reload the script domain.
 
 ### script_create_batch
 Create multiple scripts in one call.
@@ -88,7 +85,7 @@ Read script content.
 |-----------|------|----------|-------------|
 | `scriptPath` | string | Yes | Script asset path |
 
-**Returns**: `{success, path, content}`
+**Returns**: `{path, lines, content}`
 
 ### script_delete
 Delete a script.
@@ -96,6 +93,8 @@ Delete a script.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `scriptPath` | string | Yes | Script to delete |
+
+**Returns**: `{success, status, deleted, jobId, serverAvailability?}`
 
 ### script_find_in_file
 Search for patterns in scripts.
@@ -105,9 +104,9 @@ Search for patterns in scripts.
 | `pattern` | string | Yes | - | Search pattern |
 | `folder` | string | No | "Assets" | Search folder |
 | `isRegex` | bool | No | false | Use regex |
-| `limit` | int | No | 100 | Max results |
+| `limit` | int | No | 50 | Max results |
 
-**Returns**: `{success, pattern, totalMatches, matches: [{file, line, content}]}`
+**Returns**: `{pattern, matchCount, matches: [{file, line, content}]}`
 
 ### script_append
 Append content to a script.
@@ -196,7 +195,7 @@ Find and replace content in a script file.
 | `checkCompile` | bool | No | true | Check compilation after replace |
 | `diagnosticLimit` | int | No | 20 | Max compile diagnostics |
 
-**Returns:** `{ success, path, replacements, compilation? }`
+**Returns:** `{ success, status, path, jobId, replacements, serverAvailability? }`
 
 ### `script_list`
 List C# script files in the project.
@@ -228,7 +227,7 @@ Rename a script file.
 | `checkCompile` | bool | No | true | Check compilation after rename |
 | `diagnosticLimit` | int | No | 20 | Max compile diagnostics |
 
-**Returns:** `{ success, path, oldPath, newName, compilation? }`
+**Returns:** `{ success, status, path, jobId, oldPath, newName, serverAvailability? }`
 
 ### `script_move`
 Move a script to a new folder.
@@ -240,7 +239,7 @@ Move a script to a new folder.
 | `checkCompile` | bool | No | true | Check compilation after move |
 | `diagnosticLimit` | int | No | 20 | Max compile diagnostics |
 
-**Returns:** `{ success, path, oldPath, newPath, compilation? }`
+**Returns:** `{ success, status, path, jobId, oldPath, newPath, serverAvailability? }`
 
 ---
 ## Exact Signatures

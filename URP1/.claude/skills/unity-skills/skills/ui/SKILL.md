@@ -1,6 +1,6 @@
 ---
 name: unity-ui
-description: "Unity UI creation. Use when users want to create Canvas, Button, Text, Image, or other UI elements. Triggers: UI, canvas, button, text, image, panel, slider, toggle, UGUI, 界面, 按钮, 文本, 面板."
+description: "Unity UGUI (Canvas-based UI) creation and layout: Canvas, Panel, Button, Text (TMP auto-detect), Image, RawImage, InputField, Slider, Toggle, Dropdown, ScrollView, Scrollbar, RectTransform anchors and layout groups. This is the GameObject + Canvas system; for UXML/USS use the `uitoolkit` module. Triggers: UGUI, UI, Canvas, ScreenSpaceOverlay, Button, Text, TextMeshPro, TMP, Image, RawImage, Panel, Slider, Toggle, Dropdown, ScrollView, ScrollRect, Scrollbar, InputField, RectTransform, anchor, pivot, layout group, vertical layout, horizontal layout, grid layout, LayoutElement, CanvasGroup, mask, RectMask2D, outline, shadow, 界面, 按钮, 文本, 文字, 图片, 面板, 滑块, 开关, 下拉, 滚动视图, 滚动条, 输入框, 锚点, 布局, 画布, 蒙版."
 ---
 
 # Unity UI Skills
@@ -9,9 +9,11 @@ Use this module for Unity UGUI / Canvas workflows. It is separate from UI Toolki
 
 > **Batch-first**: Prefer `ui_create_batch` when creating `2+` UI elements.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：查询类 skill（`ui_find_all`，源码标 `SkillMode.SemiAuto`）直接执行；其余创建/修改类（`ui_create_*` / `ui_set_*` / `ui_add_*` / `ui_layout_children` / `ui_align_selected` 等，标 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**：所有 skill 直接执行；Auto 走 AI 自我评估，Bypass 全放行。
+- 本模块**不含** Delete / PlayMode / Reload / 高危 skill，无 Bypass-only 拦截项。删除 UI 节点请走 `gameobject` 模块。
 
 **DO NOT** (common hallucinations):
 - `ui_add_canvas` does not exist -> use `ui_create_canvas`
@@ -53,6 +55,9 @@ Use this module for Unity UGUI / Canvas workflows. It is separate from UI Toolki
 | `ui_find_all` | Find scene UI elements | `uiType?`, `limit?` |
 | `ui_set_text` | Update text content | `name`, `text` |
 | `ui_set_rect` | Set RectTransform size/offsets | target, `width`, `height`, `posX`, `posY`, `left/right/top/bottom?` |
+| `ui_get_rect_transform` | Read full RectTransform data | target |
+| `ui_set_rect_transform` | Set full RectTransform data | anchors, pivot, offsets, local transform, width/height |
+| `ui_set_rect_transform_batch` | Set full RectTransform data for multiple elements | `items` |
 | `ui_set_anchor` | Apply anchor preset | target, `preset?`, `setPivot?` |
 | `ui_layout_children` | Vertical/Horizontal/Grid layout | target, `layoutType?`, `spacing?` |
 | `ui_align_selected` | Align current selection | `alignment?` |
@@ -92,6 +97,58 @@ Use this module for Unity UGUI / Canvas workflows. It is separate from UI Toolki
 Important:
 - Most create skills do **not** take explicit `x/y` placement.
 - Create first, then place/anchor with `ui_set_rect`, `ui_set_anchor`, or `ui_layout_children`.
+
+### Full RectTransform Editing
+
+Use `ui_set_rect_transform` when you need Inspector-level RectTransform coverage instead of a preset.
+
+| Skill | Parameters |
+|-------|------------|
+| `ui_get_rect_transform` | `name`, `instanceId`, `path` |
+| `ui_set_rect_transform` | target + `anchorMinX/Y`, `anchorMaxX/Y`, `pivotX/Y`, `anchoredPosX/Y/Z`, `sizeDeltaX/Y`, `offsetMinX/Y`, `offsetMaxX/Y`, `localPosX/Y/Z`, `localRotX/Y/Z`, `localScaleX/Y/Z`, `width`, `height` |
+| `ui_set_rect_transform_batch` | `items` JSON array with the same per-target fields |
+
+### ui_get_rect_transform
+Get full RectTransform data for a UI element.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | string | No* | null | GameObject name |
+| `instanceId` | int | No* | 0 | GameObject instance ID |
+| `path` | string | No* | null | Hierarchy path |
+
+**Returns:** `{ success, name, instanceId, path, anchorMin, anchorMax, pivot, anchoredPosition3D, sizeDelta, offsetMin, offsetMax, localPosition, localEulerAngles, localScale, rect }`
+
+### ui_set_rect_transform
+Set full RectTransform data for a UI element.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | string | No* | null | GameObject name |
+| `instanceId` | int | No* | 0 | GameObject instance ID |
+| `path` | string | No* | null | Hierarchy path |
+| `anchorMinX` / `anchorMinY` | float | No | null | Anchor min |
+| `anchorMaxX` / `anchorMaxY` | float | No | null | Anchor max |
+| `pivotX` / `pivotY` | float | No | null | Pivot |
+| `anchoredPosX` / `anchoredPosY` / `anchoredPosZ` | float | No | null | Anchored position 3D |
+| `sizeDeltaX` / `sizeDeltaY` | float | No | null | Size delta |
+| `offsetMinX` / `offsetMinY` | float | No | null | Offset min |
+| `offsetMaxX` / `offsetMaxY` | float | No | null | Offset max |
+| `localPosX` / `localPosY` / `localPosZ` | float | No | null | Local position |
+| `localRotX` / `localRotY` / `localRotZ` | float | No | null | Local euler rotation |
+| `localScaleX` / `localScaleY` / `localScaleZ` | float | No | null | Local scale |
+| `width` / `height` | float | No | null | Size with current anchors |
+
+**Returns:** same shape as `ui_get_rect_transform`.
+
+### ui_set_rect_transform_batch
+Set full RectTransform data for multiple UI elements.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item target and RectTransform fields |
+
+**Returns:** `{ success, totalItems, successCount, failCount, results }`
 
 ### Layout and Anchoring Rules
 

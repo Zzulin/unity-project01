@@ -1,15 +1,17 @@
 ---
 name: unity-validation
-description: "Project validation and cleanup. Use when users want to find missing scripts, validate references, or check project health. Triggers: validate, missing script, broken reference, check, health, Unity验证, 丢失脚本, 引用检测."
+description: "Project and scene health validation + cleanup helpers — find missing scripts / null references / non-convex MeshColliders / shader compilation errors / oversized textures / potentially unused assets, validate scene issues, remove missing-script placeholders, delete empty folders, get project structure overview. Triggers: validate, validation, health check, sanity check, project health, scene health, missing script, broken reference, null reference, missing prefab, duplicate names, empty folder, unused assets, oversized texture, large texture, non-convex collider, mesh collider performance, shader error, shader compile error, project structure, project overview, validate_scene, validate_find_missing_scripts, validate_fix_missing_scripts, validate_cleanup_empty_folders, validate_find_unused_assets, validate_texture_sizes, validate_project_structure, validate_missing_references, validate_mesh_collider_convex, validate_shader_errors, 验证, 校验, 健康检查, 项目健康, 场景健康, 丢失脚本, 缺失脚本, 引用检测, 空引用, 丢失引用, 重复命名, 空文件夹, 未使用资源, 冗余资源, 超大纹理, 非凸碰撞体, MeshCollider 性能, 着色器错误, Shader 编译错误, 项目结构, 项目概览, 预构建检查."
 ---
 
 # Unity Validation Skills
 
 Maintain project health - find problems, clean up, and validate your Unity project.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**: 只读分析 skill（`validate_scene` / `validate_find_missing_scripts` / `validate_find_unused_assets` / `validate_texture_sizes` / `validate_project_structure` / `validate_missing_references` / `validate_mesh_collider_convex` / `validate_shader_errors`，标 `SkillMode.SemiAuto`）直接执行；含 Delete 的 skill（`validate_cleanup_empty_folders` 标 `Analyze | Delete`、`validate_fix_missing_scripts` 标 `Execute | Delete`，默认 `SkillMode.FullAuto`）需用户 grant。
+- **Auto / Bypass**: 直接执行。
+- **本模块含 Delete 类高危 skill**：`validate_cleanup_empty_folders` / `validate_fix_missing_scripts` 一旦 `dryRun=false` 即真删；它们在 Approval / Auto 下被 `IsForbiddenInSemi` 自动拦截，**仅 Bypass 或 Allowlist 命中可执行**。**强烈建议先用 `dryRun=true` 预览**。
 
 **DO NOT** (common hallucinations):
 - Validation skill routes use the `validate_*` prefix, not `validation_*`
@@ -48,18 +50,19 @@ Comprehensive scene validation.
 |-----------|------|----------|---------|-------------|
 | `checkMissingScripts` | bool | No | true | Check for missing scripts |
 | `checkMissingPrefabs` | bool | No | true | Check for missing prefabs |
-| `checkDuplicateNames` | bool | No | false | Check duplicate names |
+| `checkDuplicateNames` | bool | No | true | Check duplicate names |
+| `checkEmptyGameObjects` | bool | No | false | Check empty GameObjects (no components) |
 
-**Returns**: `{success, sceneName, totalIssues, missingScripts, missingPrefabs, duplicateNames}`
+**Returns**: `{scene, totalIssues, summary: {errors, warnings, info}, issues: [{type, severity, gameObject, path, message, count}]}`
 
 ### validate_find_missing_scripts
 Find objects with missing script references.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `searchInPrefabs` | bool | No | false | Also check prefab assets |
+| `searchInPrefabs` | bool | No | true | Also check prefab assets |
 
-**Returns**: `{success, count, objectsWithMissingScripts: [{name, path, missingCount}]}`
+**Returns**: `{totalFound, objects: [{source, gameObject, path, missingCount, prefabPath?}]}` (`prefabPath` only present when `source="Prefab"`)
 
 ### validate_fix_missing_scripts
 Remove missing script components.
@@ -68,7 +71,7 @@ Remove missing script components.
 |-----------|------|----------|---------|-------------|
 | `dryRun` | bool | No | true | Preview only, don't remove |
 
-**Returns**: `{success, totalFixed, fixedObjects}`
+**Returns**: `{success, dryRun, fixedCount, message, objects: [{gameObject, path, missingCount}]}`
 
 ### validate_cleanup_empty_folders
 Remove empty folders from project.
@@ -78,17 +81,17 @@ Remove empty folders from project.
 | `rootPath` | string | No | "Assets" | Starting folder |
 | `dryRun` | bool | No | true | Preview only, don't delete |
 
-**Returns**: `{success, count, foldersToDelete: [path]}`
+**Returns**: `{ success, dryRun, emptyFolderCount, folders, message }`
 
 ### validate_find_unused_assets
 Find potentially unused assets.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `assetType` | string | No | null | Filter: Texture/Material/Prefab/etc |
+| `assetType` | string | No | "Material" | Filter: Texture/Material/Prefab/etc |
 | `limit` | int | No | 100 | Max results |
 
-**Returns**: `{success, count, unusedAssets: [path]}`
+**Returns**: `{ success, assetType, potentiallyUnusedCount, assets }`
 
 ### validate_texture_sizes
 Check for oversized textures.
@@ -98,7 +101,7 @@ Check for oversized textures.
 | `maxRecommendedSize` | int | No | 2048 | Warn if larger |
 | `limit` | int | No | 50 | Max results |
 
-**Returns**: `{success, totalChecked, oversizedCount, oversizedTextures: [{path, width, height, recommendation}]}`
+**Returns**: `{maxRecommendedSize, largeTextureCount, textures: [{path, name, width, height, maxTextureSize, format, recommendation}]}`
 
 ### validate_project_structure
 Get project folder structure overview.
@@ -106,9 +109,9 @@ Get project folder structure overview.
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `rootPath` | string | No | "Assets" | Starting folder |
-| `maxDepth` | int | No | 3 | Max folder depth |
+| `maxDepth` | int | No | 2 | Max folder depth |
 
-**Returns**: `{success, structure, summary: {totalFolders, totalAssets}}`
+**Returns**: `{ success, rootPath, assetCounts, structure }`
 
 ### `validate_missing_references`
 Find null/missing object references on components in the scene.
@@ -152,8 +155,8 @@ if scene_result['totalIssues'] > 0:
 
 # Check texture sizes
 texture_result = unity_skills.call_skill("validate_texture_sizes", maxRecommendedSize=2048)
-if texture_result['oversizedCount'] > 0:
-    print(f"Warning: {texture_result['oversizedCount']} oversized textures")
+if texture_result['largeTextureCount'] > 0:
+    print(f"Warning: {texture_result['largeTextureCount']} oversized textures")
 ```
 
 ### Project Cleanup
@@ -162,21 +165,21 @@ import unity_skills
 
 # 1. Preview missing scripts fix
 preview = unity_skills.call_skill("validate_fix_missing_scripts", dryRun=True)
-print(f"Would fix {preview['totalFixed']} objects")
+print(f"Would fix {preview['fixedCount']} objects")
 
 # 2. Actually fix (if preview looks good)
 unity_skills.call_skill("validate_fix_missing_scripts", dryRun=False)
 
 # 3. Preview empty folder cleanup
 preview = unity_skills.call_skill("validate_cleanup_empty_folders", dryRun=True)
-print(f"Would delete {len(preview['foldersToDelete'])} folders")
+print(f"Would delete {len(preview['folders'])} folders")
 
 # 4. Actually cleanup
 unity_skills.call_skill("validate_cleanup_empty_folders", dryRun=False)
 
 # 5. Review unused assets (manual review recommended)
 unused = unity_skills.call_skill("validate_find_unused_assets")
-for asset in unused['unusedAssets']:
+for asset in unused['assets']:
     print(f"Potentially unused: {asset}")
 ```
 

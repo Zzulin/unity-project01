@@ -1,15 +1,17 @@
 ---
 name: unity-component
-description: "GameObject component management. Use when users want to add, remove, or configure components like Rigidbody, Collider, AudioSource. Triggers: component, add component, rigidbody, collider, audio source, script, 组件, 添加组件, 刚体, 碰撞体."
+description: "GameObject component management. Use when users want to add, remove, list, copy, enable/disable components, or read/set component properties (Rigidbody, Collider, AudioSource, custom scripts). Triggers: component, add component, remove component, list components, set property, get properties, copy component, enable, disable, rigidbody, collider, audio source, script, MeshRenderer, propertyName, componentType, 组件, 添加组件, 移除组件, 列出组件, 设置属性, 读取属性, 复制组件, 启用, 禁用, 刚体, 碰撞体, 音源, 脚本组件."
 ---
 
 # Unity Component Skills
 
 > **BATCH-FIRST**: Use `*_batch` skills when operating on 2+ objects to reduce API calls from N to 1.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：本模块 Mixed —— `component_list` / `component_get_properties` 标 `SkillMode.SemiAuto`，可直接执行；写类 skill (`component_add` / `component_set_property` / `component_set_enabled` / `component_copy` 等) 标 `SkillMode.FullAuto`，需 grant 单次执行返结果。
+- **Auto / Bypass**：FullAuto 直接执行。
+- **含 NeverInSemi 高危 skill**：`component_remove` / `component_remove_batch`（Operation.Delete）。这些在 Approval/Auto 下返 `MODE_FORBIDDEN`，仅 Bypass 或 Allowlist 命中可调。
 
 **DO NOT** (common hallucinations):
 - `component_create` / `component_get` do not exist → use `component_add` (add) and `component_get_properties` (read)
@@ -31,12 +33,15 @@ description: "GameObject component management. Use when users want to add, remov
 | `component_add` | `component_add_batch` | Adding to 2+ objects |
 | `component_remove` | `component_remove_batch` | Removing from 2+ objects |
 | `component_set_property` | `component_set_property_batch` | Setting on 2+ objects |
+| `component_set_serialized_property` | `component_set_serialized_property_batch` | Setting Inspector SerializedProperty paths |
 
 **Other Skills** (no batch):
 - `component_list` - List all components on an object
 - `component_get_properties` - Get component property values
 - `component_set_enabled` - Enable/disable a component (Behaviour, Renderer, Collider)
 - `component_copy` - Copy a component from one object to another
+- `component_get_serialized_properties` - List Inspector SerializedProperty paths
+- `component_copy_exact` - Copy a component and verify serialized fields match
 
 ---
 
@@ -54,7 +59,7 @@ Add a component to a GameObject.
 
 *At least one identifier required
 
-**Returns**: `{success, gameObject, componentType, added}`
+**Returns**: `{success, gameObject, instanceId, component, fullTypeName}` (returns `{warning, gameObject, instanceId}` instead if a single-instance component already exists)
 
 ### component_remove
 Remove a component from a GameObject.
@@ -65,7 +70,7 @@ Remove a component from a GameObject.
 | `instanceId` | int | No* | Instance ID |
 | `componentType` | string | Yes | Component type to remove |
 
-**Returns**: `{success, gameObject, componentType, removed}`
+**Returns**: `{success, gameObject, removed}` (`removed` is the requested `componentType` string)
 
 ### component_list
 List all components on a GameObject.
@@ -75,7 +80,7 @@ List all components on a GameObject.
 | `name` | string | No* | GameObject name |
 | `instanceId` | int | No* | Instance ID |
 
-**Returns**: `{success, gameObject, instanceId, components: [string]}`
+**Returns**: `{gameObject, instanceId, path, componentCount, components: [{type, fullType, enabled, keyProperties?}]}` (`keyProperties` only present when `includeProperties=true`)
 
 ### component_set_property
 Set a component property value.
@@ -112,7 +117,7 @@ call_skill("component_set_property", name="Obj", componentType="Rigidbody", prop
            value="Interpolate")
 ```
 
-**Returns**: `{success, gameObject, componentType, property, oldValue, newValue}`
+**Returns**: `{success, gameObject, component, property, valueSet, valueType}` (`valueSet` is the string form of the actual value applied; `valueType` is the resolved target type name)
 
 ### component_get_properties
 Get all properties of a component.
@@ -123,7 +128,42 @@ Get all properties of a component.
 | `instanceId` | int | No* | Instance ID |
 | `componentType` | string | Yes | Component type |
 
-**Returns**: `{success, gameObject, componentType, properties: {name: value}}`
+**Returns**: `{gameObject, component, fullTypeName, properties: [{name, type, fullType, value, canWrite}], fields: [{name, type, fullType, value, isSerializable}]}`
+
+### component_get_serialized_properties
+List Inspector serialized properties on a component via `SerializedObject`.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | No* | GameObject name |
+| `instanceId` | int | No* | Instance ID |
+| `path` | string | No* | Hierarchy path |
+| `componentType` | string | Yes | Component type |
+| `includeChildren` | bool | No | Include nested properties |
+| `limit` | int | No | Max properties returned |
+
+**Returns**: `{success, gameObject, component, fullTypeName, properties}`
+
+### component_set_serialized_property
+Set an Inspector serialized property by `propertyPath`.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | No* | GameObject name |
+| `instanceId` | int | No* | Instance ID |
+| `path` | string | No* | Hierarchy path |
+| `componentType` | string | Yes | Component type |
+| `propertyPath` | string | Yes | SerializedProperty path, e.g. `items.Array.data[0]` |
+| `value` | string | Cond. | Primitive/vector/color/enum value |
+| `referenceName` | string | No | Scene object name for ObjectReference |
+| `referenceInstanceId` | int | No | Scene object instance ID for ObjectReference |
+| `referencePath` | string | No | Scene object path for ObjectReference |
+| `assetPath` | string | No | Project asset path for ObjectReference |
+| `objectType` | string | No | Expected object/component type for references |
+
+> Provide `value` for scalar properties, or a scene/project reference for ObjectReference fields.
+
+**Returns**: `{success, gameObject, component, propertyPath, valueSet}`
 
 ---
 
@@ -131,6 +171,10 @@ Get all properties of a component.
 
 ### component_add_batch
 Add components to multiple objects.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, gameObject, componentType, added}]}`
 
@@ -144,6 +188,10 @@ unity_skills.call_skill("component_add_batch", items=[
 
 ### component_remove_batch
 Remove components from multiple objects.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, gameObject, componentType, removed}]}`
 
@@ -156,6 +204,10 @@ unity_skills.call_skill("component_remove_batch", items=[
 
 ### component_set_property_batch
 Set properties on multiple objects.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects (see example below) |
+
 
 **Returns**: `{success, totalItems, successCount, failCount, results: [{success, gameObject, componentType, property, oldValue, newValue}]}`
 
@@ -165,6 +217,16 @@ unity_skills.call_skill("component_set_property_batch", items=[
     {"name": "Enemy2", "componentType": "Rigidbody", "propertyName": "mass", "value": 2.0}
 ])
 ```
+
+### component_set_serialized_property_batch
+Set Inspector serialized properties on multiple components.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | json string | Yes | - | JSON array of per-item objects |
+
+**Item properties**: `name`, `instanceId`, `path`, `componentType`, `propertyPath`, `value`, `referenceName`, `referenceInstanceId`, `referencePath`, `assetPath`, `objectType`
+
+**Returns**: `{success, totalItems, successCount, failCount, results}`
 
 ---
 
@@ -259,6 +321,21 @@ Copy a component from one GameObject to another.
 *At least one source identifier and one target identifier required
 
 **Returns:** `{ success, source, target, componentType }`
+
+### `component_copy_exact`
+Copy a component from one GameObject to another and verify serialized Inspector fields match.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `sourceName` | string | No* | null | Source GameObject name |
+| `sourceInstanceId` | int | No* | 0 | Source Instance ID |
+| `sourcePath` | string | No* | null | Source hierarchy path |
+| `targetName` | string | No* | null | Target GameObject name |
+| `targetInstanceId` | int | No* | 0 | Target Instance ID |
+| `targetPath` | string | No* | null | Target hierarchy path |
+| `componentType` | string | Yes | - | Component type to copy |
+
+**Returns:** `{ success, source, target, componentType, verified, mismatchCount, mismatches? }`
 
 ### `component_set_enabled`
 Enable or disable a component (Behaviour, Renderer, Collider, etc.).

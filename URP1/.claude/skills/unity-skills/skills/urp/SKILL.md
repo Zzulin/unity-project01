@@ -1,15 +1,23 @@
 ---
 name: unity-urp
-description: "URP asset and renderer feature management. Use when users want to inspect or modify the active URP asset, list renderers, or add/remove built-in renderer features. Triggers: URP asset, renderer feature, renderer data, SSAO, fullscreen pass, ScreenSpaceReflection, URP设置, 渲染器特性."
+description: "Universal Render Pipeline (URP) asset & renderer feature management. Use when users want to inspect or modify the active URP asset (HDR, MSAA, render scale, shadows, camera depth/opaque texture), list renderer data assets, list / add / remove / toggle built-in renderer features such as SSAO, RenderObjects, Decal, FullScreenPass, ScreenSpaceReflection, SurfaceCacheGI. Triggers (EN): URP, Universal Render Pipeline, URP asset, URPAsset, UniversalRenderPipelineAsset, renderer data, ScriptableRendererData, renderer feature, ScriptableRendererFeature, SSAO, ScreenSpaceAmbientOcclusion, RenderObjects, FullScreenPassRendererFeature, ScreenSpaceReflection, render scale, MSAA, HDR. Triggers (ZH): URP, 通用渲染管线, URP 资源, URP 设置, 渲染器, 渲染器数据, 渲染器特性, 屏幕空间环境光遮蔽, 屏幕空间反射, 全屏 Pass, 渲染缩放."
 ---
 
 # URP Skills
 
-URP-specific asset and renderer feature management for Unity 2022.3+.
+URP-specific asset and renderer feature management for Unity 2022.3+ (URP 14 and Unity 6 / URP 17).
+
+## Operating Mode
+
+- Query skills (`urp_get_info`, `urp_list_renderers`, `urp_list_renderer_features`) are `SkillMode.SemiAuto` — they run in all three modes without grant.
+- Mutating skills (`urp_set_asset_settings`, `urp_add_renderer_feature`, `urp_set_renderer_feature_active`) are `SkillMode.FullAuto` — under **Approval** they need user grant (grant triggers one server-side execute returning the result); under **Auto** / **Bypass** they execute directly.
+- `urp_remove_renderer_feature` carries `SkillOperation.Delete` and is **auto-forbidden** in Approval / Auto modes (NeverInSemi). Only **Bypass** or the user-managed **Allowlist** can run it.
+
+## URP Package Stub
+
+This module is compiled against `com.unity.render-pipelines.universal` (`URP`). When URP is not installed, **every** skill returns a stub `{ error: "Universal Render Pipeline package … is not installed." }` (`RenderPipelineSkillsCommon.NoURP()`). The stub is a diagnostic payload, not a permission denial — it does **not** require grant and is **not** treated as NeverInSemi. Call `project_get_render_pipeline` first when you see this error.
 
 ## Guardrails
-
-**Mode**: Full-Auto required
 
 **DO NOT**:
 - Use this module for ShaderGraph

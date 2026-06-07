@@ -1,15 +1,17 @@
 ---
 name: unity-editor
-description: "Unity Editor control. Use when users want to enter play mode, select objects, undo/redo, or execute menu commands. Triggers: play, stop, pause, select, undo, redo, menu, editor, Unity编辑器, Unity播放, Unity撤销, Unity选择."
+description: "Unity Editor control. Use when users want to enter or exit play mode, pause, select GameObjects in Hierarchy, undo/redo, execute menu commands, get editor state/context (selection, focused window, isCompiling), or list tags/layers. Triggers: editor, play mode, enter play, exit play, stop play, pause play, select object, get selection, undo, redo, execute menu, menu path, editor state, editor context, focused window, tags list, layers list, 编辑器, 进入播放, 退出播放, 暂停播放, 选择对象, 当前选择, 撤销, 重做, 执行菜单, 菜单路径, 编辑器状态, 编辑器上下文, 焦点窗口, 标签列表, 图层列表."
 ---
 
 # Unity Editor Skills
 
 Control the Unity Editor itself - enter play mode, manage selection, undo/redo, and execute menu items.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Semi-Auto (available by default)
+- **Approval**：本模块 Mixed —— `editor_get_selection` / `editor_get_context` / `editor_get_state` / `editor_get_tags` / `editor_get_layers` 标 `SkillMode.SemiAuto`，可直接执行；其余 `editor_select` / `editor_undo` / `editor_redo` / `editor_execute_menu` 默认 FullAuto，Approval 模式下需 grant。
+- **Auto / Bypass**：FullAuto 直接执行。
+- **含 NeverInSemi 高危 skill**：`editor_play` / `editor_stop` / `editor_pause`（标 `MayEnterPlayMode = true`，进出 PlayMode 会丢失运行时改动）。这些在 Approval/Auto 下返 `MODE_FORBIDDEN`，仅 Bypass 或 Allowlist 命中可调。
 
 **DO NOT** (common hallucinations):
 - `editor_run` does not exist → use `editor_play` to enter play mode
@@ -45,13 +47,19 @@ Control the Unity Editor itself - enter play mode, manage selection, undo/redo, 
 ## Skills
 
 ### editor_play
-Enter play mode.
+Enter play mode. Warning: any unsaved scene changes made during Play mode will be lost when exiting.
+
+**Returns**: `{success, mode, jobId}` — `mode="playing"`, `jobId` returned from `AsyncJobService` so callers can poll `entering_play_mode` completion.
 
 ### editor_stop
 Exit play mode.
 
+**Returns**: `{success, mode}` — `mode="stopped"`.
+
 ### editor_pause
 Toggle pause state.
+
+**Returns**: `{success, paused}` — `paused` is the new boolean state.
 
 ### editor_select
 Select a GameObject.
@@ -59,16 +67,15 @@ Select a GameObject.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `name` | string | No* | Object name |
-| `instanceId` | int | No* | Instance ID |
+| `instanceId` | int | No* | Instance ID (preferred) |
 | `path` | string | No* | Object path |
-| `instanceId` | int | No* | Instance ID |
 
 *One identifier required
 
 ### editor_get_selection
 Get currently selected objects.
 
-**Returns**: `{success, count, objects: [{name, instanceId}]}`
+**Returns**: `{count, objects: [{name, instanceId}]}`
 
 ### editor_get_context
 Get full editor context including selection, assets, and scene info.
@@ -94,7 +101,7 @@ Redo the last undone action.
 ### editor_get_state
 Get current editor state.
 
-**Returns**: `{success, isPlaying, isPaused, isCompiling, platform}`
+**Returns**: `{isPlaying, isPaused, isCompiling, timeSinceStartup, unityVersion, platform}`
 
 ### editor_execute_menu
 Execute a menu command.
@@ -116,12 +123,12 @@ Execute a menu command.
 ### editor_get_tags
 Get all available tags.
 
-**Returns**: `{success, tags: [string]}`
+**Returns**: `{tags: [string]}`
 
 ### editor_get_layers
 Get all available layers.
 
-**Returns**: `{success, layers: [{index, name}]}`
+**Returns**: `{layers: [{index, name}]}`
 
 ### Pause On Error
 Pause-on-error is provided by the console module, not the editor module.

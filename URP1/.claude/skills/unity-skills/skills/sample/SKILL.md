@@ -1,6 +1,6 @@
 ---
 name: unity-sample
-description: "Sample scene generators and API test utilities. Use when users want to generate example scenes, test API connectivity, or create demo objects for learning. Triggers: test, sample, hello, ping, demo, example, 示例, Unity测试, Unity演示."
+description: "Sample/demo skills for API connectivity testing and beginner examples — create primitive cubes/spheres, move/rotate/scale by name, delete by name, simple scene info. Use for smoke tests, health checks, and demo flows; not for production work. Triggers: sample, demo, example, hello, ping, smoke test, connectivity, create cube, create sphere, primitive, 示例, 演示, 测试, 烟雾测试, 入门, 连通性, 健康检查, demo skill."
 ---
 
 # Sample Skills
@@ -9,7 +9,10 @@ Basic examples for testing the API.
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query skills (`get_scene_info`, `find_objects_by_name`) run directly. Creators/mutators (`create_cube`, `create_sphere`, `set_object_position`, `set_object_rotation`, `set_object_scale`) are FullAuto — on `MODE_RESTRICTED`, run the grant protocol.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- Auto-forbidden in this module: `delete_object` (`SkillOperation.Delete`). It is reachable only under Bypass or via a user-managed Allowlist entry; the grant flow returns `MODE_FORBIDDEN`.
 
 **DO NOT** (common hallucinations):
 - Sample skills are basic test/demo skills — do not use them for production work

@@ -1,15 +1,20 @@
 ---
 name: unity-cleaner
-description: "Project cleanup utilities. Use when users want to find unused assets, duplicate files, or clean up the project. Triggers: unused, duplicate, cleanup, optimize, dead code, orphan, Unity清理, Unity未使用, 重复文件."
+description: "Project cleanup and audit utilities — find unused assets, content-hash duplicates, missing script/asset references, empty folders, large assets, and dependency trees; delete via a two-step confirm-token flow; fix missing-script components in-place. Use when users want to clean up, audit, or shrink the project. Triggers: cleaner, cleanup, clean up, unused asset, unused assets, duplicate, duplicates, dead code, orphan, missing script, missing reference, empty folder, large asset, dependency tree, asset usage, fix missing, 清理, 项目清理, 冗余, 未使用, 重复文件, 丢失脚本, 缺失引用, 空文件夹, 大文件, 依赖, 依赖树, 资产清理, 减包."
 ---
 
 # Unity Cleaner Skills
 
-> **Safety**: All delete operations default to `dryRun=true`. Set `dryRun=false` to actually delete.
+> **Safety**: `cleaner_delete_assets` uses a **two-step confirmToken handshake**. Call without `confirmToken` to preview; call again with the returned token (5-minute TTL) to actually delete. There is no `dryRun` parameter.
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): all analyze/query skills (`cleaner_find_unused_assets`, `cleaner_find_duplicates`, `cleaner_find_missing_references`, `cleaner_get_asset_usage`, `cleaner_find_empty_folders`, `cleaner_find_large_assets`, `cleaner_get_dependency_tree`) are SemiAuto — run directly.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- Auto-forbidden in this module: `cleaner_delete_assets`, `cleaner_delete_empty_folders` (both carry `SkillOperation.Delete`). In Approval/Auto these return `MODE_FORBIDDEN` — they are reachable only under Bypass mode or via a user-managed Allowlist entry; the grant flow does **not** unlock them.
+- `cleaner_fix_missing_scripts` is an `Execute | Modify` operation (it replaces missing component references with null in place, no asset deletion), so it **does not** trigger the NeverInSemi gate. In Auto / Bypass it runs directly; in Approval it still requires the standard grant handshake before execution.
+- `cleaner_delete_assets` additionally uses a two-step `confirmToken` handshake even when the mode gate allows it — preview first (no token), then confirm with the returned token (5-minute TTL).
 
 **DO NOT** (common hallucinations):
 - `cleaner_delete` / `cleaner_remove` do not exist → cleaner skills only find/report; use `asset_delete` to actually remove
@@ -27,7 +32,7 @@ description: "Project cleanup utilities. Use when users want to find unused asse
 | `cleaner_find_unused_assets` | Find assets not referenced by others |
 | `cleaner_find_duplicates` | Find duplicate files by content hash |
 | `cleaner_find_missing_references` | Find missing scripts/asset references |
-| `cleaner_delete_assets` | Delete assets (with dryRun protection) |
+| `cleaner_delete_assets` | Delete assets via two-step confirmToken (preview → confirm) |
 | `cleaner_get_asset_usage` | Find what references a specific asset |
 | `cleaner_find_empty_folders` | Find empty folders in the project |
 | `cleaner_find_large_assets` | Find largest assets by file size |
@@ -248,8 +253,9 @@ print(f"📦 {unused['potentiallyUnusedCount']} potentially unused materials")
 # 4. Preview cleanup
 paths_to_delete = [a['path'] for a in unused['assets'][:5]]
 preview = unity_skills.call_skill("cleaner_delete_assets", 
-    paths=paths_to_delete, dryRun=True)
+    paths=paths_to_delete)
 print(f"Would free: {preview['totalMB']:.2f} MB")
+# To actually delete, call again with preview['confirmToken'] within 5 minutes.
 ```
 
 ---

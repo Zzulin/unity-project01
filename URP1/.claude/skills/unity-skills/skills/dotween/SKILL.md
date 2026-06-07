@@ -1,6 +1,6 @@
 ---
 name: unity-dotween
-description: "DOTween Free/Pro automation. Free skills inspect settings/modules and generate runtime tween/sequence scripts; Pro skills configure DOTweenAnimation components. Triggers: DOTween, DOTweenAnimation, UI animation, tween, ease, loops, stagger, 补间动画, 动画配置, UI 动画, 缓动, 循环."
+description: "DOTween Free/Pro automation. Free skills probe install status, read/validate/configure DOTweenSettings, list modules and shortcut extension methods, and generate runtime tween / Sequence / lifetime-safe MonoBehaviour scripts. Pro skills (`dotween_pro_*`) add/configure/inspect `DG.Tweening.DOTweenAnimation` components on scene objects, including stagger/cascade entrance. Triggers: DOTween, DOTweenFree, DOTweenPro, DOTweenAnimation, DOTweenSettings, DG.Tweening, tween, Sequence, ease, easing, OutQuad, OutBack, loops, Yoyo, stagger, cascade, DOMove, DOLocalMove, DORotate, DOScale, DOAnchorPos, DOFade, DOColor, DOPunchPosition, DOShakePosition, SetLink, autoKill, SafeMode, UI animation, UI 动画, 补间动画, 补间, 缓动, 缓动函数, 动画配置, 循环, 序列, 动效, 脚本生成, 错峰动画."
 ---
 
 # DOTween Skills
@@ -9,7 +9,11 @@ DOTween Free/Pro support for project diagnostics, settings, module/API discovery
 
 ## Guardrails
 
-**Mode**: Full-Auto required.
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query/diagnostic skills (`dotween_get_status`, `dotween_settings_get`, `dotween_settings_find`, `dotween_settings_validate`, `dotween_list_modules`, `dotween_list_shortcuts`, `dotween_pro_get_animation`, `dotween_pro_list_animations`) run directly. Mutators (settings configure, script generators, all other `dotween_pro_*`) are FullAuto — on `MODE_RESTRICTED`, run the grant protocol.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- Auto-forbidden in this module: `dotween_generate_tween_script`, `dotween_generate_sequence_script`, `dotween_generate_lifetime_script` (all carry `MayTriggerReload = true`, `RiskLevel = "high"` because writing a new `.cs` triggers script compilation + Domain Reload). Reachable only under Bypass mode or via a user-managed Allowlist entry; the grant flow returns `MODE_FORBIDDEN`.
+- When DOTween Free/Pro is missing, the `DOTweenPresenceDetector` does not add the `DOTWEEN` / `DOTWEEN_PRO` defines, so most skills return a "not installed" diagnostic instead of executing. The `dotween_pro_*` family additionally requires Pro because `DG.Tweening.DOTweenAnimation` is Pro-only.
 
 **Prerequisites**:
 - DOTween Free or Pro must be installed. `DOTweenPresenceDetector` adds `DOTWEEN` / `DOTWEEN_PRO` defines automatically after install.
@@ -75,7 +79,7 @@ Add one DOTweenAnimation to a GameObject and configure all core fields.
 
 ### `dotween_pro_batch_add_animation`
 Add the same animation to multiple GameObjects.
-**Parameters:** `targetsJson` (JSON string array) + all params of `dotween_pro_add_animation`.
+**Parameters:** `targetsJson` (JSON string array) + all params of dotween_pro_add_animation.
 
 ### `dotween_pro_stagger_animations`
 Batch-add with incrementing delay — UI cascade entrance pattern.
@@ -115,3 +119,8 @@ Remove one DOTweenAnimation component by index.
 | `Color / CameraBackgroundColor` | `endValueColor` (`"#FF8800"` or `"1,0.5,0,1"`) |
 | `Text` | `endValueString` |
 | `UIRect` | `endValueRect` (`"x,y,width,height"`) |
+
+---
+## Exact Signatures
+
+Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.

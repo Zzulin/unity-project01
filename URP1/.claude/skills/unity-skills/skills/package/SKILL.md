@@ -1,6 +1,6 @@
 ---
 name: unity-package
-description: "Unity Package Manager operations. Use when users want to install, remove, or inspect packages. Triggers: package, UPM, install, dependency, Cinemachine, TextMeshPro, 包管理, Unity安装, Unity依赖."
+description: "Unity Package Manager (UPM) operations and bundled helpers for Cinemachine / Splines. Use when users want to install, remove, refresh, search, or inspect packages, list dependencies, query versions, or run a one-call Cinemachine/Splines bootstrap. Triggers: package, packages, UPM, Package Manager, manifest, install, add, remove, uninstall, refresh, dependency, dependencies, version, versions, Cinemachine, Splines, TextMeshPro, 包, 包管理, Package Manager, UPM, 安装包, 移除包, 卸载, 依赖, 版本, 包依赖, 包清单."
 ---
 
 # Package Skills
@@ -9,7 +9,11 @@ Manage installed Unity packages and package-related helper flows such as Cinemac
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query skills (`package_list`, `package_check`, `package_search`, `package_get_dependencies`, `package_get_versions`, `package_get_cinemachine_status`) run directly. Mutators (`package_install`, `package_remove`, `package_install_cinemachine`, `package_install_splines`, `package_refresh`) are FullAuto — on `MODE_RESTRICTED`, run the grant protocol.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- Auto-forbidden in this module: `package_install` and `package_remove` (`MayTriggerReload = true`, `RiskLevel = "high"`; `package_remove` also carries `SkillOperation.Delete`). They are reachable only under Bypass mode or via a user-managed Allowlist entry; the grant flow returns `MODE_FORBIDDEN`.
+- Install/remove/refresh jobs return immediately with a `jobId`; the actual package import + Domain Reload happens asynchronously and may make the REST server transiently unavailable. Poll with `job_status` / `job_wait`.
 
 **DO NOT** (common hallucinations):
 - `package_add` / `package_update` do not exist -> use `package_install`

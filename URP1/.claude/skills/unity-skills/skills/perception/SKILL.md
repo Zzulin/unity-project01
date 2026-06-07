@@ -1,15 +1,17 @@
 ---
 name: unity-perception
-description: "Scene understanding and analysis. Use when users want to get a summary, overview, dependency report, or export of the current scene state. Triggers: scene summary, analyze, overview, statistics, count, export report, 场景摘要, Unity分析, Unity概览, Unity统计, 导出报告, 依赖分析."
+description: "Read-only scene + project + script analysis for AI coding context — scene health, summary, hotspots, hierarchy describe, component stats, tag/layer usage, materials/shaders, contract validation, spatial query, dependency graph, project stack detection, full scene context export, markdown scene report, snapshot diff, performance hints. Triggers: scene summary, scene analyze, scene overview, scene health, scene context, scene snapshot, scene diff, scene compare, hierarchy tree, hierarchy describe, hotspot, deep hierarchy, large group, component statistics, tag layer stats, material overview, shader overview, scene contract, scene convention, spatial query, find near object, project stack, render pipeline detect, package detect, performance hints, optimization hints, script analyze, script API, script dependency, dependency graph, impact analysis, what depends on, safe to delete, refactoring impact, export scene report, save scene markdown, scene_summarize, scene_analyze, scene_health_check, scene_context, scene_export_report, scene_dependency_analyze, script_dependency_graph, script_analyze, project_stack_detect, hierarchy_describe, 场景摘要, 场景分析, 场景概览, 场景统计, 场景健康, 场景体检, 场景诊断, 场景快照, 场景对比, 层级树, 层级描述, 热点检测, 深层级, 大群组, 组件统计, 标签层统计, 材质概览, 着色器概览, 场景规范, 默认根, 空间查询, 半径搜索, 项目栈检测, 渲染管线检测, 包检测, 性能提示, 优化建议, 脚本 API 分析, 脚本依赖, 依赖图, 影响分析, 谁依赖, 安全删除, 重构影响, 导出场景报告, 场景 Markdown 报告."
 ---
 
 # Unity Perception Skills
 
-Use this module for read-only scene and project analysis. It is available in Semi-Auto by default.
+Use this module for read-only scene and project analysis.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Semi-Auto
+- **Approval / Auto / Bypass**: 本模块所有 skill（`scene_analyze` / `scene_summarize` / `scene_health_check` / `scene_component_stats` / `scene_find_hotspots` / `scene_tag_layer_stats` / `scene_performance_hints` / `scene_diff` / `hierarchy_describe` / `scene_context` / `scene_dependency_analyze` / `scene_spatial_query` / `scene_materials` / `scene_contract_validate` / `project_stack_detect` / `script_analyze` / `script_dependency_graph` / `scene_export_report`）都标 `Mode = SkillMode.SemiAuto`，三档模式下直接执行无需 grant。其中前 17 个同时标 `ReadOnly = true`。
+- **特别说明**：`scene_export_report` 写 markdown 文件到磁盘（`Operation = Analyze | Execute`，未标 `ReadOnly`），但仍标了 `SkillMode.SemiAuto`，Approval 模式可直接执行。
+- **本模块不含 Delete / PlayMode / Reload / RiskLevel=high 类 skill** —— 没有 `IsForbiddenInSemi` 拦截。
 
 **DO NOT** (common hallucinations):
 - `perception_analyze`, `perception_scan`, and `perception_describe` do not exist

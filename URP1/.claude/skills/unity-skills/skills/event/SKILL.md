@@ -1,18 +1,21 @@
 ---
 name: unity-event
-description: "UnityEvent management. Use when users want to inspect or modify UI events like Button.onClick. Triggers: event, onClick, listener, callback, UnityEvent, button click, 事件, 监听器, 按钮点击."
+description: "UnityEvent persistent-listener wiring at editor time: inspect, add, remove, batch-add, copy, clear, set call-state, list events on a component (e.g. Button.onClick, Slider.onValueChanged). For runtime invocation only. Triggers: UnityEvent, event, persistent listener, persistent call, onClick, onValueChanged, listener, callback, wire, hook up, EditorAndRuntime, RuntimeOnly, button click, 事件, 持久监听器, 监听器, 接线, 回调, 按钮点击, 持久化."
 ---
 
 # Event Skills
 
-Inspect and modify UnityEvents (e.g. Button.onClick).
+Inspect and modify persistent listeners on UnityEvents (e.g. `Button.onClick`, `Toggle.onValueChanged`) — the same listeners you see in the Inspector's event drop slots.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：查询类 skill（`event_get_listeners` / `event_list_events` / `event_get_listener_count`，源码标 `SkillMode.SemiAuto`）直接执行；其余变更/调用类（`event_add_listener` / `event_set_listener` / `event_set_listener_state` / `event_invoke` / `event_add_listener_batch` / `event_copy_listeners`，标 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**：未被禁列表拦截的 skill 直接执行。
+- 本模块**含 Delete 类 skill**：`event_remove_listener`、`event_clear_listeners` 标记为 `SkillOperation.Delete`，被 `IsForbiddenInSemi` 静态拦截 —— 仅 **Bypass** 模式或加入 **Allowlist** 才能调用。
+- `event_invoke` 只在 Play mode / runtime 下有效；编辑器空跑时仅触发 EditorAndRuntime 监听。`event_add_listener` 等写入的是 persistent listener（序列化到 prefab/scene），即可在编辑器时配置。
 
 **DO NOT** (common hallucinations):
-- `event_create` / `event_trigger` do not exist → UnityEvents are triggered at runtime, not from editor skills
+- `event_create` / `event_trigger` do not exist → UnityEvents are declared in component source code; this module only wires listeners
 - `event_subscribe` does not exist → use `event_add_listener`
 - `event_remove` does not exist → use `event_remove_listener`
 - `event_add_listener` requires exact component type and method name on the target
@@ -77,6 +80,36 @@ Set a listener's call state (Off, RuntimeOnly, EditorAndRuntime).
 | state | string | No | null | Call state: "Off", "RuntimeOnly", or "EditorAndRuntime" |
 
 **Returns:** `{ success, index, state }`
+
+### `event_set_listener`
+Replace a persistent listener at a specific index.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| name | string | No | null | GameObject name |
+| instanceId | int | No | 0 | GameObject instance ID |
+| path | string | No | null | GameObject hierarchy path |
+| componentName | string | No | null | Source component name |
+| eventName | string | No | null | Event field name |
+| index | int | No | 0 | Listener index to replace |
+| targetName | string | No | null | Target GameObject name |
+| targetInstanceId | int | No | 0 | Target GameObject instance ID |
+| targetPath | string | No | null | Target hierarchy path |
+| targetComponentName | string | No | null | Target component name, or `GameObject` |
+| methodName | string | No | null | Public method or `set_PropertyName` |
+| mode | string | No | RuntimeOnly | Off, RuntimeOnly, or EditorAndRuntime |
+| argType | string | No | void | void, int, float, string, bool, object |
+| floatArg | float | No | 0 | Static float argument |
+| intArg | int | No | 0 | Static int argument |
+| stringArg | string | No | null | Static string argument |
+| boolArg | bool | No | false | Static bool argument |
+| objectReferenceName | string | No | null | Scene object argument name |
+| objectReferenceInstanceId | int | No | 0 | Scene object argument instance ID |
+| objectReferencePath | string | No | null | Scene object argument path |
+| objectAssetPath | string | No | null | Project asset argument path |
+| objectType | string | No | null | Object/component type for object argument |
+
+**Returns:** `{ success, index, target, targetType, method, state, argType }`
 
 ### `event_list_events`
 List all UnityEvent fields on a component.

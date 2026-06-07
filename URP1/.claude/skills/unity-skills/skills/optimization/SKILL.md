@@ -1,15 +1,17 @@
 ---
 name: unity-optimization
-description: "Project optimization utilities. Use when users want to optimize textures, meshes, or improve performance. Triggers: optimize, compression, texture size, mesh compression, performance, LOD, Unity优化, Unity压缩, Unity性能."
+description: "Project asset and scene optimization — batch texture / mesh / audio compression, analyze scene poly + material count, find large or duplicate assets, set GameObject static flags, configure LOD groups, analyze overdraw on transparents. Triggers: optimize, optimization, compression, compress, crunch compression, texture compression, max texture size, mesh compression, audio compression, vorbis, adpcm, static flags, batching static, occluder, occludee, lightmap static, LOD, level of detail, LOD group, large assets, big files, duplicate materials, overdraw, transparent overdraw, high poly, polygon count, draw calls, optimize_textures, optimize_mesh_compression, optimize_audio_compression, optimize_set_static_flags, optimize_set_lod_group, optimize_analyze_scene, optimize_find_large_assets, optimize_find_duplicate_materials, optimize_analyze_overdraw, 优化, 项目优化, 资源优化, 压缩, 纹理压缩, 网格压缩, 音频压缩, Crunch 压缩, 大资源, 重复材质, LOD, 多级细节, 静态合批, 静态标志, 透明物体, 过度绘制, 三角面数, 渲染优化."
 ---
 
 # Optimization Skills
 
 Optimize project assets (Textures, Models).
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**: 只读分析类 skill（`optimize_analyze_scene` / `optimize_find_large_assets` / `optimize_get_static_flags` / `optimize_find_duplicate_materials` / `optimize_analyze_overdraw`，标 `SkillMode.SemiAuto`）直接执行；写型 skill（`optimize_textures` / `optimize_mesh_compression` / `optimize_audio_compression` / `optimize_set_static_flags` / `optimize_set_lod_group`，默认 `SkillMode.FullAuto`）需用户 grant，grant 后一步执行返结果。
+- **Auto / Bypass**: 直接执行。
+- **本模块不含 Delete / PlayMode / Reload / RiskLevel=high 类 skill** —— 写型 skill 改的是 Importer / 组件设置，会重新导入资源，但不会触发 Domain Reload，也不会被 `IsForbiddenInSemi` 拦截。批量操作前务必检查筛选范围（`filter` / `assetType`），改完无 dry-run 回滚。
 
 **DO NOT** (common hallucinations):
 - `optimize_scene` / `optimization_run` do not exist → use specific skills: `optimize_analyze_scene`, `optimize_find_large_assets`, `optimize_find_duplicate_materials`, etc.

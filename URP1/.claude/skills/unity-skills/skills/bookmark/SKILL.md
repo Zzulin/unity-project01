@@ -1,6 +1,6 @@
 ---
 name: unity-bookmark
-description: "Scene view bookmarks. Use when users want to save, recall, or manage camera positions in the editor. Triggers: bookmark, save view, goto, camera position, viewpoint, 书签, 视角, 保存视图."
+description: "Scene View bookmarks — save the current selection plus Scene View camera pivot/rotation/size under a name, jump back to it later, list, delete. Use when users want to save, recall, or manage scene viewpoints + selections in the editor. Triggers: bookmark, bookmarks, save view, goto view, jump to view, scene view, camera position, viewpoint, viewpoints, named view, selection snapshot, 书签, 视角, 保存视角, 视图书签, 跳转视角, 选中快照, 命名视角."
 ---
 
 # Bookmark Skills
@@ -9,7 +9,10 @@ Save and recall Scene View camera positions.
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): `bookmark_set` / `bookmark_goto` / `bookmark_list` 都标 `SkillMode.SemiAuto`，Approval 模式下可直接执行，无需走 grant 协议。与 `workflow` 模块文档保持一致（C# `WorkflowSkills.cs` 内三者均为 SemiAuto）。
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- Auto-forbidden in this module: `bookmark_delete` (`SkillOperation.Delete`). Reachable only under Bypass mode or via a user-managed Allowlist entry; the grant flow returns `MODE_FORBIDDEN`. Bookmarks themselves are in-memory only — `bookmark_delete` only removes the entry, no asset I/O.
 
 **DO NOT** (common hallucinations):
 - `bookmark_save` does not exist → use `bookmark_set`

@@ -1,6 +1,6 @@
 ---
 name: unity-probuilder
-description: "ProBuilder mesh modeling. Use when users want to create ProBuilder shapes, extrude faces, bevel edges, subdivide meshes, or perform procedural mesh operations. Triggers: ProBuilder, mesh modeling, extrude, bevel, subdivide, 建模, 拉伸, 倒角, 细分. Requires com.unity.probuilder package."
+description: "ProBuilder editable mesh modeling for blockout and level geometry. Use when users want to create ProBuilder shapes, extrude faces, bevel edges, subdivide meshes, weld/move vertices, paint per-face materials, or run procedural mesh operations. Triggers: ProBuilder, ProBuilderMesh, mesh modeling, blockout, level geometry, shape, face, edge, vertex, extrude, bevel, chamfer, subdivide, weld, merge, bridge, flip normals, conform normals, project UV, 3D 建模, 建模, 拉伸, 挤出, 倒角, 细分, 焊接, 法线, 面, 边, 顶点, 关卡白模. Requires com.unity.probuilder package; missing-package calls return a diagnostic stub."
 ---
 
 # Unity ProBuilder Skills
@@ -12,7 +12,11 @@ Use this module for editable ProBuilder meshes, not regular primitive GameObject
 
 ## Guardrails
 
-**Mode**: Full-Auto required
+**Operating Mode** (v1.9 three-tier):
+- **Approval** (default): query skills (e.g. `probuilder_get_info`, `probuilder_get_vertices`) run directly. Create/modify skills are FullAuto — call once, get `MODE_RESTRICTED`, run the grant protocol; a successful `/permission/grant` executes the skill server-side and returns the result in the same response.
+- **Auto** / **Bypass**: SemiAuto and FullAuto run directly.
+- Auto-forbidden in this module: `probuilder_combine_meshes` (`SkillOperation.Modify | Delete`, the `Delete` bit triggers NeverInSemi). It is callable only under Bypass mode or after the user adds it to the Allowlist; the grant flow returns `MODE_FORBIDDEN`. Note `probuilder_delete_faces` is `Operation = SkillOperation.Modify` only and remains grantable under Approval/Auto.
+- When `com.unity.probuilder` is missing, every skill returns a package-missing diagnostic instead of executing.
 
 **DO NOT** (common hallucinations):
 - `probuilder_create_mesh` does not exist -> use `probuilder_create_shape`

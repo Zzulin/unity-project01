@@ -1,15 +1,18 @@
 ---
 name: unity-timeline
-description: "Unity Timeline operations. Use when users want to create timelines or add animation/audio tracks. Triggers: timeline, cutscene, sequence, track, clip, playable, 时间轴, 过场动画, 轨道."
+description: "Unity Timeline editing: create Timeline assets, add typed tracks (animation/audio/activation/control/signal), add clips, set bindings, play/pause/stop via PlayableDirector. Triggers: timeline, cutscene, sequence, PlayableDirector, Director, track, animation track, audio track, activation track, control track, signal track, clip, playable, binding, wrap mode, editor preview, 时间轴, 过场动画, 序列, 轨道, 动画轨道, 音频轨道, 信号轨道, 剪辑, 绑定."
 ---
 
 # Timeline Skills
 
-Create and modify Unity Timelines.
+Create and modify Unity Timeline assets — add typed tracks, drop clips on tracks, bind objects, set duration / wrap mode, and play/pause/stop the editor preview through the PlayableDirector.
 
-## Guardrails
+## Operating Mode
 
-**Mode**: Full-Auto required
+- **Approval**：查询类 skill（`timeline_list_tracks`，源码标 `SkillMode.SemiAuto`）直接执行；其余变更/播放类（`timeline_create` / add_*_track / `timeline_add_clip` / `timeline_set_duration` / `timeline_play` / `timeline_set_binding`，标 `SkillMode.FullAuto`）需用户 grant，grant 后服务端一步执行返结果。
+- **Auto / Bypass**：未被禁列表拦截的 skill 直接执行。
+- 本模块**含 Delete 类 skill**：`timeline_remove_track` 标记为 `SkillOperation.Delete`，被 `IsForbiddenInSemi` 静态拦截 —— 仅 **Bypass** 模式或加入 **Allowlist** 才能调用。
+- `timeline_play` 仅驱动 Editor 预览（PlayableDirector.Evaluate / Play 在编辑器上下文），不会进入 Play mode。
 
 **DO NOT** (common hallucinations):
 - `timeline_create_animation` / `timeline_add_track` do not exist → use the typed track skills: `timeline_add_animation_track`, `timeline_add_audio_track`, `timeline_add_activation_track`, `timeline_add_control_track`, `timeline_add_signal_track`
