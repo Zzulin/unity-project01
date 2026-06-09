@@ -16,7 +16,7 @@ MonoBehaviour:
   settings:
     enabled: 1
     downsample: 2
-    froxelDepth: 64
+    froxelDepth: 96
     maxDistance: 58
     depthDistribution: 1.9
     density: 0.24
@@ -27,9 +27,11 @@ MonoBehaviour:
     multiScatter: 0.32
     heightFalloff: 0.22
     heightOrigin: -0.4
-    noiseStrength: 0.2
+    noiseStrength: 0
     noiseScale: 1.25
-    temporalBlend: 0.88
+    temporalAccumulation: 1
+    jitterStrength: 0.9
+    temporalBlend: 0.8
     temporalDepthRejection: 0.12
     bilateralDepthScale: 0.08
     compositeOpacity: 0.94

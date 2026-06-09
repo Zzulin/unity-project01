@@ -12,7 +12,7 @@
 - `Assets/L16 Rain/L16.unity` 当前已收敛为只验证 GPU 雨幕的极简 Demo：Compute Shader + `DrawMeshInstancedIndirect` GPU 雨线、Low/Medium/High 三档和 HUD 参数面板；屏幕滑动雨水/镜头雨痕、湿润积水、雨滴涟漪、多灯牌、小柱子等额外展示物已移除。
 - L16 构建菜单：`Tools/Rain/Build L16 Advanced Rain Demo`；资源集中在 `Assets/L16 Rain/{Scripts,Shaders,Materials,Editor,Docs}`；预览截图：`Assets/Screenshots/L16_AdvancedRain_current_20260527.png`。
 - L16 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；L16 雨线 Shader `shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
-- `Assets/L17 Volumetric Lighting/L17.unity` 已重做为现代 URP RendererFeature 体积光 Demo：不再手摆 cube 光束，改为低分辨率 froxel/integrated buffer fullscreen 管线，使用 scene depth、主光 shadowmap、sun direction、blue-noise jitter、temporal reprojection、双边上采样，并在 Bloom / ACES Tonemapping 前合成；场景已简化为房间整体、窗户结构和 2 个室内接光物，主要通过窗框和墙体自然切出窗光束。
+- `Assets/L17 Volumetric Lighting/L17.unity` 已重做为现代 URP RendererFeature 体积光 Demo：不再手摆 cube 光束，改为 fullscreen froxel/integrated buffer 管线，当前回到流畅基线：半分辨率体积 buffer、96 depth steps、密度噪声关闭、blue-noise jitter + complementary 双相采样、5x5 cross-bilateral 低分辨率降噪，并在 Bloom / ACES Tonemapping 前合成；GameView 和 SceneView 都由 `temporalAccumulation` 总开关统一控制 temporal accumulation；temporal resolve 已挪到低分辨率降噪之后，并用 3x3 neighborhood clamp 限制 history；history 重投影按 `UNITY_UV_STARTS_AT_TOP` 修正 Y 方向，避免静止镜头混入上下颠倒的历史帧；GameView Play Mode 下摄像机为手动漫游：`WASD` 移动、按住右键旋转视角、`Shift` 加速、`Q/E` 垂直移动；场景已简化为房间整体、窗户结构和 2 个室内接光物，主要通过窗框和墙体自然切出窗光束。
 - L17 构建菜单：`Tools/Volumetric Lighting/Build L17 Modern Window Shafts Demo`；资源集中在 `Assets/L17 Volumetric Lighting/{Shaders,Materials,Scripts,Editor,Docs}`。
 - L17 当前验证：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 warning / 0 error；UnitySkills `debug_check_compilation` 未处于编译/刷新状态，Console Error 0，`scene_health_check` 0 findings。`Hidden/L17/Froxel Volumetric Composite` 的 `shader_check_errors` 仍返回 `messageCount=1`，但 Unity Console Warning/Error 均为 0，当前按 ShaderUtil 内部 message 残留记录。
 - `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` 已重写，当前约束和推进顺序已同步。
@@ -64,9 +64,9 @@
   - 衣物和头发物理模拟尚未接入
 - L17 已重做为现代 URP RendererFeature 体积光 Demo：
   - 不再手摆 cube 光束
-  - 低分辨率 froxel/integrated buffer fullscreen 管线已接入 RendererFeature
-  - 使用 scene depth、主光 shadowmap、sun direction、blue-noise jitter、temporal reprojection、双边上采样和 Bloom/ACES 前合成
-  - 场景改为窗框、墙体和外部树叶阴影自然切出光束
+  - fullscreen froxel/integrated buffer 管线已接入 RendererFeature，当前回到半分辨率体积 buffer + 96 depth steps 的流畅基线
+  - 使用 scene depth、主光 shadowmap、sun direction、blue-noise jitter + complementary 双相采样、5x5 cross-bilateral 低分辨率降噪和 Bloom/ACES 前合成；GameView/SceneView temporal accumulation 默认保留，resolve 位于降噪之后，并修正 history 重投影 Y 翻转
+  - 场景改为窗框和墙体自然切出光束
   - 当前验证：C# 双程序集 0 warning / 0 error，Unity Console Error 0，`scene_health_check` 0 findings；合成 shader 的 `shader_check_errors` 仍有 1 条 ShaderUtil 内部 message，但 Console Warning/Error 为 0
 
 ## 当前进度判断
@@ -91,6 +91,7 @@
 - `Assets/L17 Volumetric Lighting/L17.unity`
 - `Assets/L17 Volumetric Lighting/Shaders/L17TwoSidedInteriorLit.shader`
 - `Assets/L17 Volumetric Lighting/Scripts/L17VolumetricLightingController.cs`
+- `Assets/L17 Volumetric Lighting/Scripts/L17RuntimeCameraMotion.cs`
 - `Assets/L17 Volumetric Lighting/Scripts/L17FrustumVolumetricRendererFeature.cs`
 - `Assets/L17 Volumetric Lighting/Shaders/L17FrustumVolumetricLighting.shader`
 - `Assets/L17 Volumetric Lighting/Textures/L17_BlueNoise64.asset`

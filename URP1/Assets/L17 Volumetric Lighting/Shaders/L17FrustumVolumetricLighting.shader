@@ -16,7 +16,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-        #define L17_MAX_STEPS 96
+        #define L17_MAX_STEPS 128
 
         TEXTURE2D_X(_L17IntegratedTexture);
         TEXTURE2D_X(_L17HistoryTexture);
@@ -30,6 +30,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float4 _L17Params1;
         float4 _L17Params2;
         float4 _L17TemporalParams;
+        float4 _L17TemporalControl;
         float4 _L17ScatteringColor;
         float4x4 _L17PreviousViewProjection;
         float _L17HistoryValid;
@@ -88,9 +89,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float BlueNoise(float2 pixel)
         {
             float2 noiseUv = (fmod(pixel + float2(_L17FrameIndex * 7.0, _L17FrameIndex * 13.0), 64.0) + 0.5) / 64.0;
-            float textureNoise = SAMPLE_TEXTURE2D_LOD(_L17BlueNoiseTexture, sampler_L17BlueNoiseTexture, noiseUv, 0).r;
-            float fallbackNoise = frac(52.9829189 * frac(dot(pixel + _L17FrameIndex, float2(0.06711056, 0.00583715))));
-            return frac(textureNoise + fallbackNoise);
+            return SAMPLE_TEXTURE2D_LOD(_L17BlueNoiseTexture, sampler_L17BlueNoiseTexture, noiseUv, 0).r;
         }
 
         float HenyeyGreenstein(float cosTheta, float anisotropy)
@@ -114,10 +113,14 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float DensityAtPosition(float3 positionWS)
         {
             float heightTerm = exp(-max(positionWS.y - _L17Params2.x, 0.0) * max(_L17Params2.y, 0.001));
-            float largeNoise = ValueNoise(positionWS * _L17Params2.z * 0.12);
-            float fineNoise = ValueNoise(positionWS * _L17Params2.z * 0.43 + 19.73);
-            float noise = lerp(largeNoise, largeNoise * 0.68 + fineNoise * 0.32, 0.55);
-            float noiseTerm = lerp(1.0, saturate(noise * 1.45), saturate(_L17Params2.w));
+            float noiseTerm = 1.0;
+            if (_L17Params2.w > 0.0001)
+            {
+                float largeNoise = ValueNoise(positionWS * _L17Params2.z * 0.12);
+                float fineNoise = ValueNoise(positionWS * _L17Params2.z * 0.43 + 19.73);
+                float noise = lerp(largeNoise, largeNoise * 0.68 + fineNoise * 0.32, 0.55);
+                noiseTerm = lerp(1.0, saturate(noise * 1.45), saturate(_L17Params2.w));
+            }
             return max(_L17Params0.z, 0.0) * heightTerm * noiseTerm;
         }
 
@@ -126,21 +129,9 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return pow(saturate(slice01), max(_L17Params0.y, 0.5)) * max(_L17Params0.x, 0.01);
         }
 
-        half4 FragmentLowDepth(Varyings input) : SV_Target
+        float4 IntegrateVolume(float3 rayDirWS, float sceneDistance, float jitter)
         {
-            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-            return SceneEyeDepth(input.texcoord).xxxx;
-        }
-
-        half4 FragmentBuildVolume(Varyings input) : SV_Target
-        {
-            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-            float2 uv = input.texcoord;
-            float3 rayDirWS = RayDirection(uv);
-            float sceneDistance = min(SceneEyeDepth(uv), _L17Params0.x);
             int stepCount = (int)clamp(round(_L17FroxelDepth), 16.0, (float)L17_MAX_STEPS);
-            float jitter = BlueNoise(input.positionCS.xy);
-
             Light mainLight = GetMainLight();
             float3 lightDirWS = normalize(mainLight.direction);
             float phase = HenyeyGreenstein(dot(rayDirWS, lightDirWS), saturate(_L17Params1.y));
@@ -183,20 +174,43 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 }
             }
 
-            float4 current = float4(scattering, transmittance);
-            if (_L17HistoryValid > 0.5)
+            return float4(scattering, transmittance);
+        }
+
+        float2 PreviousClipToHistoryUv(float4 previousClip)
+        {
+            float2 previousUv = previousClip.xy / max(previousClip.w, 0.0001) * 0.5 + 0.5;
+        #if UNITY_UV_STARTS_AT_TOP
+            previousUv.y = 1.0 - previousUv.y;
+        #endif
+            return previousUv;
+        }
+
+        half4 FragmentLowDepth(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            return SceneEyeDepth(input.texcoord).xxxx;
+        }
+
+        half4 FragmentBuildVolume(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 uv = input.texcoord;
+            float3 rayDirWS = RayDirection(uv);
+            float sceneDistance = min(SceneEyeDepth(uv), _L17Params0.x);
+            float jitter = 0.5;
+            if (_L17TemporalParams.y > 0.0001)
             {
-                float reprojectionDistance = min(sceneDistance, _L17Params0.x * 0.72);
-                float3 reprojectionWS = _WorldSpaceCameraPos + rayDirWS * reprojectionDistance;
-                float4 previousClip = mul(_L17PreviousViewProjection, float4(reprojectionWS, 1.0));
-                float2 previousUv = previousClip.xy / max(previousClip.w, 0.0001) * 0.5 + 0.5;
-                if (all(previousUv > 0.001) && all(previousUv < 0.999))
-                {
-                    float4 history = SAMPLE_TEXTURE2D_X(_L17HistoryTexture, sampler_LinearClamp, previousUv);
-                    float luminanceDelta = abs(dot(history.rgb - current.rgb, float3(0.2126, 0.7152, 0.0722)));
-                    float historyWeight = saturate(_L17TemporalParams.x) * saturate(1.0 - luminanceDelta * 4.0);
-                    current = lerp(current, history, historyWeight);
-                }
+                jitter += (BlueNoise(input.positionCS.xy) - 0.5) * saturate(_L17TemporalParams.y);
+            }
+
+            float4 current = IntegrateVolume(rayDirWS, sceneDistance, saturate(jitter));
+            if (_L17TemporalParams.y > 0.0001)
+            {
+                float pairedJitter = frac(jitter + 0.5);
+                float4 paired = IntegrateVolume(rayDirWS, sceneDistance, pairedJitter);
+                current.rgb = (current.rgb + paired.rgb) * 0.5;
+                current.a = min(current.a, paired.a);
             }
 
             return current;
@@ -208,25 +222,104 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return spatialWeight * exp(-abs(fullDepth - lowDepth) * depthScale);
         }
 
+        half4 FragmentDenoiseVolume(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 uv = input.texcoord;
+            float2 texel = _L17FroxelSize.zw;
+            float centerDepth = SAMPLE_TEXTURE2D_X(_L17LowDepthTexture, sampler_PointClamp, uv).r;
+            float4 accum = 0.0;
+            float weightSum = 0.0;
+
+            [unroll]
+            for (int y = -2; y <= 2; y++)
+            {
+                [unroll]
+                for (int x = -2; x <= 2; x++)
+                {
+                    float2 offset = float2(x, y);
+                    float2 sampleUv = uv + offset * texel;
+                    float spatial = exp(-dot(offset, offset) * 0.38);
+                    float sampleDepth = SAMPLE_TEXTURE2D_X(_L17LowDepthTexture, sampler_PointClamp, sampleUv).r;
+                    float weight = BilateralWeight(centerDepth, sampleDepth, spatial);
+                    accum += SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, sampleUv) * weight;
+                    weightSum += weight;
+                }
+            }
+
+            return weightSum > 0.0001 ? accum / weightSum : SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, uv);
+        }
+
+        half4 FragmentResolveTemporal(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 uv = input.texcoord;
+            float4 current = SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, uv);
+            UNITY_BRANCH
+            if (_L17TemporalControl.x <= 0.5 || _L17HistoryValid <= 0.5)
+            {
+                return current;
+            }
+
+            float sceneDistance = min(SceneEyeDepth(uv), _L17Params0.x);
+            float3 rayDirWS = RayDirection(uv);
+            float reprojectionDistance = min(sceneDistance, _L17Params0.x * 0.72);
+            float3 reprojectionWS = _WorldSpaceCameraPos + rayDirWS * reprojectionDistance;
+            float4 previousClip = mul(_L17PreviousViewProjection, float4(reprojectionWS, 1.0));
+            if (previousClip.w <= 0.0001)
+            {
+                return current;
+            }
+
+            float2 previousUv = PreviousClipToHistoryUv(previousClip);
+            if (!all(previousUv > 0.001) || !all(previousUv < 0.999))
+            {
+                return current;
+            }
+
+            float3 minColor = current.rgb;
+            float3 maxColor = current.rgb;
+            float2 texel = _L17FroxelSize.zw;
+            [unroll]
+            for (int y = -1; y <= 1; y++)
+            {
+                [unroll]
+                for (int x = -1; x <= 1; x++)
+                {
+                    float3 sampleColor = SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, uv + float2(x, y) * texel).rgb;
+                    minColor = min(minColor, sampleColor);
+                    maxColor = max(maxColor, sampleColor);
+                }
+            }
+
+            float4 history = SAMPLE_TEXTURE2D_X(_L17HistoryTexture, sampler_LinearClamp, previousUv);
+            history.rgb = clamp(history.rgb, minColor - 0.035, maxColor + 0.035);
+            float luminanceDelta = abs(dot(history.rgb - current.rgb, float3(0.2126, 0.7152, 0.0722)));
+            float historyWeight = saturate(_L17TemporalParams.x) * saturate(1.0 - luminanceDelta * 0.9);
+            return lerp(current, history, historyWeight);
+        }
+
         float4 SampleBilateralVolume(float2 uv, float fullDepth)
         {
             float2 lowPixel = uv * _L17FroxelSize.xy - 0.5;
-            float2 basePixel = floor(lowPixel);
-            float2 fracPixel = saturate(lowPixel - basePixel);
+            float2 centerPixel = floor(lowPixel);
+            float2 fracPixel = lowPixel - centerPixel;
             float2 texel = _L17FroxelSize.zw;
 
             float4 accum = 0.0;
             float weightSum = 0.0;
 
             [unroll]
-            for (int y = 0; y <= 1; y++)
+            for (int y = -2; y <= 2; y++)
             {
                 [unroll]
-                for (int x = 0; x <= 1; x++)
+                for (int x = -2; x <= 2; x++)
                 {
-                    float2 pixel = basePixel + float2(x, y);
+                    float2 offset = float2(x, y);
+                    float2 pixel = centerPixel + offset;
                     float2 sampleUv = (pixel + 0.5) * texel;
-                    float spatial = lerp(1.0 - fracPixel.x, fracPixel.x, x) * lerp(1.0 - fracPixel.y, fracPixel.y, y);
+                    float2 distanceFromPixel = abs(offset - fracPixel);
+                    float spatial = exp(-dot(distanceFromPixel, distanceFromPixel) * 0.42);
                     float lowDepth = SAMPLE_TEXTURE2D_X(_L17LowDepthTexture, sampler_PointClamp, sampleUv).r;
                     float weight = BilateralWeight(fullDepth, lowDepth, spatial);
                     accum += SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, sampleUv) * weight;
@@ -276,6 +369,32 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             #pragma fragment FragmentBuildVolume
             #pragma multi_compile_fragment _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DenoiseVolume"
+            ZTest Always
+            ZWrite Off
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment FragmentDenoiseVolume
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "TemporalResolve"
+            ZTest Always
+            ZWrite Off
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment FragmentResolveTemporal
             ENDHLSL
         }
 

@@ -200,7 +200,7 @@ public static class L17VolumetricLightingDemoBuilder
         feature.SetResources(compositeShader, blueNoise);
         feature.settings.enabled = true;
         feature.settings.downsample = 2;
-        feature.settings.froxelDepth = 64;
+        feature.settings.froxelDepth = 96;
         feature.settings.maxDistance = 58f;
         feature.settings.depthDistribution = 1.9f;
         feature.settings.density = 0.24f;
@@ -211,9 +211,11 @@ public static class L17VolumetricLightingDemoBuilder
         feature.settings.multiScatter = 0.32f;
         feature.settings.heightOrigin = -0.4f;
         feature.settings.heightFalloff = 0.22f;
-        feature.settings.noiseStrength = 0.2f;
+        feature.settings.noiseStrength = 0f;
         feature.settings.noiseScale = 1.25f;
-        feature.settings.temporalBlend = 0.88f;
+        feature.settings.temporalAccumulation = true;
+        feature.settings.jitterStrength = 0.9f;
+        feature.settings.temporalBlend = 0.8f;
         feature.settings.temporalDepthRejection = 0.12f;
         feature.settings.bilateralDepthScale = 0.08f;
         feature.settings.compositeOpacity = 0.94f;
@@ -253,6 +255,12 @@ public static class L17VolumetricLightingDemoBuilder
         cameraObject.transform.SetPositionAndRotation(
             new Vector3(-2.4f, 2.35f, -7.4f),
             Quaternion.Euler(5.2f, 13.5f, 0f));
+
+        L17RuntimeCameraMotion cameraMotion = cameraObject.AddComponent<L17RuntimeCameraMotion>();
+        cameraMotion.enableRuntimeControls = true;
+        cameraMotion.moveSpeed = 3.2f;
+        cameraMotion.fastMoveMultiplier = 2.2f;
+        cameraMotion.lookSensitivity = 2.4f;
     }
 
     private static Light CreateSun()
@@ -292,6 +300,8 @@ public static class L17VolumetricLightingDemoBuilder
             AssetDatabase.CreateAsset(profile, VolumeProfilePath);
         }
 
+        profile.components.RemoveAll(component => component == null);
+
         Bloom bloom = GetOrAdd<Bloom>(profile);
         bloom.active = true;
         bloom.threshold.Override(0.72f);
@@ -315,6 +325,7 @@ public static class L17VolumetricLightingDemoBuilder
         vignette.smoothness.Override(0.58f);
 
         EditorUtility.SetDirty(profile);
+        AssetDatabase.ImportAsset(VolumeProfilePath);
         return profile;
     }
 
@@ -325,6 +336,13 @@ public static class L17VolumetricLightingDemoBuilder
             component = profile.Add<T>(true);
         }
 
+        if (!AssetDatabase.Contains(component))
+        {
+            component.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+            AssetDatabase.AddObjectToAsset(component, profile);
+        }
+
+        EditorUtility.SetDirty(component);
         return component;
     }
 
@@ -364,7 +382,7 @@ public static class L17VolumetricLightingDemoBuilder
         controller.rendererData = rendererData;
         controller.sunLight = sunLight;
         controller.downsample = feature != null ? feature.settings.downsample : 2;
-        controller.froxelDepth = feature != null ? feature.settings.froxelDepth : 64;
+        controller.froxelDepth = feature != null ? feature.settings.froxelDepth : 96;
         controller.maxDistance = feature != null ? feature.settings.maxDistance : 58f;
         controller.depthDistribution = feature != null ? feature.settings.depthDistribution : 1.9f;
         controller.density = feature != null ? feature.settings.density : 0.24f;
@@ -375,9 +393,11 @@ public static class L17VolumetricLightingDemoBuilder
         controller.multiScatter = feature != null ? feature.settings.multiScatter : 0.32f;
         controller.heightOrigin = feature != null ? feature.settings.heightOrigin : -0.4f;
         controller.heightFalloff = feature != null ? feature.settings.heightFalloff : 0.22f;
-        controller.noiseStrength = feature != null ? feature.settings.noiseStrength : 0.2f;
+        controller.noiseStrength = feature != null ? feature.settings.noiseStrength : 0f;
         controller.noiseScale = feature != null ? feature.settings.noiseScale : 1.25f;
-        controller.temporalBlend = feature != null ? feature.settings.temporalBlend : 0.88f;
+        controller.temporalAccumulation = feature == null || feature.settings.temporalAccumulation;
+        controller.jitterStrength = feature != null ? feature.settings.jitterStrength : 0.9f;
+        controller.temporalBlend = feature != null ? feature.settings.temporalBlend : 0.8f;
         controller.bilateralDepthScale = feature != null ? feature.settings.bilateralDepthScale : 0.08f;
         controller.compositeOpacity = feature != null ? feature.settings.compositeOpacity : 0.94f;
         controller.scatteringColor = feature != null ? feature.settings.scatteringColor : new Color(1f, 0.84f, 0.52f, 1f);

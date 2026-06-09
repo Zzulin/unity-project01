@@ -13,7 +13,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
 
     [Header("Froxel Grid")]
     [Range(1, 4)] public int downsample = 2;
-    [Range(16, 96)] public int froxelDepth = 64;
+    [Range(16, 128)] public int froxelDepth = 96;
     [Range(4f, 120f)] public float maxDistance = 58f;
     [Range(0.5f, 4f)] public float depthDistribution = 1.9f;
 
@@ -26,12 +26,14 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Range(0f, 2f)] public float multiScatter = 0.32f;
     [Range(-10f, 10f)] public float heightOrigin = -0.4f;
     [Range(0.01f, 8f)] public float heightFalloff = 0.22f;
-    [Range(0f, 1f)] public float noiseStrength = 0.2f;
+    [Range(0f, 1f)] public float noiseStrength = 0f;
     [Range(0.05f, 8f)] public float noiseScale = 1.25f;
     public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
 
     [Header("Stability")]
-    [Range(0f, 0.98f)] public float temporalBlend = 0.88f;
+    public bool temporalAccumulation = true;
+    [Range(0f, 1f)] public float jitterStrength = 0.9f;
+    [Range(0f, 0.98f)] public float temporalBlend = 0.8f;
     [Range(0.001f, 2f)] public float temporalDepthRejection = 0.12f;
     [Range(0f, 1f)] public float bilateralDepthScale = 0.08f;
     [Range(0f, 1f)] public float compositeOpacity = 0.94f;
@@ -105,6 +107,8 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         settings.heightFalloff = heightFalloff;
         settings.noiseStrength = noiseStrength;
         settings.noiseScale = noiseScale;
+        settings.temporalAccumulation = temporalAccumulation;
+        settings.jitterStrength = jitterStrength;
         settings.temporalBlend = temporalBlend;
         settings.temporalDepthRejection = temporalDepthRejection;
         settings.bilateralDepthScale = bilateralDepthScale;
