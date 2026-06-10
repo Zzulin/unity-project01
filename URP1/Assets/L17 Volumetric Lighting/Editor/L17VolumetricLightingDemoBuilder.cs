@@ -46,7 +46,7 @@ public static class L17VolumetricLightingDemoBuilder
 
         Material wallMaterial = LoadOrCreateInteriorMaterial(WallMaterialPath, "L17_RoomWall", new Color(0.62f, 0.58f, 0.5f, 1f), new Color(0.12f, 0.105f, 0.09f, 1f), 0.1f, 0.04f, 0.02f, 0.44f);
         Material floorMaterial = LoadOrCreateInteriorMaterial(FloorMaterialPath, "L17_DustyFloor", new Color(0.42f, 0.37f, 0.29f, 1f), new Color(0.08f, 0.07f, 0.06f, 1f), 0.18f, 0.08f, 0.05f, 0.38f);
-        Material woodMaterial = LoadOrCreateLitMaterial(WoodMaterialPath, "L17_WindowFrame", new Color(0.21f, 0.14f, 0.08f, 1f), 0.35f);
+        Material woodMaterial = LoadOrCreateInteriorMaterial(WoodMaterialPath, "L17_WindowFrame", new Color(0.21f, 0.14f, 0.08f, 1f), new Color(0.18f, 0.15f, 0.11f, 1f), 0.35f, 0.28f, 0.24f, 1.05f);
         VolumeProfile profile = LoadOrCreatePostProfile();
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -56,14 +56,16 @@ public static class L17VolumetricLightingDemoBuilder
         Light sunLight = CreateSun();
         CreateCamera();
         CreatePostVolume(profile);
-        CreateRoom(wallMaterial, floorMaterial, woodMaterial);
-        CreateInteriorCatchers(floorMaterial);
+        Transform geometryRoot = CreateGeometryRoot();
+        CreateRoom(wallMaterial, floorMaterial, woodMaterial, geometryRoot);
+        CreateInteriorCatchers(floorMaterial, geometryRoot);
+        Transform localVolumeBounds = FindOrCreateLocalVolumeBounds();
         if (feature != null)
         {
             feature.SetActive(true);
             EditorUtility.SetDirty(feature);
         }
-        CreateLightingController(feature, sunLight);
+        CreateLightingController(feature, sunLight, localVolumeBounds);
 
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
@@ -207,12 +209,15 @@ public static class L17VolumetricLightingDemoBuilder
         feature.settings.extinction = 0.68f;
         feature.settings.intensity = 3.25f;
         feature.settings.anisotropy = 0.78f;
-        feature.settings.shadowFloor = 0.035f;
+        feature.settings.shadowFloor = 0.015f;
         feature.settings.multiScatter = 0.32f;
         feature.settings.heightOrigin = -0.4f;
         feature.settings.heightFalloff = 0.22f;
         feature.settings.noiseStrength = 0f;
         feature.settings.noiseScale = 1.25f;
+        feature.settings.volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
+        feature.settings.volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
+        feature.settings.volumeBoundsSoftness = 0.45f;
         feature.settings.temporalAccumulation = true;
         feature.settings.jitterStrength = 0.9f;
         feature.settings.temporalBlend = 0.8f;
@@ -229,7 +234,6 @@ public static class L17VolumetricLightingDemoBuilder
 
     private static void ConfigureRenderSettings()
     {
-        RenderSettings.skybox = null;
         RenderSettings.ambientMode = AmbientMode.Trilight;
         RenderSettings.ambientSkyColor = new Color(0.08f, 0.082f, 0.09f, 1f);
         RenderSettings.ambientEquatorColor = new Color(0.045f, 0.04f, 0.034f, 1f);
@@ -242,7 +246,7 @@ public static class L17VolumetricLightingDemoBuilder
         GameObject cameraObject = new GameObject("Main Camera");
         Camera camera = cameraObject.AddComponent<Camera>();
         camera.tag = "MainCamera";
-        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.clearFlags = CameraClearFlags.Skybox;
         camera.backgroundColor = new Color(0.035f, 0.038f, 0.045f, 1f);
         camera.fieldOfView = 42f;
         camera.nearClipPlane = 0.05f;
@@ -346,41 +350,81 @@ public static class L17VolumetricLightingDemoBuilder
         return component;
     }
 
-    private static void CreateRoom(Material wallMaterial, Material floorMaterial, Material woodMaterial)
+    private static Transform CreateGeometryRoot()
     {
-        CreateCube("Room Floor", new Vector3(0f, -0.18f, 0f), new Vector3(17f, 0.36f, 18f), floorMaterial, true, true);
-        CreateCube("Room Ceiling", new Vector3(0f, 6.5f, 0f), new Vector3(17f, 0.35f, 18f), wallMaterial, true, true);
-        CreateCube("Room Wall Left", new Vector3(-8.25f, 3.1f, 0f), new Vector3(0.35f, 6.7f, 18f), wallMaterial, true, true);
-        CreateCube("Room Wall Right", new Vector3(8.25f, 3.1f, 0f), new Vector3(0.35f, 6.7f, 18f), wallMaterial, true, true);
-        CreateCube("Room Back Wall", new Vector3(0f, 3.1f, -8.7f), new Vector3(17f, 6.7f, 0.35f), wallMaterial, true, true);
-
-        CreateCube("Window Wall Left Fill", new Vector3(-5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true);
-        CreateCube("Window Wall Right Fill", new Vector3(5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true);
-        CreateCube("Window Wall Lower Fill", new Vector3(0f, 0.78f, 8.45f), new Vector3(6.25f, 1.56f, 0.35f), wallMaterial, true, true);
-        CreateCube("Window Wall Upper Fill", new Vector3(0f, 5.78f, 8.45f), new Vector3(6.25f, 1.44f, 0.35f), wallMaterial, true, true);
-
-        CreateCube("Deep Window Sill", new Vector3(0f, 1.68f, 8.18f), new Vector3(6.6f, 0.28f, 1.3f), woodMaterial, true, true);
-        CreateCube("Window Top Frame", new Vector3(0f, 5.06f, 8.1f), new Vector3(6.7f, 0.25f, 1.2f), woodMaterial, true, true);
-        CreateCube("Window Left Frame", new Vector3(-3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true);
-        CreateCube("Window Right Frame", new Vector3(3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true);
-        CreateCube("Window Center Mullion", new Vector3(0f, 3.36f, 8.03f), new Vector3(0.32f, 3.5f, 1.25f), woodMaterial, true, true);
-        CreateCube("Window Upper Transom", new Vector3(0f, 4.12f, 8.02f), new Vector3(6.25f, 0.2f, 1.22f), woodMaterial, true, true);
-        CreateCube("Window Lower Transom", new Vector3(0f, 2.75f, 8.02f), new Vector3(6.25f, 0.18f, 1.22f), woodMaterial, true, true);
+        GameObject root = new GameObject("L17 Room Geometry");
+        root.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+        return root.transform;
     }
 
-    private static void CreateInteriorCatchers(Material material)
+    private static void CreateRoom(Material wallMaterial, Material floorMaterial, Material woodMaterial, Transform parent)
     {
-        CreateCube("Dusty Pedestal", new Vector3(2.6f, 0.78f, -1.4f), new Vector3(1.6f, 1.55f, 1.6f), material, true, true);
-        CreateCube("Thin Standing Panel", new Vector3(-2.9f, 1.65f, -0.2f), new Vector3(0.18f, 3.3f, 1.25f), new Vector3(0f, 24f, 0f), material, true, true);
+        CreateCube("Room Floor", new Vector3(0f, -0.18f, 0f), new Vector3(17f, 0.36f, 18f), floorMaterial, true, true, parent);
+        CreateCube("Room Ceiling", new Vector3(0f, 6.5f, 0f), new Vector3(17f, 0.35f, 18f), wallMaterial, true, true, parent);
+        CreateCube("Room Wall Left", new Vector3(-8.25f, 3.1f, 0f), new Vector3(0.35f, 6.7f, 18f), wallMaterial, true, true, parent);
+        CreateCube("Room Wall Right", new Vector3(8.25f, 3.1f, 0f), new Vector3(0.35f, 6.7f, 18f), wallMaterial, true, true, parent);
+        CreateCube("Room Back Wall", new Vector3(0f, 3.1f, -8.7f), new Vector3(17f, 6.7f, 0.35f), wallMaterial, true, true, parent);
+
+        CreateCube("Window Wall Left Fill", new Vector3(-5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true, parent);
+        CreateCube("Window Wall Right Fill", new Vector3(5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true, parent);
+        CreateCube("Window Wall Lower Fill", new Vector3(0f, 0.78f, 8.45f), new Vector3(6.25f, 1.56f, 0.35f), wallMaterial, true, true, parent);
+        CreateCube("Window Wall Upper Fill", new Vector3(0f, 5.78f, 8.45f), new Vector3(6.25f, 1.44f, 0.35f), wallMaterial, true, true, parent);
+
+        CreateCube("Deep Window Sill", new Vector3(0f, 1.68f, 8.18f), new Vector3(6.6f, 0.28f, 1.3f), woodMaterial, true, true, parent);
+        CreateCube("Window Top Frame", new Vector3(0f, 5.06f, 8.1f), new Vector3(6.7f, 0.25f, 1.2f), woodMaterial, true, true, parent);
+        CreateCube("Window Left Frame", new Vector3(-3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true, parent);
+        CreateCube("Window Right Frame", new Vector3(3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true, parent);
+        CreateCube("Window Center Mullion", new Vector3(0f, 3.36f, 8.03f), new Vector3(0.32f, 3.5f, 1.25f), woodMaterial, true, true, parent);
+        CreateCube("Window Upper Transom", new Vector3(0f, 4.12f, 8.02f), new Vector3(6.25f, 0.2f, 1.22f), woodMaterial, true, true, parent);
+        CreateCube("Window Lower Transom", new Vector3(0f, 2.75f, 8.02f), new Vector3(6.25f, 0.18f, 1.22f), woodMaterial, true, true, parent);
     }
 
-    private static void CreateLightingController(L17FrustumVolumetricRendererFeature feature, Light sunLight)
+    private static void CreateInteriorCatchers(Material material, Transform parent)
+    {
+        CreateCube("Dusty Pedestal", new Vector3(2.6f, 0.78f, -1.4f), new Vector3(1.6f, 1.55f, 1.6f), material, true, true, parent);
+        CreateCube("Thin Standing Panel", new Vector3(-2.9f, 1.65f, -0.2f), new Vector3(0.18f, 3.3f, 1.25f), new Vector3(0f, 24f, 0f), material, true, true, parent);
+    }
+
+    private static Transform FindOrCreateLocalVolumeBounds()
+    {
+        GameObject boundsObject = GameObject.Find("L17 Local Volume Bounds");
+        if (boundsObject == null)
+        {
+            boundsObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            boundsObject.name = "L17 Local Volume Bounds";
+        }
+
+        boundsObject.transform.SetPositionAndRotation(new Vector3(0f, 3.1f, -0.1f), Quaternion.identity);
+        boundsObject.transform.localScale = new Vector3(15.8f, 6.2f, 16.2f);
+
+        MeshRenderer renderer = boundsObject.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            Object.DestroyImmediate(renderer);
+        }
+
+        Collider collider = boundsObject.GetComponent<Collider>();
+        if (collider != null)
+        {
+            collider.isTrigger = true;
+        }
+
+        if (boundsObject.GetComponent<L17LocalVolumeBoundsGizmo>() == null)
+        {
+            boundsObject.AddComponent<L17LocalVolumeBoundsGizmo>();
+        }
+
+        return boundsObject.transform;
+    }
+
+    private static void CreateLightingController(L17FrustumVolumetricRendererFeature feature, Light sunLight, Transform localVolumeBounds)
     {
         UniversalRendererData rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(RendererPath);
         GameObject controllerObject = new GameObject("L17 Froxel Lighting Controller");
         L17VolumetricLightingController controller = controllerObject.AddComponent<L17VolumetricLightingController>();
         controller.rendererData = rendererData;
         controller.sunLight = sunLight;
+        controller.volumeBoundsTransform = localVolumeBounds;
         controller.downsample = feature != null ? feature.settings.downsample : 2;
         controller.froxelDepth = feature != null ? feature.settings.froxelDepth : 96;
         controller.maxDistance = feature != null ? feature.settings.maxDistance : 58f;
@@ -389,12 +433,15 @@ public static class L17VolumetricLightingDemoBuilder
         controller.extinction = feature != null ? feature.settings.extinction : 0.68f;
         controller.intensity = feature != null ? feature.settings.intensity : 3.25f;
         controller.anisotropy = feature != null ? feature.settings.anisotropy : 0.78f;
-        controller.shadowFloor = feature != null ? feature.settings.shadowFloor : 0.035f;
+        controller.shadowFloor = feature != null ? feature.settings.shadowFloor : 0.015f;
         controller.multiScatter = feature != null ? feature.settings.multiScatter : 0.32f;
         controller.heightOrigin = feature != null ? feature.settings.heightOrigin : -0.4f;
         controller.heightFalloff = feature != null ? feature.settings.heightFalloff : 0.22f;
         controller.noiseStrength = feature != null ? feature.settings.noiseStrength : 0f;
         controller.noiseScale = feature != null ? feature.settings.noiseScale : 1.25f;
+        controller.volumeBoundsCenter = feature != null ? feature.settings.volumeBoundsCenter : new Vector3(0f, 3.1f, -0.1f);
+        controller.volumeBoundsSize = feature != null ? feature.settings.volumeBoundsSize : new Vector3(15.8f, 6.2f, 16.2f);
+        controller.volumeBoundsSoftness = feature != null ? feature.settings.volumeBoundsSoftness : 0.45f;
         controller.temporalAccumulation = feature == null || feature.settings.temporalAccumulation;
         controller.jitterStrength = feature != null ? feature.settings.jitterStrength : 0.9f;
         controller.temporalBlend = feature != null ? feature.settings.temporalBlend : 0.8f;
@@ -428,39 +475,32 @@ public static class L17VolumetricLightingDemoBuilder
         return material;
     }
 
-    private static Material LoadOrCreateLitMaterial(string path, string name, Color color, float smoothness)
-    {
-        Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (material == null)
-        {
-            material = new Material(shader) { name = name };
-            AssetDatabase.CreateAsset(material, path);
-        }
-        else if (shader != null)
-        {
-            material.shader = shader;
-        }
-
-        material.SetColor("_BaseColor", color);
-        material.SetFloat("_Smoothness", smoothness);
-        material.SetFloat("_Metallic", 0f);
-        EditorUtility.SetDirty(material);
-        return material;
-    }
-
     private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material, bool castShadows, bool receiveShadows)
     {
-        return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows);
+        return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows, null);
     }
 
     private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Vector3 rotationEuler, Material material, bool castShadows, bool receiveShadows)
+    {
+        return CreateCube(name, position, scale, rotationEuler, material, castShadows, receiveShadows, null);
+    }
+
+    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material, bool castShadows, bool receiveShadows, Transform parent)
+    {
+        return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows, parent);
+    }
+
+    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Vector3 rotationEuler, Material material, bool castShadows, bool receiveShadows, Transform parent)
     {
         GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cube.name = name;
         cube.transform.position = position;
         cube.transform.rotation = Quaternion.Euler(rotationEuler);
         cube.transform.localScale = scale;
+        if (parent != null)
+        {
+            cube.transform.SetParent(parent, true);
+        }
 
         MeshRenderer renderer = cube.GetComponent<MeshRenderer>();
         renderer.sharedMaterial = material;

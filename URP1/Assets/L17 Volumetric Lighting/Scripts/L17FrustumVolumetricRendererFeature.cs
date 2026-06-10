@@ -18,12 +18,15 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         [Range(0.01f, 4f)] public float extinction = 0.68f;
         [Range(0f, 10f)] public float intensity = 3.25f;
         [Range(0f, 0.92f)] public float anisotropy = 0.78f;
-        [Range(0f, 1f)] public float shadowFloor = 0.035f;
+        [Range(0f, 1f)] public float shadowFloor = 0.015f;
         [Range(0f, 2f)] public float multiScatter = 0.32f;
         [Range(0.01f, 8f)] public float heightFalloff = 0.22f;
         [Range(-10f, 10f)] public float heightOrigin = -0.4f;
         [Range(0f, 1f)] public float noiseStrength = 0f;
         [Range(0.05f, 8f)] public float noiseScale = 1.25f;
+        public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
+        public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
+        [Range(0.01f, 3f)] public float volumeBoundsSoftness = 0.45f;
         public bool temporalAccumulation = true;
         [Range(0f, 1f)] public float jitterStrength = 0.9f;
         [Range(0f, 0.98f)] public float temporalBlend = 0.8f;
@@ -46,12 +49,15 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int Params0Id = Shader.PropertyToID("_L17Params0");
         private static readonly int Params1Id = Shader.PropertyToID("_L17Params1");
         private static readonly int Params2Id = Shader.PropertyToID("_L17Params2");
+        private static readonly int VolumeBoundsCenterId = Shader.PropertyToID("_L17VolumeBoundsCenter");
+        private static readonly int VolumeBoundsSizeId = Shader.PropertyToID("_L17VolumeBoundsSize");
         private static readonly int TemporalParamsId = Shader.PropertyToID("_L17TemporalParams");
         private static readonly int TemporalControlId = Shader.PropertyToID("_L17TemporalControl");
         private static readonly int ScatteringColorId = Shader.PropertyToID("_L17ScatteringColor");
         private static readonly int PreviousViewProjectionId = Shader.PropertyToID("_L17PreviousViewProjection");
         private static readonly int HistoryValidId = Shader.PropertyToID("_L17HistoryValid");
         private static readonly int FrameIndexId = Shader.PropertyToID("_L17FrameIndex");
+        private static readonly int FroxelDepthId = Shader.PropertyToID("_L17FroxelDepth");
 
         private const string IntegratedTextureName = "_L17IntegratedTexture";
         private const string DenoisedTextureName = "_L17DenoisedTexture";
@@ -255,13 +261,15 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetVector(Params0Id, new Vector4(settings.maxDistance, settings.depthDistribution, settings.density, settings.extinction));
             material.SetVector(Params1Id, new Vector4(settings.intensity, settings.anisotropy, settings.shadowFloor, settings.multiScatter));
             material.SetVector(Params2Id, new Vector4(settings.heightOrigin, settings.heightFalloff, settings.noiseScale, settings.noiseStrength));
+            material.SetVector(VolumeBoundsCenterId, new Vector4(settings.volumeBoundsCenter.x, settings.volumeBoundsCenter.y, settings.volumeBoundsCenter.z, settings.volumeBoundsSoftness));
+            material.SetVector(VolumeBoundsSizeId, new Vector4(settings.volumeBoundsSize.x, settings.volumeBoundsSize.y, settings.volumeBoundsSize.z, 0f));
             material.SetVector(TemporalParamsId, new Vector4(temporalBlend, settings.jitterStrength, settings.bilateralDepthScale, settings.compositeOpacity));
             material.SetVector(TemporalControlId, new Vector4(useTemporalHistory ? 1f : 0f, cameraType == CameraType.SceneView ? 1f : 0f, settings.temporalAccumulation ? 1f : 0f, 0f));
             material.SetColor(ScatteringColorId, settings.scatteringColor);
             material.SetMatrix(PreviousViewProjectionId, validHistory ? history.previousViewProjection : Matrix4x4.identity);
             material.SetFloat(HistoryValidId, validHistory ? 1f : 0f);
             material.SetFloat(FrameIndexId, frameIndex);
-            material.SetFloat(Shader.PropertyToID("_L17FroxelDepth"), settings.froxelDepth);
+            material.SetFloat(FroxelDepthId, settings.froxelDepth);
         }
 
         public void Dispose()

@@ -22,12 +22,16 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Range(0.01f, 4f)] public float extinction = 0.68f;
     [Range(0f, 10f)] public float intensity = 3.25f;
     [Range(0f, 0.92f)] public float anisotropy = 0.78f;
-    [Range(0f, 1f)] public float shadowFloor = 0.035f;
+    [Range(0f, 1f)] public float shadowFloor = 0.015f;
     [Range(0f, 2f)] public float multiScatter = 0.32f;
     [Range(-10f, 10f)] public float heightOrigin = -0.4f;
     [Range(0.01f, 8f)] public float heightFalloff = 0.22f;
     [Range(0f, 1f)] public float noiseStrength = 0f;
     [Range(0.05f, 8f)] public float noiseScale = 1.25f;
+    public Transform volumeBoundsTransform;
+    public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
+    public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
+    [Range(0.01f, 3f)] public float volumeBoundsSoftness = 0.45f;
     public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
 
     [Header("Stability")]
@@ -49,6 +53,9 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     public Color ambientGround = new Color(0.018f, 0.015f, 0.012f, 1f);
 
     private L17FrustumVolumetricRendererFeature cachedFeature;
+    private bool hasApplied;
+    private Vector3 lastVolumeBoundsPosition;
+    private Vector3 lastVolumeBoundsScale;
 
     private void OnEnable()
     {
@@ -62,7 +69,10 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
 
     private void Update()
     {
-        Apply(false);
+        if (NeedsRuntimeApply())
+        {
+            Apply(false);
+        }
     }
 
     public void RefreshImmediate()
@@ -107,6 +117,19 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         settings.heightFalloff = heightFalloff;
         settings.noiseStrength = noiseStrength;
         settings.noiseScale = noiseScale;
+        Vector3 boundsCenter = volumeBoundsCenter;
+        Vector3 boundsSize = volumeBoundsSize;
+        if (volumeBoundsTransform != null)
+        {
+            boundsCenter = volumeBoundsTransform.position;
+            boundsSize = volumeBoundsTransform.lossyScale;
+            volumeBoundsCenter = boundsCenter;
+            volumeBoundsSize = boundsSize;
+        }
+
+        settings.volumeBoundsCenter = boundsCenter;
+        settings.volumeBoundsSize = boundsSize;
+        settings.volumeBoundsSoftness = volumeBoundsSoftness;
         settings.temporalAccumulation = temporalAccumulation;
         settings.jitterStrength = jitterStrength;
         settings.temporalBlend = temporalBlend;
@@ -115,6 +138,8 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         settings.compositeOpacity = compositeOpacity;
         settings.scatteringColor = scatteringColor;
         settings.passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+        RememberVolumeBounds(boundsCenter, boundsSize);
+        hasApplied = true;
 
 #if UNITY_EDITOR
         if (persistAssets && !Application.isPlaying)
@@ -150,5 +175,29 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         }
 
         return null;
+    }
+
+    private bool NeedsRuntimeApply()
+    {
+        if (!hasApplied)
+        {
+            return true;
+        }
+
+        if (volumeBoundsTransform == null)
+        {
+            return false;
+        }
+
+        Vector3 currentPosition = volumeBoundsTransform.position;
+        Vector3 currentScale = volumeBoundsTransform.lossyScale;
+        return (currentPosition - lastVolumeBoundsPosition).sqrMagnitude > 0.000001f
+            || (currentScale - lastVolumeBoundsScale).sqrMagnitude > 0.000001f;
+    }
+
+    private void RememberVolumeBounds(Vector3 boundsCenter, Vector3 boundsSize)
+    {
+        lastVolumeBoundsPosition = boundsCenter;
+        lastVolumeBoundsScale = boundsSize;
     }
 }

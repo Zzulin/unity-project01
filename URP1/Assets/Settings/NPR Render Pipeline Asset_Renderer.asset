@@ -23,12 +23,15 @@ MonoBehaviour:
     extinction: 0.68
     intensity: 3.25
     anisotropy: 0.78
-    shadowFloor: 0.035
+    shadowFloor: 0.015
     multiScatter: 0.32
     heightFalloff: 0.22
     heightOrigin: -0.4
     noiseStrength: 0
     noiseScale: 1.25
+    volumeBoundsCenter: {x: 0, y: 3.1, z: -0.1}
+    volumeBoundsSize: {x: 15.8, y: 6.2, z: 16.2}
+    volumeBoundsSoftness: 0.45
     temporalAccumulation: 1
     jitterStrength: 0.9
     temporalBlend: 0.8

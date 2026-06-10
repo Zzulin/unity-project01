@@ -48,8 +48,15 @@ public sealed class L17RuntimeCameraMotion : MonoBehaviour
             return;
         }
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        if (Cursor.lockState != CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        if (Cursor.visible)
+        {
+            Cursor.visible = false;
+        }
 
         yaw += Input.GetAxisRaw("Mouse X") * lookSensitivity;
         pitch -= Input.GetAxisRaw("Mouse Y") * lookSensitivity;

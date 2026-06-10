@@ -29,6 +29,8 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float4 _L17Params0;
         float4 _L17Params1;
         float4 _L17Params2;
+        float4 _L17VolumeBoundsCenter;
+        float4 _L17VolumeBoundsSize;
         float4 _L17TemporalParams;
         float4 _L17TemporalControl;
         float4 _L17ScatteringColor;
@@ -99,6 +101,18 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return (1.0 - g2) / (4.0 * PI * pow(phaseBase, 1.5));
         }
 
+        float ProductionHenyeyGreenstein(float cosTheta, float anisotropy)
+        {
+            float stableAnisotropy = min(anisotropy, 0.62);
+            float phase = HenyeyGreenstein(cosTheta, stableAnisotropy);
+
+            // Realtime volumetric fog usually bounds the near-singular forward lobe.
+            // Otherwise a directional light turns into a screen-space disk instead of a shaft.
+            float isotropicPhase = 1.0 / (4.0 * PI);
+            float phaseCeiling = isotropicPhase * 3.5;
+            return min(phase, phaseCeiling);
+        }
+
         float3 RayDirection(float2 uv)
         {
             float3 farPositionWS = ComputeWorldSpacePosition(uv, FarDeviceDepth(), unity_MatrixInvVP);
@@ -112,6 +126,11 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
 
         float DensityAtPosition(float3 positionWS)
         {
+            float3 halfBounds = max(_L17VolumeBoundsSize.xyz * 0.5, 0.001);
+            float3 boundsDistance = halfBounds - abs(positionWS - _L17VolumeBoundsCenter.xyz);
+            float boundsFadeDistance = min(boundsDistance.x, min(boundsDistance.y, boundsDistance.z));
+            float boundsMask = saturate(boundsFadeDistance / max(_L17VolumeBoundsCenter.w, 0.001));
+
             float heightTerm = exp(-max(positionWS.y - _L17Params2.x, 0.0) * max(_L17Params2.y, 0.001));
             float noiseTerm = 1.0;
             if (_L17Params2.w > 0.0001)
@@ -121,7 +140,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 float noise = lerp(largeNoise, largeNoise * 0.68 + fineNoise * 0.32, 0.55);
                 noiseTerm = lerp(1.0, saturate(noise * 1.45), saturate(_L17Params2.w));
             }
-            return max(_L17Params0.z, 0.0) * heightTerm * noiseTerm;
+            return max(_L17Params0.z, 0.0) * heightTerm * noiseTerm * boundsMask;
         }
 
         float SliceDistance(float slice01)
@@ -134,7 +153,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             int stepCount = (int)clamp(round(_L17FroxelDepth), 16.0, (float)L17_MAX_STEPS);
             Light mainLight = GetMainLight();
             float3 lightDirWS = normalize(mainLight.direction);
-            float phase = HenyeyGreenstein(dot(rayDirWS, lightDirWS), saturate(_L17Params1.y));
+            float phase = ProductionHenyeyGreenstein(dot(rayDirWS, lightDirWS), saturate(_L17Params1.y));
             float3 scattering = 0.0;
             float transmittance = 1.0;
 
@@ -160,11 +179,13 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 float density = DensityAtPosition(sampleWS);
                 float4 shadowCoord = TransformWorldToShadowCoord(sampleWS);
                 Light shadowedLight = GetMainLight(shadowCoord);
-                float shadow = lerp(_L17Params1.z, 1.0, saturate(shadowedLight.shadowAttenuation));
+                float shadowAttenuation = saturate(shadowedLight.shadowAttenuation);
+                float shadow = lerp(_L17Params1.z, 1.0, shadowAttenuation);
+                float multiScatterShadow = shadowAttenuation * shadowAttenuation;
                 float opticalDepth = density * max(_L17Params0.w, 0.001) * stepLength;
                 float stepTransmittance = exp(-opticalDepth);
                 float3 singleScatter = shadowedLight.color * _L17ScatteringColor.rgb * density * phase * shadow * stepLength;
-                float3 multiScatter = shadowedLight.color * _L17ScatteringColor.rgb * density * saturate(_L17Params1.w) * 0.08 * stepLength;
+                float3 multiScatter = shadowedLight.color * _L17ScatteringColor.rgb * density * saturate(_L17Params1.w) * 0.08 * multiScatterShadow * stepLength;
 
                 scattering += transmittance * (singleScatter + multiScatter) * max(_L17Params1.x, 0.0);
                 transmittance *= stepTransmittance;
