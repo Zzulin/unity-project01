@@ -59,7 +59,13 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
 
     private void OnEnable()
     {
+        L17FrustumVolumetricRendererFeature.RegisterSceneController(this);
         Apply(false);
+    }
+
+    private void OnDisable()
+    {
+        L17FrustumVolumetricRendererFeature.UnregisterSceneController(this);
     }
 
     private void OnValidate()
@@ -103,20 +109,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
 
         L17FrustumVolumetricRendererFeature.Settings settings = feature.settings;
         settings.enabled = true;
-        settings.downsample = downsample;
-        settings.froxelDepth = froxelDepth;
-        settings.maxDistance = maxDistance;
-        settings.depthDistribution = depthDistribution;
-        settings.density = density;
-        settings.extinction = extinction;
-        settings.intensity = intensity;
-        settings.anisotropy = anisotropy;
-        settings.shadowFloor = shadowFloor;
-        settings.multiScatter = multiScatter;
-        settings.heightOrigin = heightOrigin;
-        settings.heightFalloff = heightFalloff;
-        settings.noiseStrength = noiseStrength;
-        settings.noiseScale = noiseScale;
+        settings.requireSceneController = true;
         Vector3 boundsCenter = volumeBoundsCenter;
         Vector3 boundsSize = volumeBoundsSize;
         if (volumeBoundsTransform != null)
@@ -127,16 +120,6 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
             volumeBoundsSize = boundsSize;
         }
 
-        settings.volumeBoundsCenter = boundsCenter;
-        settings.volumeBoundsSize = boundsSize;
-        settings.volumeBoundsSoftness = volumeBoundsSoftness;
-        settings.temporalAccumulation = temporalAccumulation;
-        settings.jitterStrength = jitterStrength;
-        settings.temporalBlend = temporalBlend;
-        settings.temporalDepthRejection = temporalDepthRejection;
-        settings.bilateralDepthScale = bilateralDepthScale;
-        settings.compositeOpacity = compositeOpacity;
-        settings.scatteringColor = scatteringColor;
         settings.passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
         RememberVolumeBounds(boundsCenter, boundsSize);
         hasApplied = true;
@@ -199,5 +182,18 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     {
         lastVolumeBoundsPosition = boundsCenter;
         lastVolumeBoundsScale = boundsSize;
+    }
+
+    public void GetVolumeBounds(out Vector3 center, out Vector3 size)
+    {
+        if (volumeBoundsTransform != null)
+        {
+            center = volumeBoundsTransform.position;
+            size = volumeBoundsTransform.lossyScale;
+            return;
+        }
+
+        center = volumeBoundsCenter;
+        size = volumeBoundsSize;
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeature
 {
@@ -10,29 +11,54 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
     public sealed class Settings
     {
         public bool enabled = true;
+        public bool requireSceneController = true;
+        [HideInInspector]
         [Range(1, 4)] public int downsample = 2;
+        [HideInInspector]
         [Range(16, 128)] public int froxelDepth = 96;
+        [HideInInspector]
         [Range(4f, 120f)] public float maxDistance = 58f;
+        [HideInInspector]
         [Range(0.5f, 4f)] public float depthDistribution = 1.9f;
+        [HideInInspector]
         [Range(0f, 1.5f)] public float density = 0.24f;
+        [HideInInspector]
         [Range(0.01f, 4f)] public float extinction = 0.68f;
+        [HideInInspector]
         [Range(0f, 10f)] public float intensity = 3.25f;
+        [HideInInspector]
         [Range(0f, 0.92f)] public float anisotropy = 0.78f;
+        [HideInInspector]
         [Range(0f, 1f)] public float shadowFloor = 0.015f;
+        [HideInInspector]
         [Range(0f, 2f)] public float multiScatter = 0.32f;
+        [HideInInspector]
         [Range(0.01f, 8f)] public float heightFalloff = 0.22f;
+        [HideInInspector]
         [Range(-10f, 10f)] public float heightOrigin = -0.4f;
+        [HideInInspector]
         [Range(0f, 1f)] public float noiseStrength = 0f;
+        [HideInInspector]
         [Range(0.05f, 8f)] public float noiseScale = 1.25f;
+        [HideInInspector]
         public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
+        [HideInInspector]
         public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
+        [HideInInspector]
         [Range(0.01f, 3f)] public float volumeBoundsSoftness = 0.45f;
+        [HideInInspector]
         public bool temporalAccumulation = true;
+        [HideInInspector]
         [Range(0f, 1f)] public float jitterStrength = 0.9f;
+        [HideInInspector]
         [Range(0f, 0.98f)] public float temporalBlend = 0.8f;
+        [HideInInspector]
         [Range(0.001f, 2f)] public float temporalDepthRejection = 0.12f;
+        [HideInInspector]
         [Range(0f, 1f)] public float bilateralDepthScale = 0.08f;
+        [HideInInspector]
         [Range(0f, 1f)] public float compositeOpacity = 0.94f;
+        [HideInInspector]
         public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
         public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
     }
@@ -67,10 +93,11 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private const string CameraCopyTextureName = "_L17CameraCopyTexture";
 
         private readonly ProfilingSampler l17ProfilingSampler = new ProfilingSampler("L17 Froxel Volumetric Lighting");
-        private readonly Settings settings;
+        private readonly Settings featureSettings;
         private readonly Material material;
 
         private RTHandle source;
+        private L17VolumetricLightingController controller;
         private RTHandle integratedTexture;
         private RTHandle denoisedTexture;
         private RTHandle temporalTexture;
@@ -95,23 +122,24 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
 
         public Texture blueNoiseTexture { get; set; }
 
-        public L17VolumetricPass(Material material, Settings settings)
+        public L17VolumetricPass(Material material, Settings featureSettings)
         {
             this.material = material;
-            this.settings = settings;
-            renderPassEvent = settings.passEvent;
+            this.featureSettings = featureSettings;
+            renderPassEvent = featureSettings.passEvent;
             ConfigureInput(ScriptableRenderPassInput.Depth);
         }
 
-        public void Setup(RTHandle source)
+        public void Setup(RTHandle source, L17VolumetricLightingController controller)
         {
             this.source = source;
-            renderPassEvent = settings.passEvent;
+            this.controller = controller;
+            renderPassEvent = featureSettings.passEvent;
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
-            int downsample = Mathf.Max(1, settings.downsample);
+            int downsample = Mathf.Max(1, controller != null ? controller.downsample : featureSettings.downsample);
             int lowWidth = Mathf.Max(1, Mathf.CeilToInt(cameraTextureDescriptor.width / (float)downsample));
             int lowHeight = Mathf.Max(1, Mathf.CeilToInt(cameraTextureDescriptor.height / (float)downsample));
 
@@ -223,7 +251,9 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
 
         private bool ShouldUseTemporalHistory(CameraType cameraType)
         {
-            if (!settings.temporalAccumulation || settings.temporalBlend <= 0.001f)
+            bool temporalAccumulation = controller != null ? controller.temporalAccumulation : featureSettings.temporalAccumulation;
+            float temporalBlend = controller != null ? controller.temporalBlend : featureSettings.temporalBlend;
+            if (!temporalAccumulation || temporalBlend <= 0.001f)
             {
                 return false;
             }
@@ -252,24 +282,58 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private void PushSettings(Camera camera, CameraHistory history, bool useTemporalHistory, CameraType cameraType)
         {
             bool validHistory = useTemporalHistory && history != null && history.valid && history.texture != null;
-            float temporalBlend = validHistory ? settings.temporalBlend : 0f;
+            float temporalBlend = validHistory ? GetTemporalBlend() : 0f;
             float frameIndex = validHistory ? Time.renderedFrameCount : 0f;
+            GetVolumeBounds(out Vector3 boundsCenter, out Vector3 boundsSize);
             material.SetTexture(HistoryTextureId, validHistory ? history.texture : Texture2D.blackTexture);
             material.SetTexture(BlueNoiseTextureId, blueNoiseTexture != null ? blueNoiseTexture : Texture2D.blackTexture);
             material.SetVector(FroxelSizeId, new Vector4(previousWidth, previousHeight, 1f / Mathf.Max(1, previousWidth), 1f / Mathf.Max(1, previousHeight)));
             material.SetVector(CameraSizeId, new Vector4(camera.pixelWidth, camera.pixelHeight, 1f / Mathf.Max(1, camera.pixelWidth), 1f / Mathf.Max(1, camera.pixelHeight)));
-            material.SetVector(Params0Id, new Vector4(settings.maxDistance, settings.depthDistribution, settings.density, settings.extinction));
-            material.SetVector(Params1Id, new Vector4(settings.intensity, settings.anisotropy, settings.shadowFloor, settings.multiScatter));
-            material.SetVector(Params2Id, new Vector4(settings.heightOrigin, settings.heightFalloff, settings.noiseScale, settings.noiseStrength));
-            material.SetVector(VolumeBoundsCenterId, new Vector4(settings.volumeBoundsCenter.x, settings.volumeBoundsCenter.y, settings.volumeBoundsCenter.z, settings.volumeBoundsSoftness));
-            material.SetVector(VolumeBoundsSizeId, new Vector4(settings.volumeBoundsSize.x, settings.volumeBoundsSize.y, settings.volumeBoundsSize.z, 0f));
-            material.SetVector(TemporalParamsId, new Vector4(temporalBlend, settings.jitterStrength, settings.bilateralDepthScale, settings.compositeOpacity));
-            material.SetVector(TemporalControlId, new Vector4(useTemporalHistory ? 1f : 0f, cameraType == CameraType.SceneView ? 1f : 0f, settings.temporalAccumulation ? 1f : 0f, 0f));
-            material.SetColor(ScatteringColorId, settings.scatteringColor);
+            material.SetVector(Params0Id, new Vector4(GetMaxDistance(), GetDepthDistribution(), GetDensity(), GetExtinction()));
+            material.SetVector(Params1Id, new Vector4(GetIntensity(), GetAnisotropy(), GetShadowFloor(), GetMultiScatter()));
+            material.SetVector(Params2Id, new Vector4(GetHeightOrigin(), GetHeightFalloff(), GetNoiseScale(), GetNoiseStrength()));
+            material.SetVector(VolumeBoundsCenterId, new Vector4(boundsCenter.x, boundsCenter.y, boundsCenter.z, GetVolumeBoundsSoftness()));
+            material.SetVector(VolumeBoundsSizeId, new Vector4(boundsSize.x, boundsSize.y, boundsSize.z, 0f));
+            material.SetVector(TemporalParamsId, new Vector4(temporalBlend, GetJitterStrength(), GetBilateralDepthScale(), GetCompositeOpacity()));
+            material.SetVector(TemporalControlId, new Vector4(useTemporalHistory ? 1f : 0f, cameraType == CameraType.SceneView ? 1f : 0f, GetTemporalAccumulation() ? 1f : 0f, 0f));
+            material.SetColor(ScatteringColorId, GetScatteringColor());
             material.SetMatrix(PreviousViewProjectionId, validHistory ? history.previousViewProjection : Matrix4x4.identity);
             material.SetFloat(HistoryValidId, validHistory ? 1f : 0f);
             material.SetFloat(FrameIndexId, frameIndex);
-            material.SetFloat(FroxelDepthId, settings.froxelDepth);
+            material.SetFloat(FroxelDepthId, GetFroxelDepth());
+        }
+
+        private int GetFroxelDepth() => controller != null ? controller.froxelDepth : featureSettings.froxelDepth;
+        private float GetMaxDistance() => controller != null ? controller.maxDistance : featureSettings.maxDistance;
+        private float GetDepthDistribution() => controller != null ? controller.depthDistribution : featureSettings.depthDistribution;
+        private float GetDensity() => controller != null ? controller.density : featureSettings.density;
+        private float GetExtinction() => controller != null ? controller.extinction : featureSettings.extinction;
+        private float GetIntensity() => controller != null ? controller.intensity : featureSettings.intensity;
+        private float GetAnisotropy() => controller != null ? controller.anisotropy : featureSettings.anisotropy;
+        private float GetShadowFloor() => controller != null ? controller.shadowFloor : featureSettings.shadowFloor;
+        private float GetMultiScatter() => controller != null ? controller.multiScatter : featureSettings.multiScatter;
+        private float GetHeightOrigin() => controller != null ? controller.heightOrigin : featureSettings.heightOrigin;
+        private float GetHeightFalloff() => controller != null ? controller.heightFalloff : featureSettings.heightFalloff;
+        private float GetNoiseStrength() => controller != null ? controller.noiseStrength : featureSettings.noiseStrength;
+        private float GetNoiseScale() => controller != null ? controller.noiseScale : featureSettings.noiseScale;
+        private bool GetTemporalAccumulation() => controller != null ? controller.temporalAccumulation : featureSettings.temporalAccumulation;
+        private float GetJitterStrength() => controller != null ? controller.jitterStrength : featureSettings.jitterStrength;
+        private float GetTemporalBlend() => controller != null ? controller.temporalBlend : featureSettings.temporalBlend;
+        private float GetBilateralDepthScale() => controller != null ? controller.bilateralDepthScale : featureSettings.bilateralDepthScale;
+        private float GetCompositeOpacity() => controller != null ? controller.compositeOpacity : featureSettings.compositeOpacity;
+        private float GetVolumeBoundsSoftness() => controller != null ? controller.volumeBoundsSoftness : featureSettings.volumeBoundsSoftness;
+        private Color GetScatteringColor() => controller != null ? controller.scatteringColor : featureSettings.scatteringColor;
+
+        private void GetVolumeBounds(out Vector3 center, out Vector3 size)
+        {
+            if (controller != null)
+            {
+                controller.GetVolumeBounds(out center, out size);
+                return;
+            }
+
+            center = featureSettings.volumeBoundsCenter;
+            size = featureSettings.volumeBoundsSize;
         }
 
         public void Dispose()
@@ -291,8 +355,47 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
     public Settings settings = new Settings();
     [SerializeField] private Shader compositeShader;
     [SerializeField] private Texture2D blueNoiseTexture;
+    [HideInInspector]
     [SerializeField] private Material compositeMaterial;
+    private static readonly Dictionary<int, L17VolumetricLightingController> activeSceneControllers = new Dictionary<int, L17VolumetricLightingController>();
     private L17VolumetricPass pass;
+
+    public static void RegisterSceneController(L17VolumetricLightingController controller)
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        Scene scene = controller.gameObject.scene;
+        if (!scene.IsValid())
+        {
+            return;
+        }
+
+        activeSceneControllers[scene.handle] = controller;
+    }
+
+    public static void UnregisterSceneController(L17VolumetricLightingController controller)
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        Scene scene = controller.gameObject.scene;
+        if (!scene.IsValid())
+        {
+            return;
+        }
+
+        int sceneHandle = scene.handle;
+        if (activeSceneControllers.TryGetValue(sceneHandle, out L17VolumetricLightingController activeController)
+            && activeController == controller)
+        {
+            activeSceneControllers.Remove(sceneHandle);
+        }
+    }
 
     public void SetResources(Shader froxelCompositeShader, Texture2D blueNoise)
     {
@@ -322,13 +425,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
-        if (!settings.enabled || compositeMaterial == null)
-        {
-            return;
-        }
-
-        CameraType cameraType = renderingData.cameraData.cameraType;
-        if (cameraType != CameraType.Game && cameraType != CameraType.SceneView)
+        if (!TryGetRenderController(renderingData.cameraData.camera, renderingData.cameraData.cameraType, out _))
         {
             return;
         }
@@ -338,12 +435,12 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
 
     public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)
     {
-        if (!settings.enabled || compositeMaterial == null)
+        if (!TryGetRenderController(renderingData.cameraData.camera, renderingData.cameraData.cameraType, out L17VolumetricLightingController controller))
         {
             return;
         }
 
-        pass.Setup(renderer.cameraColorTargetHandle);
+        pass.Setup(renderer.cameraColorTargetHandle, controller);
         pass.blueNoiseTexture = blueNoiseTexture;
     }
 
@@ -353,5 +450,45 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         pass = null;
         CoreUtils.Destroy(compositeMaterial);
         compositeMaterial = null;
+    }
+
+    private bool TryGetRenderController(Camera camera, CameraType cameraType, out L17VolumetricLightingController controller)
+    {
+        controller = null;
+        if (!settings.enabled || compositeMaterial == null)
+        {
+            return false;
+        }
+
+        if (cameraType != CameraType.Game && cameraType != CameraType.SceneView)
+        {
+            return false;
+        }
+
+        if (!settings.requireSceneController)
+        {
+            return true;
+        }
+
+        if (cameraType == CameraType.SceneView)
+        {
+            return TryGetSceneController(SceneManager.GetActiveScene(), out controller);
+        }
+
+        if (camera != null && TryGetSceneController(camera.gameObject.scene, out controller))
+        {
+            return true;
+        }
+
+        return TryGetSceneController(SceneManager.GetActiveScene(), out controller);
+    }
+
+    private static bool TryGetSceneController(Scene scene, out L17VolumetricLightingController controller)
+    {
+        controller = null;
+        return scene.IsValid()
+            && activeSceneControllers.TryGetValue(scene.handle, out controller)
+            && controller != null
+            && controller.isActiveAndEnabled;
     }
 }

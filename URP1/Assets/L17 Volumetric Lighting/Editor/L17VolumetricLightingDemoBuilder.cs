@@ -76,6 +76,7 @@ public static class L17VolumetricLightingDemoBuilder
     private static void EnsureFolders()
     {
         Directory.CreateDirectory(Root + "/Editor");
+        Directory.CreateDirectory(Root + "/L17");
         Directory.CreateDirectory(Root + "/Materials");
         Directory.CreateDirectory(Root + "/Scripts");
         Directory.CreateDirectory(Root + "/Shaders");
@@ -110,7 +111,14 @@ public static class L17VolumetricLightingDemoBuilder
         SerializedProperty property = serialized.FindProperty(name);
         if (property != null)
         {
-            property.boolValue = value;
+            if (property.propertyType == SerializedPropertyType.Boolean)
+            {
+                property.boolValue = value;
+            }
+            else if (property.propertyType == SerializedPropertyType.Integer)
+            {
+                property.intValue = value ? 1 : 0;
+            }
         }
     }
 
@@ -119,7 +127,14 @@ public static class L17VolumetricLightingDemoBuilder
         SerializedProperty property = serialized.FindProperty(name);
         if (property != null)
         {
-            property.floatValue = value;
+            if (property.propertyType == SerializedPropertyType.Float)
+            {
+                property.floatValue = value;
+            }
+            else if (property.propertyType == SerializedPropertyType.Integer)
+            {
+                property.intValue = Mathf.RoundToInt(value);
+            }
         }
     }
 
@@ -128,7 +143,18 @@ public static class L17VolumetricLightingDemoBuilder
         SerializedProperty property = serialized.FindProperty(name);
         if (property != null)
         {
-            property.intValue = value;
+            if (property.propertyType == SerializedPropertyType.Integer)
+            {
+                property.intValue = value;
+            }
+            else if (property.propertyType == SerializedPropertyType.Enum)
+            {
+                property.enumValueIndex = Mathf.Clamp(value, 0, property.enumDisplayNames.Length - 1);
+            }
+            else if (property.propertyType == SerializedPropertyType.Boolean)
+            {
+                property.boolValue = value != 0;
+            }
         }
     }
 
@@ -201,6 +227,7 @@ public static class L17VolumetricLightingDemoBuilder
         feature.SetActive(true);
         feature.SetResources(compositeShader, blueNoise);
         feature.settings.enabled = true;
+        feature.settings.requireSceneController = true;
         feature.settings.downsample = 2;
         feature.settings.froxelDepth = 96;
         feature.settings.maxDistance = 58f;
@@ -506,6 +533,7 @@ public static class L17VolumetricLightingDemoBuilder
         renderer.sharedMaterial = material;
         renderer.shadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
         renderer.receiveShadows = receiveShadows;
+        GameObjectUtility.SetStaticEditorFlags(cube, StaticEditorFlags.BatchingStatic);
 
         Collider collider = cube.GetComponent<Collider>();
         if (collider != null)

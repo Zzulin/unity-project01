@@ -15,6 +15,7 @@ MonoBehaviour:
   m_Active: 1
   settings:
     enabled: 1
+    requireSceneController: 1
     downsample: 2
     froxelDepth: 96
     maxDistance: 58
@@ -22,7 +23,7 @@ MonoBehaviour:
     density: 0.24
     extinction: 0.68
     intensity: 3.25
-    anisotropy: 0.78
+    anisotropy: 0.752
     shadowFloor: 0.015
     multiScatter: 0.32
     heightFalloff: 0.22
