@@ -137,35 +137,35 @@ Shader "Mypbr/pbr_1"
                float ggx_l=GeometrySchlickGGX(NdotL,roughness);
                return ggx_v*ggx_l;
            }
-           float FresnelSchlick(float VdotH,float F0)
+           float FresnelSchlick(float VdotH,float3 F0)
            {
-               float OneminF0=1-F0;
+               float3 OneminF0=1-F0;
                return F0+OneminF0*pow(max(0,1-VdotH),5);
            }
-           float3 FresnelSchlickNdotVRoughness(float NdotV,float F0,float roughness)
+           float3 FresnelSchlickNdotVRoughness(float NdotV,float3 F0,float roughness)
            {
-               float OneminF0=max((1-roughness),F0)-F0;
+               float3 OneminF0=max((1-roughness),F0)-F0;
                return F0+OneminF0*pow(max(0,1-NdotV),5);
            }
            float3 CalculateBRDF(float3 normalWS,float3 viewDirWS,Light mainLight,float3 LightDir,float3 LightColor,float roughness,float metallic,float3 Albedo,float3 F0)
            {
                float3 halfDir=normalize(LightDir+viewDirWS);
-               float NdotL=dot(normalWS,LightDir);
-               float NdotV=dot(normalWS,viewDirWS);
-               float NdotH=dot(normalWS,halfDir);
-               float VdotH=dot(viewDirWS,halfDir);
+               float NdotL = saturate(dot(normalWS, LightDir));
+               float NdotV = saturate(dot(normalWS, viewDirWS));
+               float NdotH = saturate(dot(normalWS, halfDir));
+               float VdotH = saturate(dot(viewDirWS, halfDir));
                //直接光
                
                float D=DistributionGGX(NdotH,roughness);
                float G=GeometrySmith(NdotV,NdotL,roughness);
-               float F=FresnelSchlick(VdotH,F0);//菲涅尔项 反射率随角度变化
+               float3 F=FresnelSchlick(VdotH,F0);//菲涅尔项 反射率随角度变化
                
                float3 KS=F;
                float3 KD=float3(1,1,1)-KS;
                KD*=1-metallic;//非金属才会漫反射
                
                float3 numerator=F*D*G;
-               float demonimator=4*NdotL*NdotV;
+               float demonimator = max(4.0 * NdotL * NdotV, 0.0001);
                float3 specular= numerator/demonimator;
                float3 diffuse=KD*Albedo/(PI);
                float3 radiance=LightColor*mainLight.shadowAttenuation*mainLight.distanceAttenuation;//LightColor*阴影衰减*距离衰减
