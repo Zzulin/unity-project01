@@ -21,6 +21,7 @@
 - 场景管理：几何模型统一收纳到 `L17 Room Geometry` 下；功能对象保留在根级
 - 跨场景行为：Renderer Data 中可以保持 L17 RendererFeature 开启；只有当前场景存在启用的 `L17VolumetricLightingController` 时才会渲染 L17 体积光
 - 参数来源：Render pass 每帧从当前 Camera 所在 Scene 的 Controller 引用读取参数，避免不同场景通过共享 RendererFeature settings 互相污染
+- 表面材质：`L17TwoSidedInteriorLit` 保持原 shader 名称，内部升级为双面 URP PBR，并提供 Meta pass 支持 Lighting 面板烘焙间接光
 
 ## 主要资源
 
@@ -219,6 +220,27 @@ L17 Local Volume Bounds
 
 Shader 中用世界坐标判断积分点是否在体积盒内，并在边缘做 softness fade。这样室内有体积光，室外不会因为使用同一个 RendererFeature 就全局起雾。
 
+### 11. 表面 Shader PBR 化与烘焙支持
+
+新的要求是不再把 L17 场景模型材质切到其他 shader，而是直接把现有：
+
+```text
+L17 Volumetric Lighting/Two Sided Interior Lit
+```
+
+升级为 PBR 表面 shader。当前处理方式：
+
+- 保持 shader 名称和材质引用不变，避免场景材质重新绑定。
+- ForwardLit pass 改为 GGX PBR：Metallic、Roughness、Smoothness、Normal、Occlusion、Specular、Environment 都作为可调参数暴露。
+- 环境镜面反射改用 URP `GlossyEnvironmentReflection`，支持 reflection probe 采样、probe blending 和 box projection，而不是只手动读取单个 `unity_SpecCube0`。
+- 保留旧的 `ShadowColor`、`WrapDiffuse`、`AmbientBoost` 作为低强度艺术补偿，避免旧材质观感突然断层。
+- 补齐 `ShadowCaster`、`DepthOnly`、`DepthNormals` pass，并用 L17 自己的 `Meta` pass 明确向 Lightmapper 输出 `_BaseMap * _BaseColor`。
+- 三个 L17 材质已写入默认 PBR 参数，并开启 Double Sided GI。
+- Builder 后续重建场景时会把几何体显式标记为 `ContributeGI` 和 `ReflectionProbeStatic`，保证 Lighting 面板点击 Generate Lighting 时可以参与间接光烘焙，Baked Reflection Probe 也能捕获室内几何。
+- `Low Angle Sun` 必须是 Mixed，不能是 Realtime；否则 lightmap 会没有太阳的间接反弹，表现为黑 lightmap。
+- L17 使用缩放后的 Unity primitive cube 拼房间时，默认 lightmap UV 会重叠，且仅关闭 `Preserve UVs` 后仍可能无法稳定解决 `Occupied Texels: 0.0`。
+- 当前已生成 `Assets/L17 Volumetric Lighting/Meshes/L17_LightmapReadyCube.asset`，该 mesh 有 24 顶点、12 三角面、法线、切线和明确不重叠的 UV2；当前房间 18 个 MeshFilter 已替换为该 mesh。
+
 ### 11. 兼容天空盒
 
 后续场景加入了 `Skybox_Sunset`。
@@ -375,6 +397,36 @@ L17 Volumetric Lighting/Two Sided Interior Lit
 - `Low Angle Sun` 回到 realtime lightmapping 状态。
 - Builder 不再默认设置 ContributeGI / ReceiveGI Lightmaps。
 
+## 18. 重新推进 PBR 表面烘焙与黑图修复
+
+目标：
+
+- 保留当前实时体积光管线不变。
+- 让 L17 室内模型材质可以参与 Unity Lighting 面板的 Baked Indirect 烘焙。
+- 让房间暗部获得 lightmap 间接光，同时不让体积 raymarch 丢失主光 shadow map。
+
+实现内容：
+
+- `L17TwoSidedInteriorLit.shader` 在原 shader 名称下重做为双面 URP PBR 表面 Shader。
+- ForwardLit 支持 `LIGHTMAP_ON`、`DIRLIGHTMAP_COMBINED`、`SHADOWS_SHADOWMASK`、主光阴影、附加光和 reflection probe。
+- 暴露 Base Color、Metallic、Roughness、Smoothness、Normal、AO、Specular Strength、Environment Strength 等 PBR 参数。
+- Meta pass 改为直接输出材质 `BaseMap * BaseColor` 作为 Lightmapper Albedo，避免把金属/粗糙度折算进烘焙输入导致 Lightmapper 读到过暗值。
+- `Low Angle Sun` 使用 Mixed，用于 Baked Indirect 时保留运行时方向光和 shadow map。
+- 房间几何保持 `ContributeGI` / `ReflectionProbeStatic`，用于 lightmap 和 reflection probe 捕获。
+- Builder 以后不再创建 Unity 内置 primitive cube，而是统一使用 `Assets/L17 Volumetric Lighting/Meshes/L17_LightmapReadyCube.asset`。
+
+黑图根因修复：
+
+- 第一轮修复只解决了 primitive cube UV2 重叠问题，生成了独立 UV2 mesh。
+- 后续发现该自定义 mesh 的三角形绕序与法线方向相反。
+- 实时渲染因为双面材质仍能显示，但 Lightmapper 光线追踪会更依赖面朝向，导致有 UV chart、但烘焙 texel 仍接近全黑。
+- 已将 cube face 索引从 `0,2,1 / 0,3,2` 改为 `0,1,2 / 0,2,3`，并重新写入现有 mesh 资产。
+
+当前状态：
+
+- 旧黑 lightmap 不会自动变亮，需要重新点击 Lighting 面板 `Generate Lighting` 覆盖。
+- 如果重新烘焙后仍出现黑图，下一步应临时用 URP/Lit 材质交叉验证 Lightmapper 输入，判断问题是否还在自定义 shader Meta pass。
+
 ## 代码关系
 
 ```mermaid
@@ -408,6 +460,8 @@ flowchart LR
 - `dotnet build Assembly-CSharp-Editor.csproj --no-restore`：0 warning / 0 error
 - UnitySkills `debug_check_compilation`：未处于编译 / 刷新状态
 - Unity Console Error：0
+- `L17TwoSidedInteriorLit.shader` `shader_check_errors`：0 error / 0 message
+- `L17_LightmapReadyCube.asset`：24 vertices、12 triangles、hasUV2 true、hasNormals true、hasTangents true
 - UnitySkills `validate_missing_references`：0 issues
 
 历史记录中 `Hidden/L17/Froxel Volumetric Composite` 的 `shader_check_errors` 曾返回 `messageCount=1`，但 Unity Console Warning / Error 均为 0，当前按 ShaderUtil 内部 message 残留记录。

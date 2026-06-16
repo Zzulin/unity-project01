@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -20,6 +21,8 @@ public static class L17VolumetricLightingDemoBuilder
     private const string FloorMaterialPath = Root + "/Materials/L17_DustyFloor.mat";
     private const string WoodMaterialPath = Root + "/Materials/L17_WindowFrame.mat";
     private const string VolumeProfilePath = Root + "/Materials/L17_PostProcessProfile.asset";
+    private const string LightingSettingsPath = Root + "/L17/L17_LightingSettings.lighting";
+    private const string LightmapCubeMeshPath = Root + "/Meshes/L17_LightmapReadyCube.asset";
 
     private static readonly Vector3 SunDirection = new Vector3(-0.18f, -0.55f, -1f).normalized;
 
@@ -44,15 +47,16 @@ public static class L17VolumetricLightingDemoBuilder
             feature.SetActive(false);
         }
 
-        Material wallMaterial = LoadOrCreateInteriorMaterial(WallMaterialPath, "L17_RoomWall", new Color(0.62f, 0.58f, 0.5f, 1f), new Color(0.12f, 0.105f, 0.09f, 1f), 0.1f, 0.04f, 0.02f, 0.44f);
-        Material floorMaterial = LoadOrCreateInteriorMaterial(FloorMaterialPath, "L17_DustyFloor", new Color(0.42f, 0.37f, 0.29f, 1f), new Color(0.08f, 0.07f, 0.06f, 1f), 0.18f, 0.08f, 0.05f, 0.38f);
-        Material woodMaterial = LoadOrCreateInteriorMaterial(WoodMaterialPath, "L17_WindowFrame", new Color(0.21f, 0.14f, 0.08f, 1f), new Color(0.18f, 0.15f, 0.11f, 1f), 0.35f, 0.28f, 0.24f, 1.05f);
+        Material wallMaterial = LoadOrCreateInteriorMaterial(WallMaterialPath, "L17_RoomWall", new Color(0.62f, 0.58f, 0.5f, 1f), new Color(0.12f, 0.105f, 0.09f, 1f), 0f, 0.78f, 0.1f, 0.22f, 0.45f, 0.02f, 0.44f);
+        Material floorMaterial = LoadOrCreateInteriorMaterial(FloorMaterialPath, "L17_DustyFloor", new Color(0.42f, 0.37f, 0.29f, 1f), new Color(0.08f, 0.07f, 0.06f, 1f), 0f, 0.86f, 0.18f, 0.18f, 0.35f, 0.05f, 0.38f);
+        Material woodMaterial = LoadOrCreateInteriorMaterial(WoodMaterialPath, "L17_WindowFrame", new Color(0.21f, 0.14f, 0.08f, 1f), new Color(0.18f, 0.15f, 0.11f, 1f), 0.03f, 0.42f, 0.35f, 0.55f, 0.65f, 0.24f, 1.05f);
         VolumeProfile profile = LoadOrCreatePostProfile();
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "L17 Modern Froxel Volumetric Lighting";
 
         ConfigureRenderSettings();
+        AssignLightingSettings();
         Light sunLight = CreateSun();
         CreateCamera();
         CreatePostVolume(profile);
@@ -78,6 +82,7 @@ public static class L17VolumetricLightingDemoBuilder
         Directory.CreateDirectory(Root + "/Editor");
         Directory.CreateDirectory(Root + "/L17");
         Directory.CreateDirectory(Root + "/Materials");
+        Directory.CreateDirectory(Root + "/Meshes");
         Directory.CreateDirectory(Root + "/Scripts");
         Directory.CreateDirectory(Root + "/Shaders");
         Directory.CreateDirectory(Root + "/Textures");
@@ -268,6 +273,19 @@ public static class L17VolumetricLightingDemoBuilder
         RenderSettings.fog = false;
     }
 
+    private static void AssignLightingSettings()
+    {
+        LightingSettings settings = AssetDatabase.LoadAssetAtPath<LightingSettings>(LightingSettingsPath);
+        if (settings == null)
+        {
+            settings = new LightingSettings { name = "L17_LightingSettings" };
+            AssetDatabase.CreateAsset(settings, LightingSettingsPath);
+        }
+
+        Lightmapping.lightingSettings = settings;
+        EditorUtility.SetDirty(settings);
+    }
+
     private static void CreateCamera()
     {
         GameObject cameraObject = new GameObject("Main Camera");
@@ -306,6 +324,8 @@ public static class L17VolumetricLightingDemoBuilder
         light.shadowBias = 0.018f;
         light.shadowNormalBias = 0.18f;
         light.shadowNearPlane = 0.2f;
+        light.lightmapBakeType = LightmapBakeType.Mixed;
+        light.lightShadowCasterMode = LightShadowCasterMode.Everything;
         sun.transform.position = new Vector3(-2.8f, 7.2f, 13.5f);
         sun.transform.rotation = Quaternion.LookRotation(SunDirection, Vector3.up);
         RenderSettings.sun = light;
@@ -392,24 +412,24 @@ public static class L17VolumetricLightingDemoBuilder
         CreateCube("Room Wall Right", new Vector3(8.25f, 3.1f, 0f), new Vector3(0.35f, 6.7f, 18f), wallMaterial, true, true, parent);
         CreateCube("Room Back Wall", new Vector3(0f, 3.1f, -8.7f), new Vector3(17f, 6.7f, 0.35f), wallMaterial, true, true, parent);
 
-        CreateCube("Window Wall Left Fill", new Vector3(-5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true, parent);
-        CreateCube("Window Wall Right Fill", new Vector3(5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true, parent);
-        CreateCube("Window Wall Lower Fill", new Vector3(0f, 0.78f, 8.45f), new Vector3(6.25f, 1.56f, 0.35f), wallMaterial, true, true, parent);
-        CreateCube("Window Wall Upper Fill", new Vector3(0f, 5.78f, 8.45f), new Vector3(6.25f, 1.44f, 0.35f), wallMaterial, true, true, parent);
+        CreateCube("Window Wall Left Fill", new Vector3(-5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true, parent, false);
+        CreateCube("Window Wall Right Fill", new Vector3(5.65f, 3.1f, 8.45f), new Vector3(5.3f, 6.7f, 0.35f), wallMaterial, true, true, parent, false);
+        CreateCube("Window Wall Lower Fill", new Vector3(0f, 0.78f, 8.45f), new Vector3(6.25f, 1.56f, 0.35f), wallMaterial, true, true, parent, false);
+        CreateCube("Window Wall Upper Fill", new Vector3(0f, 5.78f, 8.45f), new Vector3(6.25f, 1.44f, 0.35f), wallMaterial, true, true, parent, false);
 
-        CreateCube("Deep Window Sill", new Vector3(0f, 1.68f, 8.18f), new Vector3(6.6f, 0.28f, 1.3f), woodMaterial, true, true, parent);
-        CreateCube("Window Top Frame", new Vector3(0f, 5.06f, 8.1f), new Vector3(6.7f, 0.25f, 1.2f), woodMaterial, true, true, parent);
-        CreateCube("Window Left Frame", new Vector3(-3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true, parent);
-        CreateCube("Window Right Frame", new Vector3(3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true, parent);
-        CreateCube("Window Center Mullion", new Vector3(0f, 3.36f, 8.03f), new Vector3(0.32f, 3.5f, 1.25f), woodMaterial, true, true, parent);
-        CreateCube("Window Upper Transom", new Vector3(0f, 4.12f, 8.02f), new Vector3(6.25f, 0.2f, 1.22f), woodMaterial, true, true, parent);
-        CreateCube("Window Lower Transom", new Vector3(0f, 2.75f, 8.02f), new Vector3(6.25f, 0.18f, 1.22f), woodMaterial, true, true, parent);
+        CreateCube("Deep Window Sill", new Vector3(0f, 1.68f, 8.18f), new Vector3(6.6f, 0.28f, 1.3f), woodMaterial, true, true, parent, false);
+        CreateCube("Window Top Frame", new Vector3(0f, 5.06f, 8.1f), new Vector3(6.7f, 0.25f, 1.2f), woodMaterial, true, true, parent, false);
+        CreateCube("Window Left Frame", new Vector3(-3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true, parent, false);
+        CreateCube("Window Right Frame", new Vector3(3.22f, 3.36f, 8.1f), new Vector3(0.25f, 3.55f, 1.2f), woodMaterial, true, true, parent, false);
+        CreateCube("Window Center Mullion", new Vector3(0f, 3.36f, 8.03f), new Vector3(0.32f, 3.5f, 1.25f), woodMaterial, true, true, parent, false);
+        CreateCube("Window Upper Transom", new Vector3(0f, 4.12f, 8.02f), new Vector3(6.25f, 0.2f, 1.22f), woodMaterial, true, true, parent, false);
+        CreateCube("Window Lower Transom", new Vector3(0f, 2.75f, 8.02f), new Vector3(6.25f, 0.18f, 1.22f), woodMaterial, true, true, parent, false);
     }
 
     private static void CreateInteriorCatchers(Material material, Transform parent)
     {
-        CreateCube("Dusty Pedestal", new Vector3(2.6f, 0.78f, -1.4f), new Vector3(1.6f, 1.55f, 1.6f), material, true, true, parent);
-        CreateCube("Thin Standing Panel", new Vector3(-2.9f, 1.65f, -0.2f), new Vector3(0.18f, 3.3f, 1.25f), new Vector3(0f, 24f, 0f), material, true, true, parent);
+        CreateCube("Dusty Pedestal", new Vector3(2.6f, 0.78f, -1.4f), new Vector3(1.6f, 1.55f, 1.6f), material, true, true, parent, false);
+        CreateCube("Thin Standing Panel", new Vector3(-2.9f, 1.65f, -0.2f), new Vector3(0.18f, 3.3f, 1.25f), new Vector3(0f, 24f, 0f), material, true, true, parent, false);
     }
 
     private static Transform FindOrCreateLocalVolumeBounds()
@@ -478,7 +498,18 @@ public static class L17VolumetricLightingDemoBuilder
         controller.RefreshImmediate();
     }
 
-    private static Material LoadOrCreateInteriorMaterial(string path, string name, Color baseColor, Color shadowColor, float smoothness, float specularStrength, float wrapDiffuse, float ambientBoost)
+    private static Material LoadOrCreateInteriorMaterial(
+        string path,
+        string name,
+        Color baseColor,
+        Color shadowColor,
+        float metallic,
+        float roughness,
+        float smoothness,
+        float specularStrength,
+        float environmentStrength,
+        float wrapDiffuse,
+        float ambientBoost)
     {
         Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
         Shader shader = Shader.Find("L17 Volumetric Lighting/Two Sided Interior Lit");
@@ -494,10 +525,19 @@ public static class L17VolumetricLightingDemoBuilder
 
         material.SetColor("_BaseColor", baseColor);
         material.SetColor("_ShadowColor", shadowColor);
+        material.SetFloat("_Metallic", metallic);
+        material.SetFloat("_Roughness", roughness);
         material.SetFloat("_Smoothness", smoothness);
         material.SetFloat("_SpecularStrength", specularStrength);
+        material.SetFloat("_EnvironmentStrength", environmentStrength);
+        material.SetFloat("_NormalMapScale", 1f);
+        material.SetFloat("_OcclusionStrength", 1f);
+        material.SetFloat("_Cull", (float)CullMode.Off);
+        material.SetFloat("_AlphaClip", 0f);
+        material.SetFloat("_Cutoff", 0.5f);
         material.SetFloat("_WrapDiffuse", wrapDiffuse);
         material.SetFloat("_AmbientBoost", ambientBoost);
+        material.doubleSidedGI = true;
         EditorUtility.SetDirty(material);
         return material;
     }
@@ -517,10 +557,18 @@ public static class L17VolumetricLightingDemoBuilder
         return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows, parent);
     }
 
-    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Vector3 rotationEuler, Material material, bool castShadows, bool receiveShadows, Transform parent)
+    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material, bool castShadows, bool receiveShadows, Transform parent, bool contributeGi)
     {
-        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows, parent, contributeGi);
+    }
+
+    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Vector3 rotationEuler, Material material, bool castShadows, bool receiveShadows, Transform parent, bool contributeGi = true)
+    {
+        GameObject cube = new GameObject(name);
         cube.name = name;
+        MeshFilter filter = cube.AddComponent<MeshFilter>();
+        filter.sharedMesh = LoadOrCreateLightmapCubeMesh();
+        MeshRenderer renderer = cube.AddComponent<MeshRenderer>();
         cube.transform.position = position;
         cube.transform.rotation = Quaternion.Euler(rotationEuler);
         cube.transform.localScale = scale;
@@ -529,19 +577,138 @@ public static class L17VolumetricLightingDemoBuilder
             cube.transform.SetParent(parent, true);
         }
 
-        MeshRenderer renderer = cube.GetComponent<MeshRenderer>();
         renderer.sharedMaterial = material;
         renderer.shadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
         renderer.receiveShadows = receiveShadows;
-        GameObjectUtility.SetStaticEditorFlags(cube, StaticEditorFlags.BatchingStatic);
-
-        Collider collider = cube.GetComponent<Collider>();
-        if (collider != null)
+        SerializedObject rendererSerialized = new SerializedObject(renderer);
+        SetBool(rendererSerialized, "m_PreserveUVs", false);
+        SerializedProperty scaleInLightmap = rendererSerialized.FindProperty("m_ScaleInLightmap");
+        if (scaleInLightmap != null)
         {
-            Object.DestroyImmediate(collider);
+            scaleInLightmap.floatValue = contributeGi ? 1f : 0f;
         }
 
+        SerializedProperty receiveGi = rendererSerialized.FindProperty("m_ReceiveGI");
+        if (receiveGi != null)
+        {
+            receiveGi.intValue = contributeGi ? 1 : 2;
+        }
+
+        rendererSerialized.ApplyModifiedPropertiesWithoutUndo();
+        StaticEditorFlags staticFlags =
+            StaticEditorFlags.BatchingStatic |
+            StaticEditorFlags.OccluderStatic |
+            StaticEditorFlags.OccludeeStatic |
+            StaticEditorFlags.ReflectionProbeStatic;
+        if (contributeGi)
+        {
+            staticFlags |= StaticEditorFlags.ContributeGI;
+        }
+
+        GameObjectUtility.SetStaticEditorFlags(cube, staticFlags);
+
         return cube;
+    }
+
+    private static Mesh LoadOrCreateLightmapCubeMesh()
+    {
+        Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(LightmapCubeMeshPath);
+        EnsureFolders();
+        bool createAsset = mesh == null;
+        if (createAsset)
+        {
+            mesh = new Mesh
+            {
+                name = "L17_LightmapReadyCube"
+            };
+        }
+
+        RebuildLightmapCubeMesh(mesh);
+        EditorUtility.SetDirty(mesh);
+        if (createAsset)
+        {
+            AssetDatabase.CreateAsset(mesh, LightmapCubeMeshPath);
+        }
+
+        AssetDatabase.SaveAssets();
+        return mesh;
+    }
+
+    private static void RebuildLightmapCubeMesh(Mesh mesh)
+    {
+        List<Vector3> vertices = new List<Vector3>(24);
+        List<Vector3> normals = new List<Vector3>(24);
+        List<Vector4> tangents = new List<Vector4>(24);
+        List<Vector2> uv0 = new List<Vector2>(24);
+        List<Vector2> uv2 = new List<Vector2>(24);
+        List<int> indices = new List<int>(36);
+
+        AddCubeFace(vertices, normals, tangents, uv0, uv2, indices, 0, new Vector3(0, 0, 0.5f), Vector3.right, Vector3.up, Vector3.forward);
+        AddCubeFace(vertices, normals, tangents, uv0, uv2, indices, 1, new Vector3(0, 0, -0.5f), Vector3.left, Vector3.up, Vector3.back);
+        AddCubeFace(vertices, normals, tangents, uv0, uv2, indices, 2, new Vector3(0.5f, 0, 0), Vector3.back, Vector3.up, Vector3.right);
+        AddCubeFace(vertices, normals, tangents, uv0, uv2, indices, 3, new Vector3(-0.5f, 0, 0), Vector3.forward, Vector3.up, Vector3.left);
+        AddCubeFace(vertices, normals, tangents, uv0, uv2, indices, 4, new Vector3(0, 0.5f, 0), Vector3.right, Vector3.back, Vector3.up);
+        AddCubeFace(vertices, normals, tangents, uv0, uv2, indices, 5, new Vector3(0, -0.5f, 0), Vector3.right, Vector3.forward, Vector3.down);
+
+        mesh.Clear();
+        mesh.indexFormat = IndexFormat.UInt16;
+        mesh.SetVertices(vertices);
+        mesh.SetNormals(normals);
+        mesh.SetTangents(tangents);
+        mesh.SetUVs(0, uv0);
+        mesh.SetUVs(1, uv2);
+        mesh.SetTriangles(indices, 0);
+        mesh.RecalculateBounds();
+    }
+
+    private static void AddCubeFace(
+        List<Vector3> vertices,
+        List<Vector3> normals,
+        List<Vector4> tangents,
+        List<Vector2> uv0,
+        List<Vector2> uv2,
+        List<int> indices,
+        int faceIndex,
+        Vector3 center,
+        Vector3 axisU,
+        Vector3 axisV,
+        Vector3 normal)
+    {
+        int start = vertices.Count;
+        vertices.Add(center - axisU * 0.5f - axisV * 0.5f);
+        vertices.Add(center + axisU * 0.5f - axisV * 0.5f);
+        vertices.Add(center + axisU * 0.5f + axisV * 0.5f);
+        vertices.Add(center - axisU * 0.5f + axisV * 0.5f);
+
+        for (int index = 0; index < 4; index++)
+        {
+            normals.Add(normal);
+            tangents.Add(new Vector4(axisU.x, axisU.y, axisU.z, 1f));
+        }
+
+        uv0.Add(new Vector2(0f, 0f));
+        uv0.Add(new Vector2(1f, 0f));
+        uv0.Add(new Vector2(1f, 1f));
+        uv0.Add(new Vector2(0f, 1f));
+
+        int column = faceIndex % 3;
+        int row = faceIndex / 3;
+        Vector2 cellMin = new Vector2(column / 3f, row / 2f);
+        Vector2 cellSize = new Vector2(1f / 3f, 1f / 2f);
+        Vector2 padding = new Vector2(0.012f, 0.018f);
+        Vector2 min = cellMin + padding;
+        Vector2 max = cellMin + cellSize - padding;
+        uv2.Add(new Vector2(min.x, min.y));
+        uv2.Add(new Vector2(max.x, min.y));
+        uv2.Add(new Vector2(max.x, max.y));
+        uv2.Add(new Vector2(min.x, max.y));
+
+        indices.Add(start + 0);
+        indices.Add(start + 1);
+        indices.Add(start + 2);
+        indices.Add(start + 0);
+        indices.Add(start + 2);
+        indices.Add(start + 3);
     }
 
 }

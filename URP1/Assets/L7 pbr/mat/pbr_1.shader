@@ -106,9 +106,11 @@ Shader "Mypbr/pbr_1"
                o.NormalWS = TransformObjectToWorldNormal(v.normal);
                o.uv = TRANSFORM_TEX(v.uv, _BaseMap);
                o.viewDirWS=GetWorldSpaceViewDir(o.positionWS);
-               o.tangentWS=normalize(TransformObjectToWorld(v.tangent.xyz));
+               o.tangentWS=normalize(TransformObjectToWorldDir(v.tangent.xyz));
                //乘以切向的w分量保证如果有模型对称的情况让副切线的方向一致
-               o.bitangentWS=normalize(cross(o.NormalWS,o.tangentWS)*v.tangent.w);
+               float tangentSign = v.tangent.w * GetOddNegativeScale();
+               o.bitangentWS = normalize(cross(o.NormalWS, o.tangentWS) * tangentSign);
+               //o.bitangentWS=normalize(cross(o.NormalWS,o.tangentWS)*v.tangent.w);
                #ifdef LIGHTMAP_ON
                //需要平移和缩放uv 适应烘焙出来的Lightmap
                o.lightmapUV.xy=v.lightmapUV*unity_LightmapST.xy+unity_LightmapST.zw;
@@ -137,7 +139,7 @@ Shader "Mypbr/pbr_1"
                float ggx_l=GeometrySchlickGGX(NdotL,roughness);
                return ggx_v*ggx_l;
            }
-           float FresnelSchlick(float VdotH,float3 F0)
+           float3 FresnelSchlick(float VdotH,float3 F0)
            {
                float3 OneminF0=1-F0;
                return F0+OneminF0*pow(max(0,1-VdotH),5);
@@ -149,7 +151,7 @@ Shader "Mypbr/pbr_1"
            }
            float3 CalculateBRDF(float3 normalWS,float3 viewDirWS,Light mainLight,float3 LightDir,float3 LightColor,float roughness,float metallic,float3 Albedo,float3 F0)
            {
-               float3 halfDir=normalize(LightDir+viewDirWS);
+               float3 halfDir=SafeNormalize(LightDir+viewDirWS);
                float NdotL = saturate(dot(normalWS, LightDir));
                float NdotV = saturate(dot(normalWS, viewDirWS));
                float NdotH = saturate(dot(normalWS, halfDir));
@@ -167,9 +169,9 @@ Shader "Mypbr/pbr_1"
                float3 numerator=F*D*G;
                float demonimator = max(4.0 * NdotL * NdotV, 0.0001);
                float3 specular= numerator/demonimator;
-               float3 diffuse=KD*Albedo/(PI);
+               float3 diffuse=KD*Albedo.rgb/(PI);
                float3 radiance=LightColor*mainLight.shadowAttenuation*mainLight.distanceAttenuation;//LightColor*阴影衰减*距离衰减
-               float3 mainlight=(diffuse+specular)*radiance*max(0.01,NdotL);
+               float3 mainlight=(diffuse+specular)*radiance*NdotL;
                //return float3(D,D,D);
                return mainlight;
            }
@@ -206,7 +208,7 @@ Shader "Mypbr/pbr_1"
                float3 LightDir=mainLight.direction;
                float3 LightColor=mainLight.color;
                //float3 shadowAttenuation=float3(mainLight.shadowAttenuation,mainLight.shadowAttenuation,mainLight.shadowAttenuation);
-               float3 F0=lerp(0.04,Albedo,metallic);//根据金属度插值 金属度为0时 为0.04 金属的F0为Albedo记录的
+               float3 F0=lerp(0.04,Albedo.rgb,metallic);//根据金属度插值 金属度为0时 为0.04 金属的F0为Albedo记录的
                float3 mainlight=CalculateBRDF(normalWS,viewDirWS,mainLight,LightDir,LightColor,roughness,metallic,Albedo,F0);
                #ifdef _ADDITIONAL_LIGHTS
                uint additionalLightCount=GetAdditionalLightsCount();
@@ -236,7 +238,7 @@ Shader "Mypbr/pbr_1"
                #else
                irradience=SampleSH(normalWS);
                #endif
-               float KD=(1-KS)*(1-metallic);
+               float3 KD=(1-KS)*(1-metallic);
                float3 diffuseAmbient=KD*irradience*Albedo;
                //间接光漫反射+间接光镜面反射
                float occlusion=SAMPLE_TEXTURE2D(_OcclusionMap,sampler_OcclusionMap,i.uv).r;
