@@ -21,6 +21,8 @@ Shader "L12 Grass/Interactive GPU Grass"
         _InteractionFlattenStrength ("Interaction Flatten Strength", Range(0, 2)) = 0.85
         _DensityTexture ("Density Texture", 2D) = "white" {}
         _InteractionTexture ("Interaction Texture", 2D) = "black" {}
+        _TerrainHeightParams ("Terrain Height Params", Vector) = (0, 0, 0.018, 0.045)
+        _TerrainHeightOffset ("Terrain Height Offset", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -77,6 +79,8 @@ Shader "L12 Grass/Interactive GPU Grass"
                 float _TipBrightness;
                 float _InteractionStrength;
                 float _InteractionFlattenStrength;
+                float4 _TerrainHeightParams;
+                float4 _TerrainHeightOffset;
             CBUFFER_END
 
             struct Attributes
@@ -112,6 +116,17 @@ Shader "L12 Grass/Interactive GPU Grass"
                 return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
             }
 
+            float SampleTerrainHeight(float2 worldXZ)
+            {
+                float2 p = worldXZ + _TerrainHeightOffset.xy;
+                float frequency = max(_TerrainHeightParams.z, 0.0001);
+                float detailFrequency = max(_TerrainHeightParams.w, 0.0001);
+                float broad = sin(p.x * frequency) * cos(p.y * frequency * 0.82);
+                float longWave = sin((p.x * 0.62 + p.y * 0.78) * frequency * 0.62);
+                float detail = sin(p.x * detailFrequency) * sin(p.y * detailFrequency * 0.73);
+                return _TerrainHeightParams.x + _TerrainHeightParams.y * (broad * 0.58 + longWave * 0.30 + detail * 0.12);
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -142,6 +157,7 @@ Shader "L12 Grass/Interactive GPU Grass"
 
                 float2 scaledBladeXZ = blade.xy * _FieldScale.xy;
                 float3 rootWS = float3(_FieldOrigin.x + scaledBladeXZ.x, _FieldOrigin.y, _FieldOrigin.z + scaledBladeXZ.y);
+                rootWS.y += SampleTerrainHeight(rootWS.xz);
                 float2 bendXZ = 0;
                 float2 fieldUV = saturate((scaledBladeXZ + _FieldSize.xy * 0.5) / max(_FieldSize.xy, 0.001));
 

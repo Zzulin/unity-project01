@@ -15,11 +15,11 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 1
-  m_FogColor: {r: 0.56, g: 0.65, b: 0.76, a: 1}
+  m_FogColor: {r: 0.6, g: 0.72, b: 0.78, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 55
-  m_LinearFogEnd: 160
+  m_LinearFogStart: 150
+  m_LinearFogEnd: 900
   m_AmbientSkyColor: {r: 0.38, g: 0.5, b: 0.68, a: 1}
   m_AmbientEquatorColor: {r: 0.3, g: 0.37, b: 0.48, a: 1}
   m_AmbientGroundColor: {r: 0.14, g: 0.15, b: 0.18, a: 1}
@@ -122,6 +122,112 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &70259567
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 70259568}
+  - component: {fileID: 70259571}
+  - component: {fileID: 70259570}
+  - component: {fileID: 70259569}
+  m_Layer: 0
+  m_Name: LXII Grass Ground
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &70259568
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 70259567}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1711800484}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!64 &70259569
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 70259567}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 314b64b00386d4dc5baf5c2523e9b2ee, type: 2}
+--- !u!23 &70259570
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 70259567}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9ebe23f943f584c4dac1f298522ad26f, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &70259571
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 70259567}
+  m_Mesh: {fileID: 4300000, guid: 314b64b00386d4dc5baf5c2523e9b2ee, type: 2}
 --- !u!1 &112724872
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,8 +259,8 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be76e5f14cfee674cb30b491fb72b09b, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   boost: 3.5
   positionLerpTime: 0.2
   middleMousePanSensitivity: 0.015
@@ -226,8 +332,8 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.1
-  far clip plane: 850
-  field of view: 48
+  far clip plane: 1200
+  field of view: 55
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -253,8 +359,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 112724872}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0000000045690842, y: 0.9945219, z: -0.104528464, w: -0.000000043471935}
-  m_LocalPosition: {x: 0.0000003078446, y: 2.198482, z: 3.5213313}
+  m_LocalRotation: {x: -0.0000000015255054, y: 0.99939084, z: -0.034899496, w: -0.00000004368476}
+  m_LocalPosition: {x: 0.00000055814286, y: 2.3464413, z: 6.3844104}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -270,8 +376,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: ""
-  m_EditorClassIdentifier: ""
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
@@ -317,14 +423,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 356058346}
-  followOffset: {x: 0, y: 1.45, z: 0}
-  distance: 3.6
-  minDistance: 2.2
-  maxDistance: 5.2
+  followOffset: {x: 0, y: 1.65, z: 0}
+  distance: 6.4
+  minDistance: 3.2
+  maxDistance: 8.8
   yaw: 180
-  pitch: 12
-  minPitch: -10
-  maxPitch: 45
+  pitch: 4
+  minPitch: -8
+  maxPitch: 38
   yawSensitivity: 180
   pitchSensitivity: 120
   zoomSensitivity: 1.2
@@ -349,7 +455,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6375e930fdec61345947c2ae3a2fb417, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6375e930fdec61345947c2ae3a2fb417, type: 3}
       propertyPath: m_LocalPosition.z
@@ -488,13 +594,13 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 1.9
-  m_Radius: 0.28
+  m_Height: 1.5264077
+  m_Radius: 0.22
   m_SlopeLimit: 50
   m_StepOffset: 0.3
   m_SkinWidth: 0.03
   m_MinMoveDistance: 0
-  m_Center: {x: 0, y: 0.95, z: 0}
+  m_Center: {x: 0, y: 0.76320386, z: 0}
 --- !u!114 &356058348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -507,8 +613,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 908ead8701e754921a78f7223c131aa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radius: 0.81
-  strength: 0.429
+  radius: 3
+  strength: 1
   gizmoColor: {r: 0.2, g: 0.8, b: 1, a: 0.35}
 --- !u!114 &356058349
 MonoBehaviour:
@@ -706,6 +812,92 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &704084292
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 704084293}
+  - component: {fileID: 704084294}
+  m_Layer: 0
+  m_Name: LXII Grass Field
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &704084293
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704084292}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1711800484}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &704084294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704084292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebabbe55c48bb41c2bb8d0c9b3583aef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grassMaterial: {fileID: 2100000, guid: 822aed92ddff74c59a2dfb189752e754, type: 2}
+  cullingCompute: {fileID: 7200000, guid: 365ef641ec191414896c321d18e7dd00, type: 3}
+  densityMap: {fileID: 2800000, guid: 8259c172ea03443f1a2e22822476c63b, type: 2}
+  bladesPerSide: 1024
+  fieldSize: 420
+  preserveDensityWhenResized: 1
+  targetBladeSpacing: 0.169
+  maxBladesPerAxis: 4096
+  chunksPerSide: 20
+  bladeHeight: 0.71
+  bladeWidth: 0.076
+  bladeRootWidthScale: 1
+  minBladeHeightScale: 0.45
+  maxBladeHeightScale: 1.55
+  shapeVariation: 0.859
+  maxDrawDistance: 210
+  cullPadding: 3
+  lod0Distance: 30
+  lod1Distance: 92
+  densityThreshold: 0.04
+  densityInfluence: 1.35
+  windStrength: 0.489
+  windScale: 0.15
+  windSpeed: 2.2
+  windDirection: {x: 0.89856756, y: 0.4388353}
+  gustStrength: 0.72
+  gustFrequency: 0.045
+  gustSpeed: 4.6
+  gustWidth: 0.38
+  gustNoiseScale: 0.042
+  interactionTextureSize: 512
+  interactionStrength: 0.71
+  interactionFlattenStrength: 0.36
+  interactionFadeSpeed: 1.46
+  baseColor: {r: 0.08, g: 0.26, b: 0.1, a: 1}
+  tipColor: {r: 0.34, g: 0.58, b: 0.18, a: 1}
+  tipBrightness: 1.04
+  terrainHeightAmplitude: 9
+  terrainHeightFrequency: 0.018
+  terrainDetailFrequency: 0.045
+  terrainHeightBase: 0
+  terrainHeightOffset: {x: 0, y: 0}
 --- !u!1 &965210078
 GameObject:
   m_ObjectHideFlags: 0
@@ -734,8 +926,8 @@ Transform:
   m_GameObject: {fileID: 965210078}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 82, z: 42}
-  m_LocalScale: {x: 620, y: 124, z: 620}
+  m_LocalPosition: {x: 0, y: 90, z: 120}
+  m_LocalScale: {x: 1600, y: 240, z: 1600}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1844354938}
@@ -750,21 +942,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d745af3d2feba400a8060b13f169e24a, type: 3}
-  m_Name: ""
-  m_EditorClassIdentifier: ""
+  m_Name: 
+  m_EditorClassIdentifier: 
   cloudMaterial: {fileID: 2100000, guid: 51b9af0eb8e4d45618868f7cbe80655a, type: 2}
   sunLight: {fileID: 605858153}
-  cloudColor: {r: 1, g: 0.93, b: 0.82, a: 1}
-  shadowColor: {r: 0.48, g: 0.56, b: 0.68, a: 1}
-  ambientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
-  density: 2.45
-  coverage: 0.52
-  weatherStrength: 0.72
-  shapeScale: 4.2
-  detailScale: 10.5
-  detailStrength: 0.32
-  bottomSoftness: 0.24
-  topSoftness: 0.28
+  cloudColor: {r: 0.92, g: 0.9, b: 0.84, a: 1}
+  shadowColor: {r: 0.34, g: 0.42, b: 0.52, a: 1}
+  ambientColor: {r: 0.3, g: 0.42, b: 0.58, a: 1}
+  density: 3.55
+  coverage: 0.5
+  weatherStrength: 0.82
+  shapeScale: 5.4
+  detailScale: 14
+  detailStrength: 0.52
+  bottomSoftness: 0.16
+  topSoftness: 0.3
   anvilBias: 0.56
   absorption: 2.45
   lightAbsorption: 2.7
@@ -774,10 +966,10 @@ MonoBehaviour:
   powderStrength: 0.86
   windDirection: {x: 1, y: 0, z: 0.18, w: 0}
   windSpeed: 3.2
-  noiseWorldSize: {x: 420, y: 180, z: 420}
+  noiseWorldSize: {x: 920, y: 260, z: 920}
   stepCount: 10
   lightStepCount: 0
-  opacity: 0.78
+  opacity: 0.84
 --- !u!23 &965210081
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -828,6 +1020,39 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 965210078}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1711800483
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1711800484}
+  m_Layer: 0
+  m_Name: LXII L12 Grass Root
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1711800484
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711800483}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 70259568}
+  - {fileID: 704084293}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1820804941
 GameObject:
   m_ObjectHideFlags: 0
@@ -892,7 +1117,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1844354938
 Transform:
   m_ObjectHideFlags: 0
@@ -909,226 +1134,6 @@ Transform:
   - {fileID: 965210079}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2100123400
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2100123401}
-  m_Layer: 0
-  m_Name: LXII L12 Grass Root
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2100123401
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100123400}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
-  m_ConstrainProportionsScale: 1
-  m_Children:
-  - {fileID: 2100123414}
-  - {fileID: 2100123422}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2100123410
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2100123414}
-  - component: {fileID: 2100123413}
-  - component: {fileID: 2100123412}
-  - component: {fileID: 2100123411}
-  m_Layer: 0
-  m_Name: LXII Grass Ground
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!23 &2100123411
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100123410}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9ebe23f943f584c4dac1f298522ad26f, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 1
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &2100123412
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100123410}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!33 &2100123413
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100123410}
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &2100123414
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100123410}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 7.2, y: 1, z: 7.2}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2100123401}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2100123420
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2100123422}
-  - component: {fileID: 2100123421}
-  m_Layer: 0
-  m_Name: LXII Grass Field
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2100123421
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100123420}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ebabbe55c48bb41c2bb8d0c9b3583aef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  grassMaterial: {fileID: 2100000, guid: 822aed92ddff74c59a2dfb189752e754, type: 2}
-  cullingCompute: {fileID: 7200000, guid: 365ef641ec191414896c321d18e7dd00, type: 3}
-  densityMap: {fileID: 2800000, guid: 8259c172ea03443f1a2e22822476c63b, type: 2}
-  bladesPerSide: 520
-  fieldSize: 72
-  preserveDensityWhenResized: 1
-  targetBladeSpacing: 0.085
-  maxBladesPerAxis: 373
-  chunksPerSide: 12
-  bladeHeight: 0.55
-  bladeWidth: 0.05
-  bladeRootWidthScale: 1
-  minBladeHeightScale: 0.49
-  maxBladeHeightScale: 1.68
-  shapeVariation: 0.781
-  maxDrawDistance: 96
-  cullPadding: 3
-  lod0Distance: 24
-  lod1Distance: 54
-  densityThreshold: 0.827
-  densityInfluence: 1.16
-  windStrength: 0.32
-  windScale: 0.18
-  windSpeed: 1.8
-  windDirection: {x: 0.89856756, y: 0.4388353}
-  gustStrength: 0.85
-  gustFrequency: 0.065
-  gustSpeed: 5.8
-  gustWidth: 0.34
-  gustNoiseScale: 0.055
-  interactionTextureSize: 256
-  interactionStrength: 3.6
-  interactionFlattenStrength: 0.494
-  interactionFadeSpeed: 2.6
-  baseColor: {r: 0.11, g: 0.34, b: 0.12, a: 1}
-  tipColor: {r: 0.46, g: 0.68, b: 0.22, a: 1}
-  tipBrightness: 1.003
---- !u!4 &2100123422
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2100123420}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.95000005, y: 0.95000005, z: 0.95000005}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 2100123401}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1136,6 +1141,6 @@ SceneRoots:
   - {fileID: 605858154}
   - {fileID: 112724876}
   - {fileID: 356058343}
-  - {fileID: 2100123401}
   - {fileID: 1820804943}
   - {fileID: 1844354938}
+  - {fileID: 1711800484}

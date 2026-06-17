@@ -39,27 +39,27 @@ Material:
     m_Floats:
     - _Absorption: 2.45
     - _AnvilBias: 0.56
-    - _BottomSoftness: 0.24
-    - _Coverage: 0.52
-    - _Density: 2.45
-    - _DetailScale: 10.5
-    - _DetailStrength: 0.32
+    - _BottomSoftness: 0.16
+    - _Coverage: 0.5
+    - _Density: 3.55
+    - _DetailScale: 14
+    - _DetailStrength: 0.52
     - _LightAbsorption: 2.7
     - _LightStepCount: 0
-    - _Opacity: 0.78
+    - _Opacity: 0.84
     - _PhaseBackward: -0.22
     - _PhaseForward: 0.52
     - _PowderStrength: 0.86
-    - _ShapeScale: 4.2
+    - _ShapeScale: 5.4
     - _SilverIntensity: 1.25
     - _StepCount: 10
-    - _TopSoftness: 0.28
-    - _WeatherStrength: 0.72
+    - _TopSoftness: 0.3
+    - _WeatherStrength: 0.82
     - _WindSpeed: 3.2
     m_Colors:
-    - _AmbientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
-    - _CloudColor: {r: 1, g: 0.93, b: 0.82, a: 1}
-    - _NoiseWorldSize: {r: 420, g: 180, b: 420, a: 0}
-    - _ShadowColor: {r: 0.48, g: 0.56, b: 0.68, a: 1}
+    - _AmbientColor: {r: 0.3, g: 0.42, b: 0.58, a: 1}
+    - _CloudColor: {r: 0.92, g: 0.9, b: 0.84, a: 1}
+    - _NoiseWorldSize: {r: 920, g: 260, b: 920, a: 0}
+    - _ShadowColor: {r: 0.34, g: 0.42, b: 0.52, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0.18, a: 0}
   m_BuildTextureStacks: []

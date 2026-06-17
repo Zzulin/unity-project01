@@ -45,16 +45,28 @@
 - LXII 当前已经接入 L13 体积云并写入场景：
   - 新增 `Tools/LXII/Setup L13 VolumeCloud In Game Scene`
   - 体积云使用 LXII 专用材质实例 `Assets/LXII game 整合/Materials/LXII_L13_RaymarchedCloud_Performance.mat`
-  - 云盒覆盖天空区域，位置 `{x: 0, y: 82, z: 42}`，缩放 `{x: 620, y: 124, z: 620}`
-  - 噪声世界尺度 `{x: 420, y: 180, z: 420}`，避免通过拉伸云盒改变云纹理比例
+  - 云盒覆盖天空区域，位置 `{x: 0, y: 90, z: 120}`，缩放 `{x: 1600, y: 240, z: 1600}`
+  - 噪声世界尺度 `{x: 920, y: 260, z: 920}`，避免通过拉伸云盒改变云纹理比例
   - 默认性能档为 `10 view steps / 0 light steps`，关闭碰撞、阴影和 motion vector，仅作为天空氛围体积层
-  - `Main Camera` 已使用 Skybox clear flags，far clip 至少为 `850`
-  - 本轮验证：`debug_check_compilation` 未处于编译/刷新状态，Unity Console Error 0，`validate_scene` 0 issues，`validate_missing_references` 0 issues；Profiler 快照约 `410 FPS / 2.44 ms / 49 batches / 49 draw calls / 82k triangles`
+  - `Main Camera` 已使用 Skybox clear flags，far clip 至少为 `1200`
+  - 场景雾距已拉远为 `150-900`，避免近处灰墙感
+  - 天空里不再保留远景云幕或椭球云团占位，只保留 `LXII Sky Volume Cloud` 一个 L13 体积云对象
 - LXII 当前已经接入可交互草地并写入场景：
-  - L12 草地区域已写入 `game.unity`
+  - L12 草地区域已从 72m 测试草坪升级为大世界预览版
+  - `LXII Grass Ground` 使用 960m 起伏地表 mesh：`Assets/LXII game 整合/Meshes/LXII_OpenWorldRollingGrassGround.asset`
+  - `LXII Grass Field` 覆盖 420m，`maxDrawDistance=210`，`chunksPerSide=20`，`bladesPerSide=1024`
+  - `targetBladeSpacing` 在 LXII 里之前不明显，是因为 420m 草场被 `maxBladesPerAxis=1024` 截断；当前 L12 上限范围已扩到 4096，目标草间距 Inspector 范围为 `0.02-1.0`，LXII 默认 `maxBladesPerAxis=2048`，`targetBladeSpacing=0.4` 可正常生成约 1050/轴
+  - L12 草 shader / culling compute 已补可选地形高度参数；默认高度为 0，不改变原 L12 平面 Demo 行为
   - 妮露已挂 `CharacterController`
   - 妮露已挂 `L12GrassInteractor`
-  - 角色移动时可对草地产生交互
+  - 角色移动时可在起伏地表上对草地产生交互
+- 本轮大世界预览验证：
+  - `debug_check_compilation` 未处于编译/刷新状态
+  - Unity Console Error 0
+  - `validate_scene` 0 issues
+  - `validate_missing_references` 0 issues
+  - `L12 Grass/Interactive GPU Grass` 的 `shader_check_errors` 为 0
+  - Profiler 静止快照：约 `49 batches / 49 draw calls / 246k triangles`
 - L12 草地当前已补充近期构建历史文档：2-card x 5 段三角草尖近景拓扑、缩放保持密度、`targetBladeSpacing` 滑条、`maxBladesPerAxis` 上限 1024、`Tip Brightness`、高低/叶形随机、中文 Inspector，以及 `chunksPerSide` 只做性能分块预筛而非视觉块状裁剪的说明。
 - LXII 当前已经具备拆分职责的第三人称角色控制基础，不再依赖单个临时测试驱动：
   - 输入、移动、动画切换职责已拆开
@@ -85,7 +97,7 @@
   - 当前验证：C# 双程序集 0 warning / 0 error，Unity Console Error 0，`scene_health_check` 0 findings；合成 shader 的 `shader_check_errors` 仍有 1 条 ShaderUtil 内部 message，但 Console Warning/Error 为 0
 
 ## 当前进度判断
-- LXII 已经从“空场景 + 单角色写入”推进到“妮露 + Humanoid + LXI 动作测试 + Inspector 收敛后的拆职责第三人称角色控制 + 第三人称摄像机 + L12 可交互草地 + L13 天空体积云已接入”的阶段。
+- LXII 已经从“空场景 + 单角色写入”推进到“妮露 + Humanoid + LXI 动作测试 + Inspector 收敛后的拆职责第三人称角色控制 + 第三人称摄像机 + L12 起伏大草原预览 + L13 大范围天空体积云已接入”的阶段。
 - 当前主线不再是单纯搭测试壳，也不再回退到 `LXIIAnimationTestDriver` 单脚本方案；后续继续控制局部穿模，并把 L14 雪按同一路径串入。
 
 ## 当前改动落点
@@ -95,7 +107,12 @@
 - `Assets/LXII game 整合/Editor/LXIIAnimationTestSetup.cs`
 - `Assets/LXII game 整合/Editor/LXIIL12GrassSetup.cs`
 - `Assets/LXII game 整合/Editor/LXIIL13VolumeCloudSetup.cs`
+- `Assets/LXII game 整合/Meshes/LXII_OpenWorldRollingGrassGround.asset`
 - `Assets/LXII game 整合/Materials/LXII_L13_RaymarchedCloud_Performance.mat`
+- `Assets/L12 grass/Scripts/L12GrassRenderer.cs`
+- `Assets/L12 grass/Shaders/L12InteractiveGrass.shader`
+- `Assets/L12 grass/Shaders/L12GrassCull.compute`
+- `Assets/Screenshots/LXII_OpenWorldGrassCloud_current_20260617_clean.png`
 - `Assets/LXII game 整合/Scripts/Animation/LXIIAnimationTestDriver.cs`（历史测试脚本，当前玩家对象已改用 `Scripts/Player/*` 控制链）
 - `Assets/LXII game 整合/Scripts/Camera/LXIIThirdPersonCameraFollow.cs`
 - `Assets/LXII game 整合/Scripts/Player/LXIIPlayerInputReader.cs`
@@ -122,7 +139,7 @@
 - 继续处理最明显、最常出现的局部穿模。
 - 把 L10.9 近距离屏幕抖动溶解 shader 接入 LXII 当前玩家链路。
 - 继续把 L14 雪接入 LXII 路径，不额外扩散范围。
-- 补一次 LXII L13 云层 Play Mode 观感与性能快照；当前静态配置目标为天空覆盖且默认 `10/0` 低成本档。
+- 后续如要从“大世界预览”升级为真正大世界，需要做草地/地形 streaming 分块，而不是继续静态放大单个草场。
 - 在当前基础控制链上继续补正式输入与交互，不回退到单脚本临时测试驱动。
 - 衣物和头发物理模拟不作为当前内建开发项；后续如要推进，默认按 Unity 插件或成熟现成方案接入。
 - 补一组 LXII 当前演示截图 / 录像。

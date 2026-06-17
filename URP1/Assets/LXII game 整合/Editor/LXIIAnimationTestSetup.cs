@@ -290,12 +290,13 @@ public static class LXIIAnimationTestSetup
 
         playerController?.ConfigureForScene(mainCamera.transform);
         follow.SetTarget(player);
+        follow.ConfigureOpenWorldFraming();
         follow.SnapBehindTarget();
 
         Undo.RecordObject(mainCamera, "Adjust LXII Animation Test Camera");
-        mainCamera.fieldOfView = 48f;
+        mainCamera.fieldOfView = 55f;
         mainCamera.nearClipPlane = 0.1f;
-        mainCamera.farClipPlane = 100f;
+        mainCamera.farClipPlane = 1200f;
 
         if (playerController != null)
         {

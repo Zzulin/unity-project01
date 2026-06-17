@@ -50,14 +50,21 @@
   - 衣物和头发物理模拟尚未接入
 - 当前 L13 体积云接入结论：
   - 使用 LXII 专用材质实例，不直接改 L13 原始 Demo 材质
-  - 云盒覆盖天空区域，Transform Scale 只负责 Ray-Box 边界
-  - `Noise World Size` 独立保持云纹理世界尺度
+  - 云盒覆盖天空区域，当前为 1600m 级天空体积盒
+  - `Noise World Size` 独立保持云纹理世界尺度，当前为 `{x: 920, y: 260, z: 920}`
   - 默认性能档为 `10 view steps / 0 light steps`
   - 云盒不参与碰撞、阴影或 motion vector
+  - 不保留远景云幕或椭球云团占位；天空只保留 `LXII Sky Volume Cloud` 一个体积云对象
+- 当前 L12 草地接入结论：
+  - `LXII Grass Ground` 已从平面换成 960m 起伏地表 mesh
+  - `LXII Grass Field` 已扩展到 420m 贴坡草海
+  - `targetBladeSpacing` 会被 `maxBladesPerAxis` 保护上限截断；当前 Inspector 范围为 `0.02-1.0`，LXII 默认 `targetBladeSpacing=0.4`、`maxBladesPerAxis=2048`
+  - L12 草 shader / culling compute 通过可选高度参数贴合坡面，默认高度为 0 时不改变原 L12 Demo
+  - 当前方案是静态大世界预览，不是真正 streaming 大世界
 
 这意味着：
 
-- LXII 当前重点已经从“先把整合层真正搭起来”转成“保持现有控制链稳定，并把 L14 雪地串入同一路径，同时继续复核 L13 云层的实机观感与性能”。
+- LXII 当前重点已经从“先把整合层真正搭起来”转成“保持现有控制链稳定，并把 L14 雪地串入同一路径，同时确认大世界预览的观感与性能边界”。
 - `codex/tasks.md` 中关于 LXII 的一些条目可能代表目标状态或待复核状态；是否已真实落地，必须以仓库文件、Unity Scene、Importer 状态和验证结果为准。
 
 ## 3. 硬约束
@@ -103,7 +110,7 @@ LXII 的第一版胜利条件：
   - Move
   - Action
 - 场景内至少有：
-  - 1 个可见草地区，能响应交互
+  - 1 个可见起伏草地区，能响应交互
   - 1 个可见雪地区，能响应交互
   - 1 组正常显示的体积云
 - 验证链条完整：
@@ -133,7 +140,7 @@ LXII 的第一版胜利条件：
 - 保持 `LXIIPlayerController` 作为主 Inspector 入口，内部组件只做自动绑定和职责拆分
 - 处理最明显的局部穿模
 - 把 L14 雪地接入 LXII 主路径
-- 复核已接入的 L13 云层在 Play Mode 下的天空覆盖、遮挡关系和性能快照
+- 复核大世界预览在 Play Mode 下的草地延伸、天空覆盖、遮挡关系和性能快照
 
 当前不作为内建开发项的内容：
 
@@ -162,6 +169,8 @@ Assets/LXII game 整合/
     LXIIL13VolumeCloudSetup.cs
   Materials/
     LXII_L13_RaymarchedCloud_Performance.mat
+  Meshes/
+    LXII_OpenWorldRollingGrassGround.asset
   Scripts/
     Player/
       LXIIPlayerInputReader.cs

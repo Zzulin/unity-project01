@@ -47,6 +47,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
     private static readonly int DensityThresholdId = Shader.PropertyToID("_DensityThreshold");
     private static readonly int DensityInfluenceId = Shader.PropertyToID("_DensityInfluence");
     private static readonly int UseDensityTextureId = Shader.PropertyToID("_UseDensityTexture");
+    private static readonly int TerrainHeightParamsId = Shader.PropertyToID("_TerrainHeightParams");
+    private static readonly int TerrainHeightOffsetId = Shader.PropertyToID("_TerrainHeightOffset");
 
     [Header("渲染资源")]
     [InspectorName("草地材质")]
@@ -65,12 +67,12 @@ public sealed class L12GrassRenderer : MonoBehaviour
     [Tooltip("推荐开启。缩放草地区域时自动补充实例，尽量保持草间距不变。")]
     [InspectorName("缩放时保持密度")]
     public bool preserveDensityWhenResized = true;
-    [Tooltip("目标草间距（世界米）。值越小越密；0.4 以上通常会显得过稀。0 表示按当前 Field Size / Blades Per Side 自动初始化一次。")]
+    [Tooltip("目标草间距（世界米）。值越小越密。若数值继续调小但画面不变，通常是单轴草株上限已经卡住。0 表示按当前 Field Size / Blades Per Side 自动初始化一次。")]
     [InspectorName("目标草间距")]
-    [Range(0.01f, 0.4f)] public float targetBladeSpacing = 0f;
+    [Range(0.02f, 1f)] public float targetBladeSpacing = 0f;
     [Tooltip("为防止缩放过大时显存暴涨，自动补密会受这个上限保护。")]
     [InspectorName("单轴草株上限")]
-    [Range(128, 1024)] public int maxBladesPerAxis = 1024;
+    [Range(128, 4096)] public int maxBladesPerAxis = 1024;
     [InspectorName("草地分块数")]
     [Range(1, 32)] public int chunksPerSide = 12;
     [InspectorName("基础草高")]
@@ -148,6 +150,21 @@ public sealed class L12GrassRenderer : MonoBehaviour
     [InspectorName("草尖发光感")]
     [Range(0.5f, 2f)] public float tipBrightness = 1.22f;
 
+    [Header("地形贴合")]
+    [Tooltip("让草根按同一套程序化高度函数贴合起伏地形。0 时保持原平面草地行为。")]
+    [InspectorName("地形起伏高度")]
+    [Range(0f, 30f)] public float terrainHeightAmplitude = 0f;
+    [Tooltip("起伏主频率。值越小，山坡越舒缓。")]
+    [InspectorName("地形起伏频率")]
+    [Range(0.001f, 0.08f)] public float terrainHeightFrequency = 0.018f;
+    [Tooltip("细节起伏频率。只给草根和地面增加轻微变化，不做高频噪声。")]
+    [InspectorName("地形细节频率")]
+    [Range(0.001f, 0.16f)] public float terrainDetailFrequency = 0.045f;
+    [InspectorName("地形高度基准")]
+    public float terrainHeightBase = 0f;
+    [InspectorName("地形采样偏移")]
+    public Vector2 terrainHeightOffset = Vector2.zero;
+
     private readonly Vector4[] frustumPlaneData = new Vector4[6];
     private readonly MaterialPropertyBlock[] lodPropertyBlocks = new MaterialPropertyBlock[LodCount];
     private readonly Mesh[] lodMeshes = new Mesh[LodCount];
@@ -196,8 +213,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
         {
             targetBladeSpacing = fieldSize / Mathf.Clamp(bladesPerSide, 8, 1200);
         }
-        targetBladeSpacing = Mathf.Clamp(targetBladeSpacing, 0.01f, 0.4f);
-        maxBladesPerAxis = Mathf.Clamp(maxBladesPerAxis, 128, 1024);
+        targetBladeSpacing = Mathf.Clamp(targetBladeSpacing, 0.02f, 1f);
+        maxBladesPerAxis = Mathf.Clamp(maxBladesPerAxis, 128, 4096);
         chunksPerSide = Mathf.Clamp(chunksPerSide, 1, 32);
         fieldSize = Mathf.Max(1f, fieldSize);
         bladeHeight = Mathf.Max(0.05f, bladeHeight);
@@ -215,6 +232,9 @@ public sealed class L12GrassRenderer : MonoBehaviour
         maxDrawDistance = Mathf.Max(5f, maxDrawDistance);
         lod0Distance = Mathf.Clamp(lod0Distance, 1f, maxDrawDistance);
         lod1Distance = Mathf.Clamp(Mathf.Max(lod0Distance + 1f, lod1Distance), lod0Distance + 1f, maxDrawDistance);
+        terrainHeightAmplitude = Mathf.Max(0f, terrainHeightAmplitude);
+        terrainHeightFrequency = Mathf.Clamp(terrainHeightFrequency, 0.001f, 0.08f);
+        terrainDetailFrequency = Mathf.Clamp(terrainDetailFrequency, 0.001f, 0.16f);
         needsRebuild = true;
     }
 
@@ -253,9 +273,10 @@ public sealed class L12GrassRenderer : MonoBehaviour
         PushCommonMaterialProperties();
 
         Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
+        float terrainVerticalRange = Mathf.Abs(terrainHeightAmplitude) * 2f;
         Bounds bounds = new Bounds(
-            transform.position + Vector3.up * bladeHeight,
-            new Vector3(scaledFieldSize.x + 8f, bladeHeight * 4f + 4f, scaledFieldSize.y + 8f));
+            transform.position + Vector3.up * (terrainHeightBase + bladeHeight),
+            new Vector3(scaledFieldSize.x + 8f, terrainVerticalRange + bladeHeight * 4f + 6f, scaledFieldSize.y + 8f));
 
         for (int lod = 0; lod < LodCount; lod++)
         {
@@ -460,6 +481,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
         cullingCompute.SetFloat(DensityThresholdId, densityThreshold);
         cullingCompute.SetFloat(DensityInfluenceId, densityInfluence);
         cullingCompute.SetInt(UseDensityTextureId, densityMap != null ? 1 : 0);
+        cullingCompute.SetVector(TerrainHeightParamsId, new Vector4(terrainHeightBase, terrainHeightAmplitude, terrainHeightFrequency, terrainDetailFrequency));
+        cullingCompute.SetVector(TerrainHeightOffsetId, new Vector4(terrainHeightOffset.x, terrainHeightOffset.y, 0f, 0f));
         cullingCompute.SetVector(CameraPositionId, renderCamera.transform.position);
         cullingCompute.SetVectorArray(FrustumPlanesId, frustumPlaneData);
 
@@ -526,6 +549,8 @@ public sealed class L12GrassRenderer : MonoBehaviour
             block.SetTexture(InteractionTextureId, interactionTexture != null ? interactionTexture : runtimeWhiteTexture);
             block.SetFloat(InteractionStrengthId, interactionStrength);
             block.SetFloat(InteractionFlattenStrengthId, interactionFlattenStrength);
+            block.SetVector(TerrainHeightParamsId, new Vector4(terrainHeightBase, terrainHeightAmplitude, terrainHeightFrequency, terrainDetailFrequency));
+            block.SetVector(TerrainHeightOffsetId, new Vector4(terrainHeightOffset.x, terrainHeightOffset.y, 0f, 0f));
         }
     }
 
@@ -688,9 +713,9 @@ public sealed class L12GrassRenderer : MonoBehaviour
 
         float spacing = targetBladeSpacing <= 0.001f
             ? fieldSize / baseBladesPerSide
-            : Mathf.Clamp(targetBladeSpacing, 0.01f, 0.4f);
+            : Mathf.Clamp(targetBladeSpacing, 0.02f, 1f);
         Vector2 scaledFieldSize = GetScaledFieldSizeXZ();
-        int maxAxis = Mathf.Clamp(maxBladesPerAxis, 128, 1024);
+        int maxAxis = Mathf.Clamp(maxBladesPerAxis, 128, 4096);
         int bladesX = Mathf.Clamp(Mathf.CeilToInt(scaledFieldSize.x / spacing), 8, maxAxis);
         int bladesZ = Mathf.Clamp(Mathf.CeilToInt(scaledFieldSize.y / spacing), 8, maxAxis);
         return new Vector2Int(bladesX, bladesZ);

@@ -9,6 +9,8 @@ public static class LXIIL13VolumeCloudSetup
     private const string ScenePath = "Assets/LXII game 整合/game.unity";
     private const string RootName = "LXII L13 VolumeCloud Root";
     private const string CloudName = "LXII Sky Volume Cloud";
+    private const string DistantCloudLayerName = "LXII Distant Cloud Layer";
+    private const string DistantCloudPuffRootName = "LXII Distant Cloud Puffs";
 
     private const string MaterialsFolder = "Assets/LXII game 整合/Materials";
     private const string CloudMaterialPath = MaterialsFolder + "/LXII_L13_RaymarchedCloud_Performance.mat";
@@ -19,9 +21,9 @@ public static class LXIIL13VolumeCloudSetup
     private const string DetailNoisePath = "Assets/L13 VolumeCloud/Textures/DetailNoise3D.asset";
     private const string WeatherMapPath = "Assets/L13 VolumeCloud/Textures/WeatherMap.png";
 
-    private static readonly Vector3 CloudPosition = new Vector3(0f, 82f, 42f);
-    private static readonly Vector3 CloudScale = new Vector3(620f, 124f, 620f);
-    private static readonly Vector3 NoiseWorldSize = new Vector3(420f, 180f, 420f);
+    private static readonly Vector3 CloudPosition = new Vector3(0f, 90f, 120f);
+    private static readonly Vector3 CloudScale = new Vector3(1600f, 240f, 1600f);
+    private static readonly Vector3 NoiseWorldSize = new Vector3(920f, 260f, 920f);
 
     [MenuItem("Tools/LXII/Setup L13 VolumeCloud In Game Scene")]
     public static void SetupL13VolumeCloudInGameScene()
@@ -39,7 +41,9 @@ public static class LXIIL13VolumeCloudSetup
         }
 
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        CleanupLegacyDistantCloudObjects();
         GameObject root = FindOrCreateRoot();
+        CleanupDuplicateCloudObjects(root.transform);
         GameObject cloud = FindOrCreateCloud(root.transform, cloudMaterial);
         ConfigureCloudObject(cloud, cloudMaterial);
         ConfigureSceneSky();
@@ -58,13 +62,30 @@ public static class LXIIL13VolumeCloudSetup
 
     private static GameObject FindOrCreateRoot()
     {
-        GameObject root = GameObject.Find(RootName);
-        if (root != null)
+        GameObject keptRoot = null;
+        Transform[] transforms = Object.FindObjectsOfType<Transform>(true);
+        foreach (Transform transform in transforms)
         {
-            return root;
+            if (transform == null || transform.name != RootName)
+            {
+                continue;
+            }
+
+            if (keptRoot == null)
+            {
+                keptRoot = transform.gameObject;
+                continue;
+            }
+
+            Object.DestroyImmediate(transform.gameObject);
         }
 
-        root = new GameObject(RootName);
+        if (keptRoot != null)
+        {
+            return keptRoot;
+        }
+
+        GameObject root = new GameObject(RootName);
         root.transform.position = Vector3.zero;
         return root;
     }
@@ -121,17 +142,17 @@ public static class LXIIL13VolumeCloudSetup
 
         controller.cloudMaterial = cloudMaterial;
         controller.sunLight = FindSunLight();
-        controller.cloudColor = new Color(1f, 0.93f, 0.82f, 1f);
-        controller.shadowColor = new Color(0.48f, 0.56f, 0.68f, 1f);
-        controller.ambientColor = new Color(0.46f, 0.55f, 0.72f, 1f);
-        controller.density = 2.45f;
-        controller.coverage = 0.52f;
-        controller.weatherStrength = 0.72f;
-        controller.shapeScale = 4.2f;
-        controller.detailScale = 10.5f;
-        controller.detailStrength = 0.32f;
-        controller.bottomSoftness = 0.24f;
-        controller.topSoftness = 0.28f;
+        controller.cloudColor = new Color(0.92f, 0.90f, 0.84f, 1f);
+        controller.shadowColor = new Color(0.34f, 0.42f, 0.52f, 1f);
+        controller.ambientColor = new Color(0.30f, 0.42f, 0.58f, 1f);
+        controller.density = 3.55f;
+        controller.coverage = 0.50f;
+        controller.weatherStrength = 0.82f;
+        controller.shapeScale = 5.4f;
+        controller.detailScale = 14f;
+        controller.detailStrength = 0.52f;
+        controller.bottomSoftness = 0.16f;
+        controller.topSoftness = 0.30f;
         controller.anvilBias = 0.56f;
         controller.absorption = 2.45f;
         controller.lightAbsorption = 2.7f;
@@ -144,7 +165,7 @@ public static class LXIIL13VolumeCloudSetup
         controller.noiseWorldSize = NoiseWorldSize;
         controller.stepCount = 10;
         controller.lightStepCount = 0;
-        controller.opacity = 0.78f;
+        controller.opacity = 0.84f;
 
         ConfigureCloudMaterial(cloudMaterial);
         EditorUtility.SetDirty(renderer);
@@ -163,6 +184,11 @@ public static class LXIIL13VolumeCloudSetup
         RenderSettings.ambientSkyColor = new Color(0.38f, 0.50f, 0.68f, 1f);
         RenderSettings.ambientEquatorColor = new Color(0.30f, 0.37f, 0.48f, 1f);
         RenderSettings.ambientGroundColor = new Color(0.14f, 0.15f, 0.18f, 1f);
+        RenderSettings.fog = true;
+        RenderSettings.fogMode = FogMode.Linear;
+        RenderSettings.fogColor = new Color(0.60f, 0.72f, 0.78f, 1f);
+        RenderSettings.fogStartDistance = 150f;
+        RenderSettings.fogEndDistance = 900f;
     }
 
     private static void ConfigureMainCamera()
@@ -174,8 +200,43 @@ public static class LXIIL13VolumeCloudSetup
         }
 
         camera.clearFlags = CameraClearFlags.Skybox;
-        camera.farClipPlane = Mathf.Max(camera.farClipPlane, 850f);
+        camera.farClipPlane = Mathf.Max(camera.farClipPlane, 1200f);
         EditorUtility.SetDirty(camera);
+    }
+
+    private static void CleanupLegacyDistantCloudObjects()
+    {
+        Transform[] transforms = Object.FindObjectsOfType<Transform>(true);
+        foreach (Transform transform in transforms)
+        {
+            if (transform == null)
+            {
+                continue;
+            }
+
+            bool isLegacyLayer = transform.name == DistantCloudLayerName
+                || transform.name.StartsWith(DistantCloudLayerName + " ");
+            bool isLegacyPuff = transform.name == DistantCloudPuffRootName
+                || transform.name.StartsWith("Cloud Puff ");
+            if (isLegacyLayer || isLegacyPuff)
+            {
+                Object.DestroyImmediate(transform.gameObject);
+            }
+        }
+    }
+
+    private static void CleanupDuplicateCloudObjects(Transform root)
+    {
+        Transform[] transforms = Object.FindObjectsOfType<Transform>(true);
+        foreach (Transform transform in transforms)
+        {
+            if (transform == null || transform.name != CloudName || transform.parent == root)
+            {
+                continue;
+            }
+
+            Object.DestroyImmediate(transform.gameObject);
+        }
     }
 
     private static Light FindSunLight()
@@ -228,18 +289,18 @@ public static class LXIIL13VolumeCloudSetup
         material.SetTexture("_DetailNoise", AssetDatabase.LoadAssetAtPath<Texture3D>(DetailNoisePath));
         material.SetTexture("_WeatherMap", AssetDatabase.LoadAssetAtPath<Texture2D>(WeatherMapPath));
 
-        material.SetColor("_CloudColor", new Color(1f, 0.93f, 0.82f, 1f));
-        material.SetColor("_ShadowColor", new Color(0.48f, 0.56f, 0.68f, 1f));
-        material.SetColor("_AmbientColor", new Color(0.46f, 0.55f, 0.72f, 1f));
-        material.SetFloat("_Density", 2.45f);
-        material.SetFloat("_Coverage", 0.52f);
-        material.SetFloat("_WeatherStrength", 0.72f);
-        material.SetFloat("_ShapeScale", 4.2f);
-        material.SetFloat("_DetailScale", 10.5f);
+        material.SetColor("_CloudColor", new Color(0.92f, 0.90f, 0.84f, 1f));
+        material.SetColor("_ShadowColor", new Color(0.34f, 0.42f, 0.52f, 1f));
+        material.SetColor("_AmbientColor", new Color(0.30f, 0.42f, 0.58f, 1f));
+        material.SetFloat("_Density", 3.55f);
+        material.SetFloat("_Coverage", 0.50f);
+        material.SetFloat("_WeatherStrength", 0.82f);
+        material.SetFloat("_ShapeScale", 5.4f);
+        material.SetFloat("_DetailScale", 14f);
         material.SetVector("_NoiseWorldSize", new Vector4(NoiseWorldSize.x, NoiseWorldSize.y, NoiseWorldSize.z, 0f));
-        material.SetFloat("_DetailStrength", 0.32f);
-        material.SetFloat("_BottomSoftness", 0.24f);
-        material.SetFloat("_TopSoftness", 0.28f);
+        material.SetFloat("_DetailStrength", 0.52f);
+        material.SetFloat("_BottomSoftness", 0.16f);
+        material.SetFloat("_TopSoftness", 0.30f);
         material.SetFloat("_AnvilBias", 0.56f);
         material.SetFloat("_Absorption", 2.45f);
         material.SetFloat("_LightAbsorption", 2.7f);
@@ -251,7 +312,7 @@ public static class LXIIL13VolumeCloudSetup
         material.SetFloat("_WindSpeed", 3.2f);
         material.SetInt("_StepCount", 10);
         material.SetInt("_LightStepCount", 0);
-        material.SetFloat("_Opacity", 0.78f);
+        material.SetFloat("_Opacity", 0.84f);
         material.renderQueue = 3020;
 
         EditorUtility.SetDirty(material);

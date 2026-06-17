@@ -5,14 +5,14 @@ public sealed class LXIIThirdPersonCameraFollow : MonoBehaviour
     private const string DefaultTargetName = "LXII Nilou Player";
 
     [SerializeField] private Transform target;
-    [SerializeField] private Vector3 followOffset = new Vector3(0f, 1.45f, 0f);
-    [SerializeField] private float distance = 3.6f;
-    [SerializeField] private float minDistance = 2.2f;
-    [SerializeField] private float maxDistance = 5.2f;
+    [SerializeField] private Vector3 followOffset = new Vector3(0f, 1.65f, 0f);
+    [SerializeField] private float distance = 6.4f;
+    [SerializeField] private float minDistance = 3.2f;
+    [SerializeField] private float maxDistance = 8.8f;
     [SerializeField] private float yaw = 180f;
-    [SerializeField] private float pitch = 12f;
-    [SerializeField] private float minPitch = -10f;
-    [SerializeField] private float maxPitch = 45f;
+    [SerializeField] private float pitch = 4f;
+    [SerializeField] private float minPitch = -8f;
+    [SerializeField] private float maxPitch = 38f;
     [SerializeField] private float yawSensitivity = 180f;
     [SerializeField] private float pitchSensitivity = 120f;
     [SerializeField] private float zoomSensitivity = 1.2f;
@@ -25,6 +25,18 @@ public sealed class LXIIThirdPersonCameraFollow : MonoBehaviour
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+        initialized = false;
+    }
+
+    public void ConfigureOpenWorldFraming()
+    {
+        followOffset = new Vector3(0f, 1.65f, 0f);
+        distance = 6.4f;
+        minDistance = 3.2f;
+        maxDistance = 8.8f;
+        pitch = 4f;
+        minPitch = -8f;
+        maxPitch = 38f;
         initialized = false;
     }
 

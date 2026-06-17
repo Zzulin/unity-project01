@@ -21,6 +21,8 @@ float _DensityInfluence;
 int _UseDensityTexture;
 int _SourceOffset;
 int _SourceCount;
+float4 _TerrainHeightParams;
+float4 _TerrainHeightOffset;
 
 float Hash12(float2 p)
 {
@@ -45,6 +47,17 @@ float SampleDensity(float2 localXZ)
     return saturate(density);
 }
 
+float SampleTerrainHeight(float2 worldXZ)
+{
+    float2 p = worldXZ + _TerrainHeightOffset.xy;
+    float frequency = max(_TerrainHeightParams.z, 0.0001);
+    float detailFrequency = max(_TerrainHeightParams.w, 0.0001);
+    float broad = sin(p.x * frequency) * cos(p.y * frequency * 0.82);
+    float longWave = sin((p.x * 0.62 + p.y * 0.78) * frequency * 0.62);
+    float detail = sin(p.x * detailFrequency) * sin(p.y * detailFrequency * 0.73);
+    return _TerrainHeightParams.x + _TerrainHeightParams.y * (broad * 0.58 + longWave * 0.30 + detail * 0.12);
+}
+
 [numthreads(64, 1, 1)]
 void CullGrass(uint3 id : SV_DispatchThreadID)
 {
@@ -55,7 +68,8 @@ void CullGrass(uint3 id : SV_DispatchThreadID)
 
     float4 blade = _SourceBladeData[_SourceOffset + id.x];
     float2 scaledBladeXZ = blade.xy * _FieldScale.xy;
-    float3 worldPosition = float3(_FieldOrigin.x + scaledBladeXZ.x, _FieldOrigin.y + _BladeHeight * blade.w * 0.5, _FieldOrigin.z + scaledBladeXZ.y);
+    float2 worldXZ = float2(_FieldOrigin.x + scaledBladeXZ.x, _FieldOrigin.z + scaledBladeXZ.y);
+    float3 worldPosition = float3(worldXZ.x, _FieldOrigin.y + SampleTerrainHeight(worldXZ) + _BladeHeight * blade.w * 0.5, worldXZ.y);
     float3 toCamera = worldPosition - _CameraPosition.xyz;
     float distanceToCamera = length(toCamera);
 
