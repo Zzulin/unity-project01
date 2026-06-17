@@ -33,13 +33,19 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BladeHeight: 1.25
-    - _BladeWidth: 0.085
-    - _InteractionStrength: 3.6
-    - _WindScale: 0.18
-    - _WindSpeed: 1.8
-    - _WindStrength: 0.32
+    - _BladeHeight: 0.71
+    - _BladeWidth: 0.076
+    - _InteractionFlattenStrength: 0.36
+    - _InteractionStrength: 0.71
+    - _ShapeVariation: 0.859
+    - _TipBrightness: 1.04
+    - _WindScale: 0.15
+    - _WindSpeed: 2.2
+    - _WindStrength: 0.489
     m_Colors:
-    - _BaseColor: {r: 0.11, g: 0.34, b: 0.12, a: 1}
-    - _TipColor: {r: 0.46, g: 0.68, b: 0.22, a: 1}
+    - _BaseColor: {r: 0.08, g: 0.26, b: 0.1, a: 1}
+    - _TerrainHeightOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _TerrainHeightParams: {r: 0, g: 9, b: 0.018, a: 0.045}
+    - _TipColor: {r: 0.34, g: 0.58, b: 0.18, a: 1}
+    - _WindDirection: {r: 0.89856756, g: 0.4388353, b: 0, a: 0}
   m_BuildTextureStacks: []

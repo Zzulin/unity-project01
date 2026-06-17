@@ -60,6 +60,7 @@
   - `LXII Grass Field` 已扩展到 420m 贴坡草海
   - `targetBladeSpacing` 会被 `maxBladesPerAxis` 保护上限截断；当前 Inspector 范围为 `0.02-1.0`，LXII 默认 `targetBladeSpacing=0.4`、`maxBladesPerAxis=2048`
   - L12 草 shader / culling compute 通过可选高度参数贴合坡面，默认高度为 0 时不改变原 L12 Demo
+  - L12 草 shader `Properties` 默认值已同步到当前 LXII 草地观感参数；`L12_InteractiveGrass.mat` 对应覆盖值也同步
   - 当前方案是静态大世界预览，不是真正 streaming 大世界
 
 这意味着：

@@ -875,8 +875,8 @@ MonoBehaviour:
   cullPadding: 3
   lod0Distance: 30
   lod1Distance: 92
-  densityThreshold: 0.04
-  densityInfluence: 1.35
+  densityThreshold: 0.883
+  densityInfluence: 1.08
   windStrength: 0.489
   windScale: 0.15
   windSpeed: 2.2
@@ -888,7 +888,7 @@ MonoBehaviour:
   gustNoiseScale: 0.042
   interactionTextureSize: 512
   interactionStrength: 0.71
-  interactionFlattenStrength: 0.36
+  interactionFlattenStrength: 0.18
   interactionFadeSpeed: 1.46
   baseColor: {r: 0.08, g: 0.26, b: 0.1, a: 1}
   tipColor: {r: 0.34, g: 0.58, b: 0.18, a: 1}
@@ -949,10 +949,10 @@ MonoBehaviour:
   cloudColor: {r: 0.92, g: 0.9, b: 0.84, a: 1}
   shadowColor: {r: 0.34, g: 0.42, b: 0.52, a: 1}
   ambientColor: {r: 0.3, g: 0.42, b: 0.58, a: 1}
-  density: 3.55
-  coverage: 0.5
+  density: 12
+  coverage: 0.069
   weatherStrength: 0.82
-  shapeScale: 5.4
+  shapeScale: 2.46
   detailScale: 14
   detailStrength: 0.52
   bottomSoftness: 0.16
@@ -965,10 +965,10 @@ MonoBehaviour:
   silverIntensity: 1.25
   powderStrength: 0.86
   windDirection: {x: 1, y: 0, z: 0.18, w: 0}
-  windSpeed: 3.2
+  windSpeed: 0.9
   noiseWorldSize: {x: 920, y: 260, z: 920}
   stepCount: 10
-  lightStepCount: 0
+  lightStepCount: 2
   opacity: 0.84
 --- !u!23 &965210081
 MeshRenderer:
@@ -1117,7 +1117,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1844354938
 Transform:
   m_ObjectHideFlags: 0

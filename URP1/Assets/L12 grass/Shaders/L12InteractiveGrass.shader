@@ -2,26 +2,26 @@ Shader "L12 Grass/Interactive GPU Grass"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.11, 0.34, 0.12, 1)
-        _TipColor ("Tip Color", Color) = (0.46, 0.68, 0.22, 1)
-        _BladeHeight ("Blade Height", Float) = 1.25
-        _BladeWidth ("Blade Width", Float) = 0.085
-        _WindStrength ("Wind Strength", Range(0, 1.5)) = 0.32
-        _WindScale ("Wind Scale", Float) = 0.18
-        _WindSpeed ("Wind Speed", Float) = 1.8
-        _WindDirection ("Wind Direction", Vector) = (0.86, 0.42, 0, 0)
-        _GustStrength ("Gust Strength", Range(0, 2)) = 0.85
-        _GustFrequency ("Gust Frequency", Float) = 0.065
-        _GustSpeed ("Gust Speed", Float) = 5.8
-        _GustWidth ("Gust Width", Range(0.05, 0.95)) = 0.34
-        _GustNoiseScale ("Gust Noise Scale", Float) = 0.055
-        _ShapeVariation ("Shape Variation", Range(0, 1)) = 0.72
-        _TipBrightness ("Tip Brightness", Range(0.5, 2)) = 1.22
-        _InteractionStrength ("Interaction Strength", Float) = 3.6
-        _InteractionFlattenStrength ("Interaction Flatten Strength", Range(0, 2)) = 0.85
+        _BaseColor ("Base Color", Color) = (0.08, 0.26, 0.10, 1)
+        _TipColor ("Tip Color", Color) = (0.34, 0.58, 0.18, 1)
+        _BladeHeight ("Blade Height", Float) = 0.71
+        _BladeWidth ("Blade Width", Float) = 0.076
+        _WindStrength ("Wind Strength", Range(0, 1.5)) = 0.489
+        _WindScale ("Wind Scale", Float) = 0.15
+        _WindSpeed ("Wind Speed", Float) = 2.2
+        _WindDirection ("Wind Direction", Vector) = (0.89856756, 0.4388353, 0, 0)
+        _GustStrength ("Gust Strength", Range(0, 2)) = 0.72
+        _GustFrequency ("Gust Frequency", Float) = 0.045
+        _GustSpeed ("Gust Speed", Float) = 4.6
+        _GustWidth ("Gust Width", Range(0.05, 0.95)) = 0.38
+        _GustNoiseScale ("Gust Noise Scale", Float) = 0.042
+        _ShapeVariation ("Shape Variation", Range(0, 1)) = 0.859
+        _TipBrightness ("Tip Brightness", Range(0.5, 2)) = 1.04
+        _InteractionStrength ("Interaction Strength", Float) = 0.71
+        _InteractionFlattenStrength ("Interaction Flatten Strength", Range(0, 2)) = 0.36
         _DensityTexture ("Density Texture", 2D) = "white" {}
         _InteractionTexture ("Interaction Texture", 2D) = "black" {}
-        _TerrainHeightParams ("Terrain Height Params", Vector) = (0, 0, 0.018, 0.045)
+        _TerrainHeightParams ("Terrain Height Params", Vector) = (0, 9, 0.018, 0.045)
         _TerrainHeightOffset ("Terrain Height Offset", Vector) = (0, 0, 0, 0)
     }
 

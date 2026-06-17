@@ -57,6 +57,7 @@
   - `LXII Grass Field` 覆盖 420m，`maxDrawDistance=210`，`chunksPerSide=20`，`bladesPerSide=1024`
   - `targetBladeSpacing` 在 LXII 里之前不明显，是因为 420m 草场被 `maxBladesPerAxis=1024` 截断；当前 L12 上限范围已扩到 4096，目标草间距 Inspector 范围为 `0.02-1.0`，LXII 默认 `maxBladesPerAxis=2048`，`targetBladeSpacing=0.4` 可正常生成约 1050/轴
   - L12 草 shader / culling compute 已补可选地形高度参数；默认高度为 0，不改变原 L12 平面 Demo 行为
+  - L12 草 shader `Properties` 默认值已同步为 LXII 当前草地观感参数；现有 `L12_InteractiveGrass.mat` 的对应覆盖值也已同步
   - 妮露已挂 `CharacterController`
   - 妮露已挂 `L12GrassInteractor`
   - 角色移动时可在起伏地表上对草地产生交互
