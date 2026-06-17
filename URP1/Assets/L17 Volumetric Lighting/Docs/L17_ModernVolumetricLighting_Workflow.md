@@ -35,7 +35,7 @@
 | 体积光 Shader | `Assets/L17 Volumetric Lighting/Shaders/L17FrustumVolumetricLighting.shader` |
 | 场景表面 Shader | `Assets/L17 Volumetric Lighting/Shaders/L17TwoSidedInteriorLit.shader` |
 | 蓝噪声贴图 | `Assets/L17 Volumetric Lighting/Textures/L17_BlueNoise64.asset` |
-| 场景材质 | `Assets/L17 Volumetric Lighting/Materials/{L17_RoomWall,L17_DustyFloor,L17_WindowFrame}.mat` |
+| 统一场景材质 | `Assets/L17 Volumetric Lighting/Materials/L17_RoomWall.mat` |
 | 后处理 Profile | `Assets/L17 Volumetric Lighting/Materials/L17_PostProcessProfile.asset` |
 | 构建器 | `Assets/L17 Volumetric Lighting/Editor/L17VolumetricLightingDemoBuilder.cs` |
 
@@ -296,17 +296,19 @@ L17 Room Geometry
 
 ### 14. 场景表面材质统一为自定义 Shader
 
-早期窗框材质仍使用 `Universal Render Pipeline/Lit`，墙和地板使用自定义 shader。为了让 L17 Demo 的场景材质链路更统一，当前已全部改为：
+早期窗框材质仍使用 `Universal Render Pipeline/Lit`，墙和地板使用自定义 shader。随后已统一到 L17 自定义 shader；为进一步降低学习和审查成本，当前 L17 所有场景模型都使用同一个材质球：
+
+```text
+Assets/L17 Volumetric Lighting/Materials/L17_RoomWall.mat
+```
+
+该材质使用：
 
 ```text
 L17 Volumetric Lighting/Two Sided Interior Lit
 ```
 
-包括：
-
-- `L17_RoomWall.mat`
-- `L17_DustyFloor.mat`
-- `L17_WindowFrame.mat`
+`L17_DustyFloor.mat` 和 `L17_WindowFrame.mat` 已删除；地面、墙体、窗框、室内小物体全部引用 `L17_RoomWall.mat`。
 
 `L17TwoSidedInteriorLit.shader` 自己实现 ForwardLit 观感，同时复用 URP Lit 的 `ShadowCaster` 和 `DepthOnly` pass。这是常见做法：表面光照逻辑自定义，但阴影和深度 pass 尽量复用 URP 已有实现。
 
@@ -424,8 +426,33 @@ L17 Volumetric Lighting/Two Sided Interior Lit
 
 当前状态：
 
-- 旧黑 lightmap 不会自动变亮，需要重新点击 Lighting 面板 `Generate Lighting` 覆盖。
-- 如果重新烘焙后仍出现黑图，下一步应临时用 URP/Lit 材质交叉验证 Lightmapper 输入，判断问题是否还在自定义 shader Meta pass。
+- 这一阶段确认：只修 cube UV2 和绕序还不够稳定，因为房间内部实际看到的是厚 cube 的内侧背面，Lightmapper 对背面和双面材质的处理仍容易得到偏暗结果。
+- 下一阶段改为给房间大面使用朝室内的单面 panel mesh，避免烘焙依赖厚 cube 背面。
+
+## 19. 单面接光面与可见 baked indirect 修复
+
+问题表现：
+
+- `Lightmap-0_comp_light.exr` 已经不是全黑，Renderer 也有 `lightmapIndex=0` 和 `receiveGI=Lightmaps`，但 Scene/Game 中房顶和背光墙面仍接近黑色。
+- 说明问题不再是“没有 lightmap”，而是 lightmap 能量弱、厚 cube 背面烘焙不可靠，以及 shader 对 bakedGI 的显示强度偏低。
+
+修复内容：
+
+- 新增 `Assets/L17 Volumetric Lighting/Meshes/L17_LightmapReadyPanel.asset`，作为单面接光面。
+- Builder 中 `Room Floor`、`Room Ceiling`、`Room Wall Left`、`Room Wall Right`、`Room Back Wall` 改为 `CreatePanel(...)`，五个大面法线全部朝向室内。
+- 窗框、窗洞填充、室内小物体仍保留 cube，只负责实时遮挡和视觉结构，不再强行参与 lightmap chart。
+- `L17_LightingSettings.lighting` 调整为 Baked Indirect：`IndirectOutputScale = 1.8`、`BounceScale = 1.25`、`AlbedoBoost = 1.1`、`PVRBounces = 4`、`PVRSampleCount = 512`、关闭 baked AO，避免室内角落被 AO 二次压黑。
+- `Low Angle Sun` 保持 Mixed，并把 `bounceIntensity` 提高到 `2.0`，只增强烘焙间接光，不关闭运行时方向光和 shadow map。
+- `L17TwoSidedInteriorLit.shader` 将 `_AmbientBoost` 改名为 `Baked GI Strength`，shader 内直接用它控制 `SAMPLE_GI(...)` 的显示强度，不再把材质小于 1 的旧值钳到固定 1。
+- L17 材质当前推荐值：墙面 `Baked GI Strength = 1.35`，地面 `1.15`，窗框 `1.1`。
+
+验证结果：
+
+- UnitySkills `camera_screenshot` 生成 `Assets/Screenshots/L17_baked_indirect_fixed_camera.png`，画面中左墙、背墙和顶面已经能看到棕金色间接光，不再是纯黑。
+- `Assets/L17 Volumetric Lighting/L17/Lightmap-0_comp_light.exr` 于 2026-06-17 13:06 重新生成，预览中五个大面 lightmap chart 有明显太阳反弹渐变。
+- `Room Ceiling` 当前 `lightmapIndex = 0`、`receiveGI = Lightmaps`、`lightmapScaleOffset` 非零，证明室内模型正在采样 lightmap。
+- Unity Console Warning / Error：0。
+- `L17TwoSidedInteriorLit.shader` `shader_check_errors`：0 error / 0 message。
 
 ## 代码关系
 
@@ -454,14 +481,18 @@ flowchart LR
 
 ## 当前验证记录
 
-最近一次代码整理后验证：
+最近一次烘焙间接光修复后验证：
 
 - `dotnet build Assembly-CSharp.csproj --no-restore`：0 warning / 0 error
 - `dotnet build Assembly-CSharp-Editor.csproj --no-restore`：0 warning / 0 error
 - UnitySkills `debug_check_compilation`：未处于编译 / 刷新状态
-- Unity Console Error：0
+- Unity Console Warning / Error：0
 - `L17TwoSidedInteriorLit.shader` `shader_check_errors`：0 error / 0 message
 - `L17_LightmapReadyCube.asset`：24 vertices、12 triangles、hasUV2 true、hasNormals true、hasTangents true
+- `L17_LightmapReadyPanel.asset`：用于房间五个大面，法线朝室内，避免厚 cube 背面烘焙不稳定
+- `Lightmap-0_comp_light.exr`：2026-06-17 13:06 重新生成，预览非黑，有可见太阳反弹渐变
+- `Room Ceiling`：`receiveGI = Lightmaps`、`lightmapIndex = 0`、`lightmapScaleOffset` 非零
+- `Assets/Screenshots/L17_baked_indirect_fixed_camera.png`：UnitySkills 直接由 `Main Camera` 截图，暗面可见棕金色 baked indirect
 - UnitySkills `validate_missing_references`：0 issues
 
 历史记录中 `Hidden/L17/Froxel Volumetric Composite` 的 `shader_check_errors` 曾返回 `messageCount=1`，但 Unity Console Warning / Error 均为 0，当前按 ShaderUtil 内部 message 残留记录。

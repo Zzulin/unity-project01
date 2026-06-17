@@ -21,7 +21,7 @@ Shader "L17 Volumetric Lighting/Two Sided Interior Lit"
         _SpecularStrength ("Specular Strength", Range(0.0, 2.0)) = 0.6
         _EnvironmentStrength ("Environment Strength", Range(0.0, 2.0)) = 0.7
         _WrapDiffuse ("Diffuse Wrap", Range(0.0, 0.5)) = 0.03
-        _AmbientBoost ("Ambient Boost", Range(0.0, 3.0)) = 0.45
+        _AmbientBoost ("Baked GI Strength", Range(0.0, 3.0)) = 1.25
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
     }
 
@@ -282,12 +282,13 @@ Shader "L17 Volumetric Lighting/Two Sided Interior Lit"
                 float3 ks = L17FresnelSchlickRoughness(noV, f0, roughness);
                 float3 kd = (1.0 - ks) * (1.0 - metallic);
                 float3 indirectTint = lerp(_ShadowColor.rgb, 1.0.xxx, 0.75);
-                float3 diffuseGI = bakedGI * albedo * kd * indirectTint * _AmbientBoost;
+                float diffuseGIIntensity = max(_AmbientBoost, 0.0);
+                float3 diffuseGI = bakedGI * albedo * kd * indirectTint * diffuseGIIntensity;
 
                 float3 reflectDir = reflect(-viewDirWS, normalWS);
                 float3 reflection = GlossyEnvironmentReflection(reflectDir, input.positionWS, roughness, occlusion);
                 float3 specularGI = reflection * ks * _SpecularStrength;
-                color += (diffuseGI * occlusion + specularGI) * _EnvironmentStrength;
+                color += diffuseGI * occlusion + specularGI * _EnvironmentStrength;
 
                 float beamMask = SampleBeamSurfaceMask(input.positionWS);
                 float beamWrap = max(_L17BeamSurfaceWrap, 0.001);

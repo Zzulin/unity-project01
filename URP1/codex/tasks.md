@@ -12,11 +12,11 @@
 - `Assets/L16 Rain/L16.unity` 当前已收敛为只验证 GPU 雨幕的极简 Demo：Compute Shader + `DrawMeshInstancedIndirect` GPU 雨线、Low/Medium/High 三档和 HUD 参数面板；屏幕滑动雨水/镜头雨痕、湿润积水、雨滴涟漪、多灯牌、小柱子等额外展示物已移除。
 - L16 构建菜单：`Tools/Rain/Build L16 Advanced Rain Demo`；资源集中在 `Assets/L16 Rain/{Scripts,Shaders,Materials,Editor,Docs}`；预览截图：`Assets/Screenshots/L16_AdvancedRain_current_20260527.png`。
 - L16 当前验证已通过：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 error；L16 雨线 Shader `shader_check_errors` 0 error；`scene_health_check` 0 findings；Play Mode 短跑后 Console Error 为 0。
-- `Assets/L17 Volumetric Lighting/L17.unity` 已重做为现代 URP RendererFeature 体积光 Demo：不再手摆 cube 光束，改为 fullscreen froxel/integrated buffer 管线，当前回到流畅基线：半分辨率体积 buffer、96 depth steps、密度噪声关闭、blue-noise jitter + complementary 双相采样、5x5 cross-bilateral 低分辨率降噪，并在 Bloom / ACES Tonemapping 前合成；GameView 和 SceneView 都由 `temporalAccumulation` 总开关统一控制 temporal accumulation；temporal resolve 已挪到低分辨率降噪之后，并用 3x3 neighborhood clamp 限制 history；history 重投影按 `UNITY_UV_STARTS_AT_TOP` 修正 Y 方向，避免静止镜头混入上下颠倒的历史帧；参与介质由场景对象 `L17 Local Volume Bounds` 的 Transform 驱动，移动/缩放该 Cube 即可调整体积光范围，避免室外全局雾被太阳方向照成整屏亮团；RendererFeature 现在默认要求当前场景存在启用的 `L17VolumetricLightingController` 才渲染，并通过 `Scene -> Controller` 注册表让 Render pass 直接读取当前场景 Controller 参数，不再把场景艺术参数写入共享 RendererFeature settings，因此不同场景不会互相污染体积光参数；几何模型已统一收纳到 `L17 Room Geometry` 下，功能对象保留根级，Builder 不再保留整理已有层级栏的一次性维护菜单；`L17TwoSidedInteriorLit` 已在原 shader 名称下升级为双面 URP PBR 表面 Shader，暴露 Base/Metallic/Roughness/Smoothness/Normal/AO/Specular/Environment 参数，并补齐 ShadowCaster、DepthOnly、DepthNormals、Meta pass，可参与 Lighting 面板烘焙间接光；`L17VolumetricLightingController` 已改为启用、Inspector 修改或局部体积盒移动/缩放时才同步环境/灯光和体积盒缓存，不再每帧无条件写 RendererFeature；multi scatter 已改为受 shadow map 遮挡约束，`shadowFloor` 降到 0.015；Henyey-Greenstein 前向散射已加生产级峰值约束；GameView Play Mode 下摄像机为手动漫游：`WASD` 移动、按住右键旋转视角、`Shift` 加速、`Q/E` 垂直移动；场景已简化为房间整体、窗户结构和 2 个室内接光物，主要通过窗框和墙体自然切出窗光束。
+- `Assets/L17 Volumetric Lighting/L17.unity` 已重做为现代 URP RendererFeature 体积光 Demo：不再手摆 cube 光束，改为 fullscreen froxel/integrated buffer 管线，当前回到流畅基线：半分辨率体积 buffer、96 depth steps、密度噪声关闭、blue-noise jitter + complementary 双相采样、5x5 cross-bilateral 低分辨率降噪，并在 Bloom / ACES Tonemapping 前合成；GameView 和 SceneView 都由 `temporalAccumulation` 总开关统一控制 temporal accumulation；temporal resolve 已挪到低分辨率降噪之后，并用 3x3 neighborhood clamp 限制 history；history 重投影按 `UNITY_UV_STARTS_AT_TOP` 修正 Y 方向，避免静止镜头混入上下颠倒的历史帧；参与介质由场景对象 `L17 Local Volume Bounds` 的 Transform 驱动，移动/缩放该 Cube 即可调整体积光范围，避免室外全局雾被太阳方向照成整屏亮团；RendererFeature 现在默认要求当前场景存在启用的 `L17VolumetricLightingController` 才渲染，并通过 `Scene -> Controller` 注册表让 Render pass 直接读取当前场景 Controller 参数，不再把场景艺术参数写入共享 RendererFeature settings，因此不同场景不会互相污染体积光参数；几何模型已统一收纳到 `L17 Room Geometry` 下，功能对象保留根级，Builder 不再保留整理已有层级栏的一次性维护菜单；五个房间大面已改为朝室内的 `L17_LightmapReadyPanel` 单面接光 mesh；`L17TwoSidedInteriorLit` 已在原 shader 名称下升级为双面 URP PBR 表面 Shader，暴露 Base/Metallic/Roughness/Smoothness/Normal/AO/Specular/Environment/Baked GI Strength 参数，并补齐 ShadowCaster、DepthOnly、DepthNormals、Meta pass，可参与 Lighting 面板烘焙间接光；`L17VolumetricLightingController` 已改为启用、Inspector 修改或局部体积盒移动/缩放时才同步环境/灯光和体积盒缓存，不再每帧无条件写 RendererFeature；multi scatter 已改为受 shadow map 遮挡约束，`shadowFloor` 降到 0.015；Henyey-Greenstein 前向散射已加生产级峰值约束；GameView Play Mode 下摄像机为手动漫游：`WASD` 移动、按住右键旋转视角、`Shift` 加速、`Q/E` 垂直移动；场景已简化为房间整体、窗户结构和 2 个室内接光物，主要通过窗框和墙体自然切出窗光束。
 - L17 构建菜单：`Tools/Volumetric Lighting/Build L17 Modern Window Shafts Demo`；资源集中在 `Assets/L17 Volumetric Lighting/{Shaders,Materials,Scripts,Editor,Docs}`。
 - L17 表面 PBR 的环境镜面反射已改为 URP `GlossyEnvironmentReflection`，会采样 reflection probe，并支持 probe blending / box projection 关键字。
-- L17 当前烘焙/反射探针参与条件已修正：`Low Angle Sun` 为 Mixed，`L17 Room Geometry` 子物体标记为 LightmapStatic + ReflectionProbeStatic，`L17TwoSidedInteriorLit` 使用自定义 Meta pass 输出烘焙 Albedo。
-- L17 lightmap 黑图进一步定位为 primitive cube 的 lightmap UV 重叠问题；已生成 `Assets/L17 Volumetric Lighting/Meshes/L17_LightmapReadyCube.asset`，该 mesh 带明确 UV2，18 个房间 MeshFilter 已替换为该 mesh，Builder 后续重建也会使用该 mesh 并关闭 `Preserve UVs`。
+- L17 当前烘焙/反射探针参与条件已修正：`Low Angle Sun` 为 Mixed，`bounceIntensity=2.0`，`L17 Room Geometry` 大面标记为 LightmapStatic + ReflectionProbeStatic，`L17TwoSidedInteriorLit` 使用自定义 Meta pass 输出烘焙 Albedo，并在 ForwardLit 中采样 `SAMPLE_GI`。
+- L17 lightmap 黑图已从 primitive cube UV2 / 厚 cube 背面问题收敛到正式方案：五个房间大面使用 `Assets/L17 Volumetric Lighting/Meshes/L17_LightmapReadyPanel.asset` 单面接光 mesh，窗框和小物体不强制参与 lightmap chart；`L17_LightingSettings` 使用 Baked Indirect、4 bounces、IndirectOutputScale 1.8、关闭 baked AO。当前 `Lightmap-0_comp_light.exr` 非黑，`Room Ceiling` 等大面 `lightmapIndex=0`，UnitySkills 截图 `Assets/Screenshots/L17_baked_indirect_fixed_camera.png` 可见室内暗面间接光。
 - L17 当前验证：`dotnet build Assembly-CSharp.csproj --no-restore`、`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 均 0 warning / 0 error；UnitySkills `debug_check_compilation` 未处于编译/刷新状态，Console Error 0，`validate_scene` 0 issues，`validate_missing_references` 0 issues。`Hidden/L17/Froxel Volumetric Composite` 的 `shader_check_errors` 仍返回 `messageCount=1`，但 Unity Console Warning/Error 均为 0，当前按 ShaderUtil 内部 message 残留记录。
 - `Assets/LXII game 整合/Docs/LXII_ClaudeCode_DuoAgent_Workflow.md` 已重写，当前约束和推进顺序已同步。
 - LXII 当前采用 Unity 正式验证口径：
@@ -40,6 +40,16 @@
   - `LXII L12 Grass Root`
   - `LXII Grass Ground`
   - `LXII Grass Field`
+  - `LXII L13 VolumeCloud Root`
+  - `LXII Sky Volume Cloud`
+- LXII 当前已经接入 L13 体积云并写入场景：
+  - 新增 `Tools/LXII/Setup L13 VolumeCloud In Game Scene`
+  - 体积云使用 LXII 专用材质实例 `Assets/LXII game 整合/Materials/LXII_L13_RaymarchedCloud_Performance.mat`
+  - 云盒覆盖天空区域，位置 `{x: 0, y: 82, z: 42}`，缩放 `{x: 620, y: 124, z: 620}`
+  - 噪声世界尺度 `{x: 420, y: 180, z: 420}`，避免通过拉伸云盒改变云纹理比例
+  - 默认性能档为 `10 view steps / 0 light steps`，关闭碰撞、阴影和 motion vector，仅作为天空氛围体积层
+  - `Main Camera` 已使用 Skybox clear flags，far clip 至少为 `850`
+  - 本轮验证：`debug_check_compilation` 未处于编译/刷新状态，Unity Console Error 0，`validate_scene` 0 issues，`validate_missing_references` 0 issues；Profiler 快照约 `410 FPS / 2.44 ms / 49 batches / 49 draw calls / 82k triangles`
 - LXII 当前已经接入可交互草地并写入场景：
   - L12 草地区域已写入 `game.unity`
   - 妮露已挂 `CharacterController`
@@ -75,8 +85,8 @@
   - 当前验证：C# 双程序集 0 warning / 0 error，Unity Console Error 0，`scene_health_check` 0 findings；合成 shader 的 `shader_check_errors` 仍有 1 条 ShaderUtil 内部 message，但 Console Warning/Error 为 0
 
 ## 当前进度判断
-- LXII 已经从“空场景 + 单角色写入”推进到“妮露 + Humanoid + LXI 动作测试 + Inspector 收敛后的拆职责第三人称角色控制 + 第三人称摄像机 + L12 可交互草地已接入”的阶段。
-- 当前主线不再是单纯搭测试壳，也不再回退到 `LXIIAnimationTestDriver` 单脚本方案；后续继续控制局部穿模，并把 L14 雪、L13 云按同一路径逐步串入。
+- LXII 已经从“空场景 + 单角色写入”推进到“妮露 + Humanoid + LXI 动作测试 + Inspector 收敛后的拆职责第三人称角色控制 + 第三人称摄像机 + L12 可交互草地 + L13 天空体积云已接入”的阶段。
+- 当前主线不再是单纯搭测试壳，也不再回退到 `LXIIAnimationTestDriver` 单脚本方案；后续继续控制局部穿模，并把 L14 雪按同一路径串入。
 
 ## 当前改动落点
 - `Assets/LXII game 整合/game.unity`
@@ -84,6 +94,8 @@
 - `Assets/LXII game 整合/Editor/LXIINilouHumanoidSetup.cs`
 - `Assets/LXII game 整合/Editor/LXIIAnimationTestSetup.cs`
 - `Assets/LXII game 整合/Editor/LXIIL12GrassSetup.cs`
+- `Assets/LXII game 整合/Editor/LXIIL13VolumeCloudSetup.cs`
+- `Assets/LXII game 整合/Materials/LXII_L13_RaymarchedCloud_Performance.mat`
 - `Assets/LXII game 整合/Scripts/Animation/LXIIAnimationTestDriver.cs`（历史测试脚本，当前玩家对象已改用 `Scripts/Player/*` 控制链）
 - `Assets/LXII game 整合/Scripts/Camera/LXIIThirdPersonCameraFollow.cs`
 - `Assets/LXII game 整合/Scripts/Player/LXIIPlayerInputReader.cs`
@@ -101,7 +113,7 @@
 - `Assets/L17 Volumetric Lighting/Shaders/L17FrustumVolumetricLighting.shader`
 - `Assets/L17 Volumetric Lighting/Textures/L17_BlueNoise64.asset`
 - `Assets/L17 Volumetric Lighting/Materials/L17_PostProcessProfile.asset`
-- `Assets/L17 Volumetric Lighting/Materials/{L17_RoomWall,L17_DustyFloor,L17_WindowFrame}.mat`
+- `Assets/L17 Volumetric Lighting/Materials/L17_RoomWall.mat`
 - `Assets/L17 Volumetric Lighting/Editor/L17VolumetricLightingDemoBuilder.cs`
 - `Assets/L17 Volumetric Lighting/Docs/L17_ModernVolumetricLighting_Workflow.md`
 
@@ -109,7 +121,8 @@
 - 后续每轮 LXII 代码或场景改动后，按 Unity 编译状态 + Console Error + 必要 Play Mode 验证记录结果。
 - 继续处理最明显、最常出现的局部穿模。
 - 把 L10.9 近距离屏幕抖动溶解 shader 接入 LXII 当前玩家链路。
-- 继续把 L14 雪先接入 LXII 路径，再接 L13 云，不额外扩散范围。
+- 继续把 L14 雪接入 LXII 路径，不额外扩散范围。
+- 补一次 LXII L13 云层 Play Mode 观感与性能快照；当前静态配置目标为天空覆盖且默认 `10/0` 低成本档。
 - 在当前基础控制链上继续补正式输入与交互，不回退到单脚本临时测试驱动。
 - 衣物和头发物理模拟不作为当前内建开发项；后续如要推进，默认按 Unity 插件或成熟现成方案接入。
 - 补一组 LXII 当前演示截图 / 录像。

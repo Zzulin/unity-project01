@@ -22,11 +22,14 @@
   - `Tools/LXII/Setup Nilou Humanoid In Game Scene`
   - `Tools/LXII/Setup LXI Animation Test In Game Scene`
   - `Tools/LXII/Setup L12 Grass In Game Scene`
+  - `Tools/LXII/Setup L13 VolumeCloud In Game Scene`
 - `game.unity` 已不再是纯空壳，当前已落地：
   - `LXII Nilou Player`
   - `LXII L12 Grass Root`
   - `LXII Grass Ground`
   - `LXII Grass Field`
+  - `LXII L13 VolumeCloud Root`
+  - `LXII Sky Volume Cloud`
 - 当前角色链路已具备：
   - 妮露 Humanoid Avatar
   - LXI Idle / Run / Action 测试控制器
@@ -45,10 +48,16 @@
   - 没有明显扭胯、塌肩、脚尖异常、头发链违和
   - 仍可能存在局部穿模
   - 衣物和头发物理模拟尚未接入
+- 当前 L13 体积云接入结论：
+  - 使用 LXII 专用材质实例，不直接改 L13 原始 Demo 材质
+  - 云盒覆盖天空区域，Transform Scale 只负责 Ray-Box 边界
+  - `Noise World Size` 独立保持云纹理世界尺度
+  - 默认性能档为 `10 view steps / 0 light steps`
+  - 云盒不参与碰撞、阴影或 motion vector
 
 这意味着：
 
-- LXII 当前重点已经从“先把整合层真正搭起来”转成“保持现有控制链稳定，并把 L14 / L13 逐步串入同一路径”。
+- LXII 当前重点已经从“先把整合层真正搭起来”转成“保持现有控制链稳定，并把 L14 雪地串入同一路径，同时继续复核 L13 云层的实机观感与性能”。
 - `codex/tasks.md` 中关于 LXII 的一些条目可能代表目标状态或待复核状态；是否已真实落地，必须以仓库文件、Unity Scene、Importer 状态和验证结果为准。
 
 ## 3. 硬约束
@@ -123,8 +132,8 @@ LXII 的第一版胜利条件：
 - 保持拆职责第三人称角色控制链稳定，不回退到单脚本测试驱动
 - 保持 `LXIIPlayerController` 作为主 Inspector 入口，内部组件只做自动绑定和职责拆分
 - 处理最明显的局部穿模
-- 把 L14 雪地先接入 LXII 主路径
-- 再接 L13 云作为终点氛围层
+- 把 L14 雪地接入 LXII 主路径
+- 复核已接入的 L13 云层在 Play Mode 下的天空覆盖、遮挡关系和性能快照
 
 当前不作为内建开发项的内容：
 
@@ -150,6 +159,9 @@ Assets/LXII game 整合/
     LXIINilouHumanoidSetup.cs
     LXIIAnimationTestSetup.cs
     LXIIL12GrassSetup.cs
+    LXIIL13VolumeCloudSetup.cs
+  Materials/
+    LXII_L13_RaymarchedCloud_Performance.mat
   Scripts/
     Player/
       LXIIPlayerInputReader.cs
