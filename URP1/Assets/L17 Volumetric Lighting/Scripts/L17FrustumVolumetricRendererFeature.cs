@@ -84,6 +84,17 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int HistoryValidId = Shader.PropertyToID("_L17HistoryValid");
         private static readonly int FrameIndexId = Shader.PropertyToID("_L17FrameIndex");
         private static readonly int FroxelDepthId = Shader.PropertyToID("_L17FroxelDepth");
+        private static readonly int CloudShapeNoiseId = Shader.PropertyToID("_L17CloudShapeNoise");
+        private static readonly int CloudDetailNoiseId = Shader.PropertyToID("_L17CloudDetailNoise");
+        private static readonly int CloudWeatherMapId = Shader.PropertyToID("_L17CloudWeatherMap");
+        private static readonly int CloudWorldToLocalId = Shader.PropertyToID("_L17CloudWorldToLocal");
+        private static readonly int CloudLocalToWorldId = Shader.PropertyToID("_L17CloudLocalToWorld");
+        private static readonly int CloudNoiseWorldSizeId = Shader.PropertyToID("_L17CloudNoiseWorldSize");
+        private static readonly int CloudWindId = Shader.PropertyToID("_L17CloudWind");
+        private static readonly int CloudParams0Id = Shader.PropertyToID("_L17CloudParams0");
+        private static readonly int CloudParams1Id = Shader.PropertyToID("_L17CloudParams1");
+        private static readonly int CloudParams2Id = Shader.PropertyToID("_L17CloudParams2");
+        private static readonly int CloudMacroGapStrengthId = Shader.PropertyToID("_L17CloudMacroGapStrength");
 
         private const string IntegratedTextureName = "_L17IntegratedTexture";
         private const string DenoisedTextureName = "_L17DenoisedTexture";
@@ -301,6 +312,56 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetFloat(HistoryValidId, validHistory ? 1f : 0f);
             material.SetFloat(FrameIndexId, frameIndex);
             material.SetFloat(FroxelDepthId, GetFroxelDepth());
+            PushCloudOccluder();
+        }
+
+        private void PushCloudOccluder()
+        {
+            L13VolumeCloudController cloud = controller != null ? controller.cloudOccluder : null;
+            Material cloudMaterial = cloud != null ? cloud.cloudMaterial : null;
+            bool enabled = cloud != null
+                && cloud.isActiveAndEnabled
+                && cloudMaterial != null
+                && cloud.coverage > 0.0001f
+                && cloud.density > 0.0001f;
+
+            material.SetVector(CloudParams2Id, enabled
+                ? new Vector4(cloud.anvilBias, cloud.lightAbsorption, controller.cloudShadowSteps, controller.cloudShadowStrength)
+                : Vector4.zero);
+
+            if (!enabled)
+            {
+                return;
+            }
+
+            material.SetTexture(CloudShapeNoiseId, cloudMaterial.GetTexture("_ShapeNoise"));
+            material.SetTexture(CloudDetailNoiseId, cloudMaterial.GetTexture("_DetailNoise"));
+            material.SetTexture(CloudWeatherMapId, cloudMaterial.GetTexture("_WeatherMap"));
+            material.SetMatrix(CloudWorldToLocalId, cloud.transform.worldToLocalMatrix);
+            material.SetMatrix(CloudLocalToWorldId, cloud.transform.localToWorldMatrix);
+            material.SetVector(CloudNoiseWorldSizeId, cloud.noiseWorldSize);
+            material.SetVector(CloudWindId, new Vector4(
+                cloud.windDirection.x,
+                cloud.windDirection.y,
+                cloud.windDirection.z,
+                cloud.windSpeed));
+            material.SetVector(CloudParams0Id, new Vector4(
+                cloud.density,
+                cloud.coverage,
+                cloud.weatherStrength,
+                cloud.shapeScale));
+            material.SetVector(CloudParams1Id, new Vector4(
+                cloud.detailScale,
+                cloud.detailStrength,
+                cloud.bottomSoftness,
+                cloud.topSoftness));
+            material.SetVector(CloudParams2Id, new Vector4(
+                cloud.anvilBias,
+                cloud.lightAbsorption,
+                controller.cloudShadowSteps,
+                controller.cloudShadowStrength));
+            material.SetFloat("_L17CloudShadowContrast", controller.cloudShadowContrast);
+            material.SetFloat(CloudMacroGapStrengthId, cloud.macroGapStrength);
         }
 
         private int GetFroxelDepth() => controller != null ? controller.froxelDepth : featureSettings.froxelDepth;

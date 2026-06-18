@@ -14,7 +14,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Header("Froxel Grid")]
     [Range(1, 4)] public int downsample = 2;
     [Range(16, 128)] public int froxelDepth = 96;
-    [Range(4f, 120f)] public float maxDistance = 58f;
+    [Range(4f, 2000f)] public float maxDistance = 58f;
     [Range(0.5f, 4f)] public float depthDistribution = 1.9f;
 
     [Header("Medium")]
@@ -24,15 +24,21 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Range(0f, 0.92f)] public float anisotropy = 0.78f;
     [Range(0f, 1f)] public float shadowFloor = 0.015f;
     [Range(0f, 2f)] public float multiScatter = 0.32f;
-    [Range(-10f, 10f)] public float heightOrigin = -0.4f;
-    [Range(0.01f, 8f)] public float heightFalloff = 0.22f;
+    [Range(-500f, 500f)] public float heightOrigin = -0.4f;
+    [Range(0.001f, 8f)] public float heightFalloff = 0.22f;
     [Range(0f, 1f)] public float noiseStrength = 0f;
     [Range(0.05f, 8f)] public float noiseScale = 1.25f;
     public Transform volumeBoundsTransform;
     public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
     public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
-    [Range(0.01f, 3f)] public float volumeBoundsSoftness = 0.45f;
+    [Range(0.01f, 300f)] public float volumeBoundsSoftness = 0.45f;
     public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
+
+    [Header("L13 Cloud Occlusion")]
+    public L13VolumeCloudController cloudOccluder;
+    [Range(1, 8)] public int cloudShadowSteps = 4;
+    [Range(0f, 1f)] public float cloudShadowStrength = 1f;
+    [Range(0.25f, 4f)] public float cloudShadowContrast = 1.6f;
 
     [Header("Stability")]
     public bool temporalAccumulation = true;

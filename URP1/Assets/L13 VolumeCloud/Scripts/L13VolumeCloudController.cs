@@ -12,6 +12,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     private static readonly int DensityId = Shader.PropertyToID("_Density");
     private static readonly int CoverageId = Shader.PropertyToID("_Coverage");
     private static readonly int WeatherStrengthId = Shader.PropertyToID("_WeatherStrength");
+    private static readonly int MacroGapStrengthId = Shader.PropertyToID("_MacroGapStrength");
     private static readonly int ShapeScaleId = Shader.PropertyToID("_ShapeScale");
     private static readonly int DetailScaleId = Shader.PropertyToID("_DetailScale");
     private static readonly int NoiseWorldSizeId = Shader.PropertyToID("_NoiseWorldSize");
@@ -44,6 +45,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     [Range(0f, 12f)] public float density = 3.2f;
     [Range(0f, 1f)] public float coverage = 0.6f;
     [Range(0f, 1f)] public float weatherStrength = 0.72f;
+    [Range(0f, 1f)] public float macroGapStrength = 0f;
     [Range(0.05f, 8f)] public float shapeScale = 6f;
     [Range(0.25f, 24f)] public float detailScale = 18f;
     [Range(0f, 1f)] public float detailStrength = 0.42f;
@@ -176,6 +178,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         material.SetFloat(DensityId, density);
         material.SetFloat(CoverageId, coverage);
         material.SetFloat(WeatherStrengthId, weatherStrength);
+        material.SetFloat(MacroGapStrengthId, macroGapStrength);
         material.SetFloat(ShapeScaleId, shapeScale);
         material.SetFloat(DetailScaleId, detailScale);
         material.SetVector(NoiseWorldSizeId, ToNoiseWorldSizeVector());
@@ -207,6 +210,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         block.SetFloat(DensityId, density);
         block.SetFloat(CoverageId, coverage);
         block.SetFloat(WeatherStrengthId, weatherStrength);
+        block.SetFloat(MacroGapStrengthId, macroGapStrength);
         block.SetFloat(ShapeScaleId, shapeScale);
         block.SetFloat(DetailScaleId, detailScale);
         block.SetVector(NoiseWorldSizeId, ToNoiseWorldSizeVector());

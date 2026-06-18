@@ -29,6 +29,10 @@
   - 场景系统：`Assets/L12 grass/*`、`Assets/L13 VolumeCloud/*`、`Assets/L14 Snow/*`
 
 ## 当前结论（短版）
+- `Assets/L18 VolumeCloud+VollumetricLighting/L18.unity` 已改为直接整合 L13 与 L17：场景使用 `L13VolumeCloudController` + L13 原体积云 Shader 渲染云层，使用 `L17VolumetricLightingController` + 原 L17 RendererFeature 渲染低空参与介质；L17 沿主光方向采样绑定的 L13 云密度场作为实时遮光，Coverage/Density 为 0 时透射恢复为 1，不会残留固定光柱。L18 不再保留专用 RendererFeature、Shader 或运行时脚本。
+- L13 新增默认关闭的 `macroGapStrength`，默认 0 保持 L13 原场景观感；L17 新增可选 `cloudOccluder` 及云影采样参数，没有绑定 L13 时保持 L17 原场景效果。L18 使用独立云材质，避免参数写回 L13 共享材质；Main Camera far clip 为 2500m，远景直线已确认主要来自体积盒/云底边界而非远裁剪面，当前通过扩大 L17 Bounds、90m 边缘软化和 L13 云底渐隐处理。色调按 RDR2 参考收敛为深蓝灰环境与中性偏暖白光幕，预览为 `Assets/Screenshots/L18_L13_L17_RDR2_tone_final_20260618.png`。
+- L18 地面场景已精简为单个根对象 `Ground`，树木、岩石和前景剪影全部移除；程序天空太阳盘缩至 `0.006`，云前向散射/银边峰值同步收窄，避免太阳方向形成大面积白斑。Main Camera 已复用 `L17RuntimeCameraMotion`：WASD、Q/E、右键视角、Shift 加速，基础速度 40m/s、加速倍率 4。
+- L18 当前体积云 Controller 的 25 项外观、采样和质量参数已按 `Assets/L13 VolumeCloud/L13.unity` 中实际值逐项同步；仅保留 L18 自身云盒 Transform、独立材质、太阳引用与 L17 云影绑定。
 - LXII 方案已修正：不使用 L11/StarRail；玩家必须是 `NPC_Avatar_Girl_Sword_Nilou.fbx`，保留 L10.9 妮露材质；Humanoid Avatar、LXI Idle/Run/Action、L12 可交互草地、第三人称摄像机和拆职责角色控制链已接入 `Assets/LXII game 整合/game.unity`。
 - LXII 当前角色控制链已从单脚本测试驱动拆为 `LXIIPlayerInputReader`、`LXIIPlayerMotor`、`LXIIPlayerAnimationDriver`、`LXIIPlayerController`；Inspector 主入口收敛到 `LXIIPlayerController`，内部辅助组件默认隐藏；保留 `CharacterController` 与第三人称摄像机，当前输入为 `WASD` 移动、`Left Shift` 加速、自动 Idle/Run、`3` 触发 Action。
 - LXII 已升级为大世界预览观感：`Tools/LXII/Setup L12 Grass In Game Scene` 会写入 960m 起伏地表 mesh 和 420m 贴坡草海，L12 草 shader / culling compute 已加可选地形高度参数且默认不影响原 L12 Demo；`targetBladeSpacing` 之前在 LXII 不明显是被 `maxBladesPerAxis=1024` 截断，当前 LXII 默认上限改为 2048；`Tools/LXII/Setup L13 VolumeCloud In Game Scene` 只保留一个 `LXII Sky Volume Cloud` 体积云对象，云盒为 1600m 级，默认 `10 view steps / 0 light steps`，场景雾距为 `150-900`，相机 far clip 至少 `1200`。

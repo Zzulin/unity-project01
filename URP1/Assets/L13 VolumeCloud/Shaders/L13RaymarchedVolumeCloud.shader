@@ -2,32 +2,43 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
 {
     Properties
     {
+        //颜色
         _CloudColor ("Cloud Tint", Color) = (1.0, 0.92, 0.78, 1)
         _ShadowColor ("Shadow Tint", Color) = (0.48, 0.56, 0.68, 1)
         _AmbientColor ("Ambient Color", Color) = (0.46, 0.55, 0.72, 1)
+        //云形贴图
         _ShapeNoise ("Shape Noise 3D", 3D) = "" {}
         _DetailNoise ("Detail Noise 3D", 3D) = "" {}
         _WeatherMap ("Weather Map", 2D) = "white" {}
+        //密度控制
         _Density ("Density", Range(0, 12)) = 3.2
         _Coverage ("Coverage", Range(0, 1)) = 0.6
         _WeatherStrength ("Weather Strength", Range(0, 1)) = 0.72
+        _MacroGapStrength ("Macro Gap Strength", Range(0, 1)) = 0
+        //噪声控制
         _ShapeScale ("Shape Scale", Range(0.05, 8)) = 7.5
         _DetailScale ("Detail Scale", Range(0.25, 24)) = 18
         _NoiseWorldSize ("Noise World Size", Vector) = (240, 76, 160, 0)
+        
         _DetailStrength ("Detail Strength", Range(0, 1)) = 0.42
         _BottomSoftness ("Bottom Softness", Range(0.01, 0.45)) = 0.18
         _TopSoftness ("Top Softness", Range(0.01, 0.45)) = 0.22
         _AnvilBias ("Anvil Bias", Range(0, 1)) = 0.62
+        
+        //光照控制
         _Absorption ("Absorption", Range(0.2, 8)) = 2.6
         _LightAbsorption ("Light Absorption", Range(0.2, 8)) = 2.9
         _PhaseForward ("Forward Phase", Range(0, 0.85)) = 0.58
         _PhaseBackward ("Backward Phase", Range(-0.65, 0)) = -0.28
         _SilverIntensity ("Silver Intensity", Range(0, 4)) = 1.65
         _PowderStrength ("Powder Strength", Range(0, 3)) = 1.15
+        //动画控制
         _WindDirection ("Wind Direction", Vector) = (1, 0, 0.25, 0)
         _WindSpeed ("Wind Speed", Range(0, 30)) = 7
+        //性能控制
         _StepCount ("View Steps", Range(3, 96)) = 16
         _LightStepCount ("Light Steps", Range(0, 8)) = 0
+        
         _Opacity ("Opacity", Range(0, 1)) = 0.92
     }
 
@@ -81,6 +92,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 float _Density;
                 float _Coverage;
                 float _WeatherStrength;
+                float _MacroGapStrength;
                 float _ShapeScale;
                 float _DetailScale;
                 float _DetailStrength;
@@ -187,7 +199,8 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                     body = saturate(body - (1.0 - detailErosion) * _DetailStrength * weather.a * saturate(body * 1.65));
                 }
 
-                return body * heightMask * EdgeFade(p01) * _Density * localDensity;
+                float macroGap = lerp(1.0, smoothstep(0.43, 0.62, weather.r), saturate(_MacroGapStrength));
+                return body * heightMask * EdgeFade(p01) * _Density * localDensity * macroGap;
             }
 
             float HenyeyGreenstein(float cosTheta, float g)

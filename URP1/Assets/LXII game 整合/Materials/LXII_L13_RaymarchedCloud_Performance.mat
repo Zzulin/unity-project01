@@ -46,6 +46,7 @@ Material:
     - _DetailStrength: 0.52
     - _LightAbsorption: 2.7
     - _LightStepCount: 2
+    - _MacroGapStrength: 0
     - _Opacity: 0.84
     - _PhaseBackward: -0.22
     - _PhaseForward: 0.52

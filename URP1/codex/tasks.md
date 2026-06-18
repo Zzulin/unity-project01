@@ -5,6 +5,10 @@
 - 当前目标：把 LXII 收敛成可演示的整合场景，不使用 L11 / StarRail，玩家固定为 L10.9 妮露 `Assets/L10.9 learnNPR/43 妮露/NPC_Avatar_Girl_Sword_Nilou.fbx`；Humanoid + LXI 动作基础链已打通，当前继续把第三人称控制、草地、雪地、体积云串成同一条演示路径。
 
 ## 当前已确认
+- L18 已撤销专用 Shader/RendererFeature/Controller，改为直接组合 L13 云与 L17 froxel 体积光；L17 可选采样绑定的 L13 云密度场生成实时云缝遮光，L13/L17 原场景因默认未启用耦合参数而保持原效果。
+- L18 当前使用独立 L13 云材质、2500m Camera far clip、扩大并软化的 L17 户外 Bounds；色调按 RDR2 参考调整为深蓝灰环境与中性白光幕。当前 Unity 编译空闲、Console Error 0、`validate_scene` 0 issues、`validate_missing_references` 0 issues。
+- L18 展示物已精简为单个 `Ground`；太阳盘与云层前向高亮范围已收窄；Main Camera 已挂现有 `L17RuntimeCameraMotion`，Play Mode 短测 Console Error 0。
+- L18 云参数已逐项同步为 L13 场景当前实际值（含颜色、密度/覆盖、噪声尺度、相函数、风和 14/3 步进）；L18 云盒 Transform 与独立材质保持独立。
 - `Assets/L15 Water/L15.unity` 已生成纯水体现代二次元水体 Demo：不放水上装饰物，只保留水面、水底凹陷地形、灯光、后处理、相机和 HUD。
 - L15 当前水体链路包含：高细分水面网格、4 层 Gerstner 顶点波、深浅水吸收/分层染色、透明混合、Fresnel/高光、岸线泡沫、水底三平面动态焦散；水面网格已改为 UInt32 索引，避免 65535 顶点以上的大三角伪影。
 - L15 构建菜单：`Tools/Water/Build L15 Modern Anime Water Demo`；预览截图：`Assets/Screenshots/L15_ModernAnimeWater_caustic_voronoi_current_20260522.png`。
@@ -136,6 +140,7 @@
 - `Assets/L17 Volumetric Lighting/Docs/L17_ModernVolumetricLighting_Workflow.md`
 
 ## 当前待办
+- L18 后续继续优化云洞尺度、光幕对比、远景地表层次，并视性能决定是否恢复 temporal accumulation。
 - 后续每轮 LXII 代码或场景改动后，按 Unity 编译状态 + Console Error + 必要 Play Mode 验证记录结果。
 - 继续处理最明显、最常出现的局部穿模。
 - 把 L10.9 近距离屏幕抖动溶解 shader 接入 LXII 当前玩家链路。

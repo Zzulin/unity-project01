@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: L13_RaymarchedCloud
+  m_Name: L18_L13_RaymarchedCloud
   m_Shader: {fileID: 4800000, guid: cf7ea813227ea491b806588589f56825, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -59,7 +59,7 @@ Material:
     - _WindSpeed: 2.6
     m_Colors:
     - _AmbientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
-    - _CloudColor: {r: 1, g: 0.91408354, b: 0.759434, a: 1}
+    - _CloudColor: {r: 1, g: 0.9140835, b: 0.759434, a: 1}
     - _NoiseWorldSize: {r: 240, g: 240, b: 240, a: 0}
     - _ShadowColor: {r: 0.48, g: 0.56, b: 0.68, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0.25, a: 0}

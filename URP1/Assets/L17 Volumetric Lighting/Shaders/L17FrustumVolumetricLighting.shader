@@ -23,6 +23,12 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         TEXTURE2D_X_FLOAT(_L17LowDepthTexture);
         TEXTURE2D(_L17BlueNoiseTexture);
         SAMPLER(sampler_L17BlueNoiseTexture);
+        TEXTURE3D(_L17CloudShapeNoise);
+        SAMPLER(sampler_L17CloudShapeNoise);
+        TEXTURE3D(_L17CloudDetailNoise);
+        SAMPLER(sampler_L17CloudDetailNoise);
+        TEXTURE2D(_L17CloudWeatherMap);
+        SAMPLER(sampler_L17CloudWeatherMap);
 
         float4 _L17FroxelSize;
         float4 _L17CameraSize;
@@ -38,6 +44,15 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float _L17HistoryValid;
         float _L17FrameIndex;
         float _L17FroxelDepth;
+        float4x4 _L17CloudWorldToLocal;
+        float4x4 _L17CloudLocalToWorld;
+        float4 _L17CloudNoiseWorldSize;
+        float4 _L17CloudWind;
+        float4 _L17CloudParams0;
+        float4 _L17CloudParams1;
+        float4 _L17CloudParams2;
+        float _L17CloudShadowContrast;
+        float _L17CloudMacroGapStrength;
 
         float DeviceDepthFromRawDepth(float rawDepth)
         {
@@ -113,6 +128,110 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return min(phase, phaseCeiling);
         }
 
+        float2 IntersectCloudBox(float3 rayOriginOS, float3 rayDirectionOS)
+        {
+            float3 inverseDirection = 1.0 / max(abs(rayDirectionOS), 0.00001) * sign(rayDirectionOS);
+            float3 t0 = (-0.5 - rayOriginOS) * inverseDirection;
+            float3 t1 = (0.5 - rayOriginOS) * inverseDirection;
+            float3 tMin = min(t0, t1);
+            float3 tMax = max(t0, t1);
+            return float2(max(max(tMin.x, tMin.y), tMin.z), min(min(tMax.x, tMax.y), tMax.z));
+        }
+
+        float CoupledCloudHeightGradient(float height01)
+        {
+            float bottom = smoothstep(0.0, max(_L17CloudParams1.z, 0.01), height01);
+            float top = 1.0 - smoothstep(1.0 - max(_L17CloudParams1.w, 0.01), 1.0, height01);
+            float anvil = lerp(0.72, 1.2, smoothstep(_L17CloudParams2.x, 1.0, height01));
+            return saturate(bottom * top * anvil);
+        }
+
+        float CoupledCloudEdgeFade(float3 position01)
+        {
+            float2 edgeDistance = min(position01.xz, 1.0 - position01.xz);
+            return smoothstep(0.0, 0.075, min(edgeDistance.x, edgeDistance.y));
+        }
+
+        float SampleCoupledCloudDensity(float3 positionOS)
+        {
+            float3 position01 = positionOS + 0.5;
+            if (any(position01 < 0.0) || any(position01 > 1.0))
+            {
+                return 0.0;
+            }
+
+            float3 positionWS = mul(_L17CloudLocalToWorld, float4(positionOS, 1.0)).xyz;
+            float3 centerWS = mul(_L17CloudLocalToWorld, float4(0.0, 0.0, 0.0, 1.0)).xyz;
+            float3 noiseWorldSize = max(abs(_L17CloudNoiseWorldSize.xyz), float3(0.001, 0.001, 0.001));
+            float3 noiseCoord = (positionWS - centerWS) / noiseWorldSize + 0.5;
+            float3 windDirection = normalize(_L17CloudWind.xyz + float3(0.0001, 0.0, 0.0001));
+            float3 wind = windDirection * (_Time.y * _L17CloudWind.w * 0.015);
+            float2 weatherUv = noiseCoord.xz * 0.72 + wind.xz * 0.035;
+            float4 weather = SAMPLE_TEXTURE2D_LOD(_L17CloudWeatherMap, sampler_L17CloudWeatherMap, weatherUv, 0);
+
+            float coverage = saturate(_L17CloudParams0.y + (weather.r - 0.5) * _L17CloudParams0.z);
+            float cloudType = weather.g;
+            float localDensity = lerp(0.65, 1.25, weather.b);
+            float3 shapeUv = noiseCoord * _L17CloudParams0.w * 0.12 + wind;
+            float4 shapeNoise = SAMPLE_TEXTURE3D_LOD(_L17CloudShapeNoise, sampler_L17CloudShapeNoise, shapeUv, 0);
+            float baseShape = lerp(shapeNoise.r, shapeNoise.b, 0.72);
+            float threshold = lerp(0.82, 0.24, coverage);
+            float body = smoothstep(threshold, 1.0, baseShape + shapeNoise.g * 0.18)
+                * lerp(0.88, 1.16, cloudType);
+
+            float3 detailUv = noiseCoord * _L17CloudParams1.x * 0.08 + wind * 2.2;
+            float4 detailNoise = SAMPLE_TEXTURE3D_LOD(_L17CloudDetailNoise, sampler_L17CloudDetailNoise, detailUv, 0);
+            float detailErosion = lerp(detailNoise.r, detailNoise.b, saturate(position01.y));
+            body = saturate(body - (1.0 - detailErosion) * _L17CloudParams1.y * weather.a * saturate(body * 1.65));
+
+            float macroGap = lerp(1.0, smoothstep(0.43, 0.62, weather.r), saturate(_L17CloudMacroGapStrength));
+            return body
+                * CoupledCloudHeightGradient(position01.y)
+                * CoupledCloudEdgeFade(position01)
+                * _L17CloudParams0.x
+                * localDensity
+                * macroGap;
+        }
+
+        float CoupledCloudTransmittance(float3 positionWS, float3 lightDirectionWS)
+        {
+            if (_L17CloudParams2.w <= 0.0001 || _L17CloudParams0.y <= 0.0001)
+            {
+                return 1.0;
+            }
+
+            float3 rayOriginOS = mul(_L17CloudWorldToLocal, float4(positionWS, 1.0)).xyz;
+            float3 rayDirectionOS = normalize(mul((float3x3)_L17CloudWorldToLocal, lightDirectionWS));
+            float2 hit = IntersectCloudBox(rayOriginOS, rayDirectionOS);
+            float startDistance = max(hit.x, 0.0);
+            float endDistance = hit.y;
+            if (endDistance <= startDistance)
+            {
+                return 1.0;
+            }
+
+            int stepCount = (int)clamp(round(_L17CloudParams2.z), 1.0, 8.0);
+            float stepLength = (endDistance - startDistance) / stepCount;
+            float opticalDepth = 0.0;
+            float travel = startDistance + stepLength * 0.5;
+
+            [loop]
+            for (int index = 0; index < 8; index++)
+            {
+                if (index >= stepCount)
+                {
+                    break;
+                }
+
+                opticalDepth += SampleCoupledCloudDensity(rayOriginOS + rayDirectionOS * travel) * stepLength;
+                travel += stepLength;
+            }
+
+            float transmission = exp(-opticalDepth * max(_L17CloudParams2.y, 0.001));
+            transmission = pow(saturate(transmission), max(_L17CloudShadowContrast, 0.25));
+            return lerp(1.0, transmission, saturate(_L17CloudParams2.w));
+        }
+
         float3 RayDirection(float2 uv)
         {
             float3 farPositionWS = ComputeWorldSpacePosition(uv, FarDeviceDepth(), unity_MatrixInvVP);
@@ -179,7 +298,8 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 float density = DensityAtPosition(sampleWS);
                 float4 shadowCoord = TransformWorldToShadowCoord(sampleWS);
                 Light shadowedLight = GetMainLight(shadowCoord);
-                float shadowAttenuation = saturate(shadowedLight.shadowAttenuation);
+                float cloudTransmission = CoupledCloudTransmittance(sampleWS, lightDirWS);
+                float shadowAttenuation = saturate(shadowedLight.shadowAttenuation * cloudTransmission);
                 float shadow = lerp(_L17Params1.z, 1.0, shadowAttenuation);
                 float multiScatterShadow = shadowAttenuation * shadowAttenuation;
                 float opticalDepth = density * max(_L17Params0.w, 0.001) * stepLength;
