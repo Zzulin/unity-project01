@@ -52,12 +52,12 @@ Material:
     - _PhaseBackward: -0.28
     - _PhaseForward: 0.58
     - _PowderStrength: 1.15
-    - _ShapeScale: 1.63
+    - _ShapeScale: 1.02
     - _SilverIntensity: 1.65
     - _StepCount: 14
     - _TopSoftness: 0.22
     - _WeatherStrength: 0.72
-    - _WindSpeed: 2.6
+    - _WindSpeed: 1.3
     m_Colors:
     - _AmbientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
     - _CloudColor: {r: 1, g: 0.9140835, b: 0.759434, a: 1}

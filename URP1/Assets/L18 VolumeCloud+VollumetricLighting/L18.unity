@@ -226,7 +226,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 2500
+  far clip plane: 3500
   field of view: 58
   orthographic: 0
   orthographic size: 5
@@ -506,8 +506,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 80, y: 75, z: 390}
-  m_LocalScale: {x: 1800, y: 190, z: 1000}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: 3229, y: 384, z: 4606.2}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -630,7 +630,7 @@ MonoBehaviour:
   coverage: 0.286
   weatherStrength: 0.72
   macroGapStrength: 0
-  shapeScale: 1.63
+  shapeScale: 1.02
   detailScale: 3.43
   detailStrength: 0.569
   bottomSoftness: 0.357
@@ -644,7 +644,7 @@ MonoBehaviour:
   silverIntensity: 1.65
   powderStrength: 1.15
   windDirection: {x: 1, y: 0, z: 0.25, w: 0}
-  windSpeed: 2.6
+  windSpeed: 1.3
   noiseWorldSize: {x: 240, y: 240, z: 240}
   stepCount: 14
   lightStepCount: 3
@@ -809,7 +809,7 @@ MonoBehaviour:
   noiseScale: 0.12
   volumeBoundsTransform: {fileID: 1280845992}
   volumeBoundsCenter: {x: 80, y: 75, z: 390}
-  volumeBoundsSize: {x: 1800, y: 190, z: 1000}
+  volumeBoundsSize: {x: 3229, y: 384, z: 4606.2}
   volumeBoundsSoftness: 28
   scatteringColor: {r: 0.96, g: 0.98, b: 1, a: 1}
   cloudOccluder: {fileID: 1441240294}

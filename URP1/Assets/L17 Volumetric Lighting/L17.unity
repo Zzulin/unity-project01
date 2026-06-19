@@ -1453,6 +1453,7 @@ MonoBehaviour:
   extinction: 0.68
   intensity: 3.25
   anisotropy: 0.78
+  forwardPhaseCeiling: 3.5
   shadowFloor: 0.015
   multiScatter: 0.32
   heightOrigin: -0.4
@@ -2292,7 +2293,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 8.25, y: 3.1, z: 0}
-  m_LocalScale: {x: 18, y: 6.7, z: 1}
+  m_LocalScale: {x: 18, y: 7.6246, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 612207814}
