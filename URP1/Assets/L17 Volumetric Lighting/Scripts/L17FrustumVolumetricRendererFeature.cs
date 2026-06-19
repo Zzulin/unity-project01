@@ -306,7 +306,11 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetVector(VolumeBoundsCenterId, new Vector4(boundsCenter.x, boundsCenter.y, boundsCenter.z, GetVolumeBoundsSoftness()));
             material.SetVector(VolumeBoundsSizeId, new Vector4(boundsSize.x, boundsSize.y, boundsSize.z, 0f));
             material.SetVector(TemporalParamsId, new Vector4(temporalBlend, GetJitterStrength(), GetBilateralDepthScale(), GetCompositeOpacity()));
-            material.SetVector(TemporalControlId, new Vector4(useTemporalHistory ? 1f : 0f, cameraType == CameraType.SceneView ? 1f : 0f, GetTemporalAccumulation() ? 1f : 0f, 0f));
+            material.SetVector(TemporalControlId, new Vector4(
+                useTemporalHistory ? 1f : 0f,
+                cameraType == CameraType.SceneView ? 1f : 0f,
+                GetTemporalAccumulation() ? 1f : 0f,
+                controller != null ? controller.forwardPhaseCeiling : 3.5f));
             material.SetColor(ScatteringColorId, GetScatteringColor());
             material.SetMatrix(PreviousViewProjectionId, validHistory ? history.previousViewProjection : Matrix4x4.identity);
             material.SetFloat(HistoryValidId, validHistory ? 1f : 0f);

@@ -29,6 +29,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
         _Absorption ("Absorption", Range(0.2, 8)) = 2.6
         _LightAbsorption ("Light Absorption", Range(0.2, 8)) = 2.9
         _PhaseForward ("Forward Phase", Range(0, 0.85)) = 0.58
+        _ForwardPhaseClamp ("Forward Phase Clamp (0 = Off)", Range(0, 1)) = 0
         _PhaseBackward ("Backward Phase", Range(-0.65, 0)) = -0.28
         _SilverIntensity ("Silver Intensity", Range(0, 4)) = 1.65
         _PowderStrength ("Powder Strength", Range(0, 3)) = 1.15
@@ -102,6 +103,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 float _Absorption;
                 float _LightAbsorption;
                 float _PhaseForward;
+                float _ForwardPhaseClamp;
                 float _PhaseBackward;
                 float _SilverIntensity;
                 float _PowderStrength;
@@ -266,6 +268,10 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 float forwardPhase = HenyeyGreenstein(dot(viewDirWS, sunDirWS), _PhaseForward);
                 float backwardPhase = HenyeyGreenstein(dot(viewDirWS, sunDirWS), _PhaseBackward);
                 float phase = forwardPhase * _SilverIntensity + backwardPhase * 0.35 + 0.18;
+                if (_ForwardPhaseClamp > 0.0001)
+                {
+                    phase = min(phase, _ForwardPhaseClamp);
+                }
 
                 float transmittance = 1.0;
                 float3 color = 0.0;
@@ -288,7 +294,12 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                         float alphaSlice = saturate(1.0 - attenuation);
                         float powder = 1.0 - exp(-density * _PowderStrength);
                         float3 litCloud = lerp(_ShadowColor.rgb, _CloudColor.rgb, lightTrans);
-                        float3 scattering = _AmbientColor.rgb * 0.82 + litCloud * _SunColor.rgb * (phase * lightTrans * 2.1 + powder * 0.32);
+                        float directLighting = phase * lightTrans * 2.1 + powder * 0.32;
+                        if (_ForwardPhaseClamp > 0.0001)
+                        {
+                            directLighting = min(directLighting, _ForwardPhaseClamp * 1.8);
+                        }
+                        float3 scattering = _AmbientColor.rgb * 0.82 + litCloud * _SunColor.rgb * directLighting;
 
                         color += transmittance * alphaSlice * scattering;
                         transmittance *= attenuation;

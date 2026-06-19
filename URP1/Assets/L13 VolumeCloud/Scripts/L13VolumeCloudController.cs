@@ -23,6 +23,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     private static readonly int AbsorptionId = Shader.PropertyToID("_Absorption");
     private static readonly int LightAbsorptionId = Shader.PropertyToID("_LightAbsorption");
     private static readonly int PhaseForwardId = Shader.PropertyToID("_PhaseForward");
+    private static readonly int ForwardPhaseClampId = Shader.PropertyToID("_ForwardPhaseClamp");
     private static readonly int PhaseBackwardId = Shader.PropertyToID("_PhaseBackward");
     private static readonly int SilverIntensityId = Shader.PropertyToID("_SilverIntensity");
     private static readonly int PowderStrengthId = Shader.PropertyToID("_PowderStrength");
@@ -55,6 +56,8 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     [Range(0.2f, 8f)] public float absorption = 2.6f;
     [Range(0.2f, 8f)] public float lightAbsorption = 2.9f;
     [Range(0f, 0.85f)] public float forwardPhase = 0.58f;
+    [Tooltip("0 keeps the original L13 phase response. Positive values cap the view-aligned forward lobe.")]
+    [Range(0f, 1f)] public float forwardPhaseClamp = 0f;
     [Range(-0.65f, 0f)] public float backwardPhase = -0.28f;
     [Range(0f, 4f)] public float silverIntensity = 1.65f;
     [Range(0f, 3f)] public float powderStrength = 1.15f;
@@ -189,6 +192,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         material.SetFloat(AbsorptionId, absorption);
         material.SetFloat(LightAbsorptionId, lightAbsorption);
         material.SetFloat(PhaseForwardId, forwardPhase);
+        material.SetFloat(ForwardPhaseClampId, forwardPhaseClamp);
         material.SetFloat(PhaseBackwardId, backwardPhase);
         material.SetFloat(SilverIntensityId, silverIntensity);
         material.SetFloat(PowderStrengthId, powderStrength);
@@ -221,6 +225,7 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         block.SetFloat(AbsorptionId, absorption);
         block.SetFloat(LightAbsorptionId, lightAbsorption);
         block.SetFloat(PhaseForwardId, forwardPhase);
+        block.SetFloat(ForwardPhaseClampId, forwardPhaseClamp);
         block.SetFloat(PhaseBackwardId, backwardPhase);
         block.SetFloat(SilverIntensityId, silverIntensity);
         block.SetFloat(PowderStrengthId, powderStrength);

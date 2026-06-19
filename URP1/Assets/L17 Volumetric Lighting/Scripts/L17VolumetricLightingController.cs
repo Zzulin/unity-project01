@@ -22,6 +22,8 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Range(0.01f, 4f)] public float extinction = 0.68f;
     [Range(0f, 10f)] public float intensity = 3.25f;
     [Range(0f, 0.92f)] public float anisotropy = 0.78f;
+    [Tooltip("Multiplier of the isotropic phase used as the maximum forward-scattering peak.")]
+    [Range(1f, 3.5f)] public float forwardPhaseCeiling = 3.5f;
     [Range(0f, 1f)] public float shadowFloor = 0.015f;
     [Range(0f, 2f)] public float multiScatter = 0.32f;
     [Range(-500f, 500f)] public float heightOrigin = -0.4f;

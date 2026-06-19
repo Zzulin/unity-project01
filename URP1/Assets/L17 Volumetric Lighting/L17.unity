@@ -221,7 +221,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &172418803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,7 +281,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 0.93, b: 0.78, a: 1}
-  m_Intensity: 3.1
+  m_Intensity: 2.35
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1464,6 +1464,10 @@ MonoBehaviour:
   volumeBoundsSize: {x: 15.8, y: 6.2, z: 16.2}
   volumeBoundsSoftness: 0.45
   scatteringColor: {r: 1, g: 0.84, b: 0.52, a: 1}
+  cloudOccluder: {fileID: 0}
+  cloudShadowSteps: 4
+  cloudShadowStrength: 1
+  cloudShadowContrast: 1.6
   temporalAccumulation: 1
   jitterStrength: 0.9
   temporalBlend: 0.8

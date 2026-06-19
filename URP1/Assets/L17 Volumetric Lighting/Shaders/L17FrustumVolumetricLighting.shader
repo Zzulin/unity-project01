@@ -124,7 +124,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             // Realtime volumetric fog usually bounds the near-singular forward lobe.
             // Otherwise a directional light turns into a screen-space disk instead of a shaft.
             float isotropicPhase = 1.0 / (4.0 * PI);
-            float phaseCeiling = isotropicPhase * 3.5;
+            float phaseCeiling = isotropicPhase * clamp(_L17TemporalControl.w, 1.0, 3.5);
             return min(phase, phaseCeiling);
         }
 
