@@ -72,6 +72,14 @@ public sealed class L13VolumeCloudController : MonoBehaviour
     [Range(0, 8)] public int lightStepCount = 0;
     [Range(0f, 1f)] public float opacity = 0.92f;
 
+    [Header("Volumetric Light Occlusion")]
+    [Tooltip("Sampling quality used when this cloud casts shadows into L17 volumetric lighting.")]
+    [Range(1, 8)] public int volumetricShadowSteps = 4;
+    [Tooltip("How strongly this cloud blocks L17 volumetric lighting. Set to 0 to disable cloud occlusion.")]
+    [Range(0f, 1f)] public float volumetricShadowStrength = 1f;
+    [Tooltip("Contrast of cloud gaps in L17 volumetric lighting.")]
+    [Range(0.5f, 3f)] public float volumetricShadowContrast = 1.6f;
+
     private MeshRenderer cachedRenderer;
     private MaterialPropertyBlock propertyBlock;
 

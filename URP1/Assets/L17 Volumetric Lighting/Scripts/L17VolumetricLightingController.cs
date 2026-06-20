@@ -8,59 +8,48 @@ using UnityEditor;
 [ExecuteAlways]
 public sealed class L17VolumetricLightingController : MonoBehaviour
 {
-    [Header("Renderer Feature")]
     public UniversalRendererData rendererData;
 
-    [Header("Froxel Grid")]
     [Range(1, 4)] public int downsample = 2;
     [Range(16, 128)] public int froxelDepth = 96;
-    [Range(4f, 2000f)] public float maxDistance = 58f;
-    [Range(0.5f, 4f)] public float depthDistribution = 1.9f;
+    [Min(4f)] public float maxDistance = 58f;
+    [Range(0.5f, 3f)] public float depthDistribution = 1.9f;
 
-    [Header("Medium")]
-    [Range(0f, 1.5f)] public float density = 0.24f;
-    [Range(0.01f, 4f)] public float extinction = 0.68f;
-    [Range(0f, 10f)] public float intensity = 3.25f;
+    [Min(0f)] public float density = 0.24f;
+    [Range(0.01f, 1.5f)] public float extinction = 0.68f;
+    [Range(0f, 30f)] public float intensity = 3.25f;
     [Range(0f, 0.92f)] public float anisotropy = 0.78f;
     [Tooltip("Multiplier of the isotropic phase used as the maximum forward-scattering peak.")]
     [Range(1f, 3.5f)] public float forwardPhaseCeiling = 3.5f;
-    [Range(0f, 1f)] public float shadowFloor = 0.015f;
-    [Range(0f, 2f)] public float multiScatter = 0.32f;
-    [Range(-500f, 500f)] public float heightOrigin = -0.4f;
-    [Range(0.001f, 8f)] public float heightFalloff = 0.22f;
+    [Range(0f, 0.08f)] public float shadowFloor = 0.015f;
+    [Range(0f, 0.6f)] public float multiScatter = 0.32f;
+    [Range(-50f, 150f)] public float heightOrigin = -0.4f;
+    [Min(0.0001f)] public float heightFalloff = 0.22f;
     [Range(0f, 1f)] public float noiseStrength = 0f;
-    [Range(0.05f, 8f)] public float noiseScale = 1.25f;
+    [Min(0.001f)] public float noiseScale = 1.25f;
     public Transform volumeBoundsTransform;
     public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
     public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
-    [Range(0.01f, 300f)] public float volumeBoundsSoftness = 0.45f;
+    [Min(0.01f)] public float volumeBoundsSoftness = 0.45f;
     public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
 
-    [Header("L13 Cloud Occlusion")]
-    public L13VolumeCloudController cloudOccluder;
-    [Range(1, 8)] public int cloudShadowSteps = 4;
-    [Range(0f, 1f)] public float cloudShadowStrength = 1f;
-    [Range(0.25f, 4f)] public float cloudShadowContrast = 1.6f;
-
-    [Header("Stability")]
     public bool temporalAccumulation = true;
     [Range(0f, 1f)] public float jitterStrength = 0.9f;
-    [Range(0f, 0.98f)] public float temporalBlend = 0.8f;
-    [Range(0.001f, 2f)] public float temporalDepthRejection = 0.12f;
-    [Range(0f, 1f)] public float bilateralDepthScale = 0.08f;
+    [Range(0f, 0.95f)] public float temporalBlend = 0.8f;
+    [Range(0.001f, 0.5f)] public float temporalDepthRejection = 0.12f;
+    [Range(0f, 0.3f)] public float bilateralDepthScale = 0.08f;
     [Range(0f, 1f)] public float compositeOpacity = 0.94f;
 
-    [Header("Sun")]
     public Light sunLight;
-    [Range(0f, 8f)] public float sunIntensity = 2.35f;
+    [Range(0f, 5f)] public float sunIntensity = 2.35f;
     public Color sunColor = new Color(1f, 0.93f, 0.78f, 1f);
 
-    [Header("Room Bounce")]
     public Color ambientSky = new Color(0.08f, 0.082f, 0.09f, 1f);
     public Color ambientEquator = new Color(0.045f, 0.04f, 0.034f, 1f);
     public Color ambientGround = new Color(0.018f, 0.015f, 0.012f, 1f);
 
     private L17FrustumVolumetricRendererFeature cachedFeature;
+    private L13VolumeCloudController cachedCloudOccluder;
     private bool hasApplied;
     private Vector3 lastVolumeBoundsPosition;
     private Vector3 lastVolumeBoundsScale;
@@ -204,4 +193,124 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         center = volumeBoundsCenter;
         size = volumeBoundsSize;
     }
+
+    public L13VolumeCloudController GetCloudOccluder()
+    {
+        if (cachedCloudOccluder != null
+            && cachedCloudOccluder.isActiveAndEnabled
+            && cachedCloudOccluder.gameObject.scene == gameObject.scene)
+        {
+            return cachedCloudOccluder;
+        }
+
+        cachedCloudOccluder = null;
+        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded)
+        {
+            return null;
+        }
+
+        foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+        {
+            L13VolumeCloudController cloud = root.GetComponentInChildren<L13VolumeCloudController>(false);
+            if (cloud != null && cloud.isActiveAndEnabled)
+            {
+                cachedCloudOccluder = cloud;
+                break;
+            }
+        }
+
+        return cachedCloudOccluder;
+    }
 }
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(L17VolumetricLightingController))]
+public sealed class L17VolumetricLightingControllerEditor : Editor
+{
+    private SerializedProperty Property(string name)
+    {
+        return serializedObject.FindProperty(name);
+    }
+
+    private static void Header(string label)
+    {
+        EditorGUILayout.Space(5f);
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+    }
+
+    private static void PowerSlider(
+        SerializedProperty property,
+        GUIContent label,
+        float maximum,
+        float power)
+    {
+        float value = Mathf.Clamp(property.floatValue, 0f, maximum);
+        float normalized = Mathf.Pow(value / maximum, 1f / power);
+
+        EditorGUILayout.BeginHorizontal();
+        float nextNormalized = EditorGUILayout.Slider(label, normalized, 0f, 1f);
+        float nextValue = Mathf.Pow(nextNormalized, power) * maximum;
+        nextValue = EditorGUILayout.FloatField(nextValue, GUILayout.Width(72f));
+        EditorGUILayout.EndHorizontal();
+
+        property.floatValue = Mathf.Clamp(nextValue, 0f, maximum);
+    }
+
+    public override void OnInspectorGUI()
+    {
+        serializedObject.Update();
+
+        using (new EditorGUI.DisabledScope(true))
+        {
+            EditorGUILayout.PropertyField(Property("m_Script"));
+        }
+
+        Header("Renderer Feature");
+        EditorGUILayout.PropertyField(Property("rendererData"));
+
+        Header("Froxel Grid");
+        EditorGUILayout.PropertyField(Property("downsample"));
+        EditorGUILayout.PropertyField(Property("froxelDepth"));
+        PowerSlider(Property("maxDistance"), new GUIContent("Max Distance"), 2000f, 2.2f);
+        EditorGUILayout.PropertyField(Property("depthDistribution"));
+
+        Header("Medium");
+        PowerSlider(Property("density"), new GUIContent("Density"), 0.4f, 3f);
+        EditorGUILayout.PropertyField(Property("extinction"));
+        EditorGUILayout.PropertyField(Property("intensity"));
+        EditorGUILayout.PropertyField(Property("anisotropy"));
+        EditorGUILayout.PropertyField(Property("forwardPhaseCeiling"));
+        EditorGUILayout.PropertyField(Property("shadowFloor"));
+        EditorGUILayout.PropertyField(Property("multiScatter"));
+        EditorGUILayout.PropertyField(Property("heightOrigin"));
+        PowerSlider(Property("heightFalloff"), new GUIContent("Height Falloff"), 0.5f, 3f);
+        EditorGUILayout.PropertyField(Property("noiseStrength"));
+        PowerSlider(Property("noiseScale"), new GUIContent("Noise Scale"), 2f, 2.2f);
+        EditorGUILayout.PropertyField(Property("volumeBoundsTransform"));
+        EditorGUILayout.PropertyField(Property("volumeBoundsCenter"));
+        EditorGUILayout.PropertyField(Property("volumeBoundsSize"));
+        PowerSlider(Property("volumeBoundsSoftness"), new GUIContent("Volume Bounds Softness"), 100f, 2.2f);
+        EditorGUILayout.PropertyField(Property("scatteringColor"));
+
+        Header("Stability");
+        EditorGUILayout.PropertyField(Property("temporalAccumulation"));
+        EditorGUILayout.PropertyField(Property("jitterStrength"));
+        EditorGUILayout.PropertyField(Property("temporalBlend"));
+        EditorGUILayout.PropertyField(Property("temporalDepthRejection"));
+        EditorGUILayout.PropertyField(Property("bilateralDepthScale"));
+        EditorGUILayout.PropertyField(Property("compositeOpacity"));
+
+        Header("Sun");
+        EditorGUILayout.PropertyField(Property("sunLight"));
+        EditorGUILayout.PropertyField(Property("sunIntensity"));
+        EditorGUILayout.PropertyField(Property("sunColor"));
+
+        Header("Room Bounce");
+        EditorGUILayout.PropertyField(Property("ambientSky"));
+        EditorGUILayout.PropertyField(Property("ambientEquator"));
+        EditorGUILayout.PropertyField(Property("ambientGround"));
+
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+#endif

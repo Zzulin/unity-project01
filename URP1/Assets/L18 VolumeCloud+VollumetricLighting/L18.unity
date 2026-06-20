@@ -20,9 +20,9 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 420
   m_LinearFogEnd: 1150
-  m_AmbientSkyColor: {r: 0.035, g: 0.055, b: 0.1, a: 1}
-  m_AmbientEquatorColor: {r: 0.02, g: 0.03, b: 0.055, a: 1}
-  m_AmbientGroundColor: {r: 0.006, g: 0.009, b: 0.016, a: 1}
+  m_AmbientSkyColor: {r: 0.055, g: 0.065, b: 0.095, a: 1}
+  m_AmbientEquatorColor: {r: 0.045, g: 0.05, b: 0.065, a: 1}
+  m_AmbientGroundColor: {r: 0.022, g: 0.026, b: 0.03, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
@@ -623,32 +623,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cloudMaterial: {fileID: 2100000, guid: e01f800a57e6f41ebae6fab7ce8d25e3, type: 2}
   sunLight: {fileID: 708351567}
-  cloudColor: {r: 1, g: 0.9140835, b: 0.759434, a: 1}
-  shadowColor: {r: 0.48, g: 0.56, b: 0.68, a: 1}
-  ambientColor: {r: 0.46, g: 0.55, b: 0.72, a: 1}
-  density: 10.35
-  coverage: 0.286
-  weatherStrength: 0.72
-  macroGapStrength: 0
-  shapeScale: 1.02
-  detailScale: 3.43
-  detailStrength: 0.569
-  bottomSoftness: 0.357
-  topSoftness: 0.22
+  cloudColor: {r: 0.9, g: 0.86, b: 0.82, a: 1}
+  shadowColor: {r: 0.16, g: 0.19, b: 0.27, a: 1}
+  ambientColor: {r: 0.24, g: 0.29, b: 0.4, a: 1}
+  density: 6.8
+  coverage: 0.44
+  weatherStrength: 0.86
+  macroGapStrength: 0.52
+  shapeScale: 3.32
+  detailScale: 20
+  detailStrength: 0.48
+  bottomSoftness: 0.24
+  topSoftness: 0.18
   anvilBias: 0.62
   absorption: 2.6
   lightAbsorption: 2.9
   forwardPhase: 0.58
   forwardPhaseClamp: 0.12
   backwardPhase: -0.28
-  silverIntensity: 1.65
-  powderStrength: 1.15
+  silverIntensity: 1.1
+  powderStrength: 0.82
   windDirection: {x: 1, y: 0, z: 0.25, w: 0}
-  windSpeed: 1.3
-  noiseWorldSize: {x: 240, y: 240, z: 240}
-  stepCount: 14
-  lightStepCount: 3
+  windSpeed: 1
+  noiseWorldSize: {x: 360, y: 150, z: 300}
+  stepCount: 24
+  lightStepCount: 4
   opacity: 1
+  volumetricShadowSteps: 3
+  volumetricShadowStrength: 1
+  volumetricShadowContrast: 2.1
 --- !u!1 &1705515874
 GameObject:
   m_ObjectHideFlags: 0
@@ -793,29 +796,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rendererData: {fileID: 11400000, guid: 64dcde4b9461635469144f0672379a5c, type: 2}
   downsample: 2
-  froxelDepth: 52
-  maxDistance: 1500
+  froxelDepth: 64
+  maxDistance: 1499.9999
   depthDistribution: 1.35
-  density: 0.0042
-  extinction: 0.42
-  intensity: 6.5
-  anisotropy: 0.74
-  forwardPhaseCeiling: 1.35
+  density: 0.004799999
+  extinction: 0.34
+  intensity: 24
+  anisotropy: 0.78
+  forwardPhaseCeiling: 1.7
   shadowFloor: 0.004
   multiScatter: 0.03
   heightOrigin: 20
-  heightFalloff: 0.0035
-  noiseStrength: 0
-  noiseScale: 0.12
+  heightFalloff: 0.0034999994
+  noiseStrength: 0.18
+  noiseScale: 0.018000003
   volumeBoundsTransform: {fileID: 1280845992}
   volumeBoundsCenter: {x: 80, y: 75, z: 390}
   volumeBoundsSize: {x: 3229, y: 384, z: 4606.2}
   volumeBoundsSoftness: 28
-  scatteringColor: {r: 0.96, g: 0.98, b: 1, a: 1}
-  cloudOccluder: {fileID: 1441240294}
-  cloudShadowSteps: 4
-  cloudShadowStrength: 1
-  cloudShadowContrast: 1.45
+  scatteringColor: {r: 1, g: 0.965, b: 0.9, a: 1}
   temporalAccumulation: 0
   jitterStrength: 0.9
   temporalBlend: 0.8
@@ -825,9 +824,9 @@ MonoBehaviour:
   sunLight: {fileID: 708351567}
   sunIntensity: 2.8
   sunColor: {r: 1, g: 0.97, b: 0.9, a: 1}
-  ambientSky: {r: 0.035, g: 0.055, b: 0.1, a: 1}
-  ambientEquator: {r: 0.02, g: 0.03, b: 0.055, a: 1}
-  ambientGround: {r: 0.006, g: 0.009, b: 0.016, a: 1}
+  ambientSky: {r: 0.055, g: 0.065, b: 0.095, a: 1}
+  ambientEquator: {r: 0.045, g: 0.05, b: 0.065, a: 1}
+  ambientGround: {r: 0.022, g: 0.026, b: 0.03, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

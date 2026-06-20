@@ -1447,9 +1447,9 @@ MonoBehaviour:
   rendererData: {fileID: 11400000, guid: 64dcde4b9461635469144f0672379a5c, type: 2}
   downsample: 2
   froxelDepth: 96
-  maxDistance: 58
+  maxDistance: 58.000004
   depthDistribution: 1.9
-  density: 0.24
+  density: 0.24000001
   extinction: 0.68
   intensity: 3.25
   anisotropy: 0.78
@@ -1459,16 +1459,12 @@ MonoBehaviour:
   heightOrigin: -0.4
   heightFalloff: 0.22
   noiseStrength: 0
-  noiseScale: 1.25
+  noiseScale: 1.2499999
   volumeBoundsTransform: {fileID: 172418806}
   volumeBoundsCenter: {x: 0, y: 3.1, z: -0.1}
   volumeBoundsSize: {x: 15.8, y: 6.2, z: 16.2}
-  volumeBoundsSoftness: 0.45
+  volumeBoundsSoftness: 0.45000002
   scatteringColor: {r: 1, g: 0.84, b: 0.52, a: 1}
-  cloudOccluder: {fileID: 0}
-  cloudShadowSteps: 4
-  cloudShadowStrength: 1
-  cloudShadowContrast: 1.6
   temporalAccumulation: 1
   jitterStrength: 0.9
   temporalBlend: 0.8

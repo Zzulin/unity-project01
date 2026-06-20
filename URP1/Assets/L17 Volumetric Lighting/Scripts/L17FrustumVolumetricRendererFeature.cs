@@ -321,16 +321,17 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
 
         private void PushCloudOccluder()
         {
-            L13VolumeCloudController cloud = controller != null ? controller.cloudOccluder : null;
+            L13VolumeCloudController cloud = controller != null ? controller.GetCloudOccluder() : null;
             Material cloudMaterial = cloud != null ? cloud.cloudMaterial : null;
             bool enabled = cloud != null
                 && cloud.isActiveAndEnabled
                 && cloudMaterial != null
                 && cloud.coverage > 0.0001f
-                && cloud.density > 0.0001f;
+                && cloud.density > 0.0001f
+                && cloud.volumetricShadowStrength > 0.0001f;
 
             material.SetVector(CloudParams2Id, enabled
-                ? new Vector4(cloud.anvilBias, cloud.lightAbsorption, controller.cloudShadowSteps, controller.cloudShadowStrength)
+                ? new Vector4(cloud.anvilBias, cloud.lightAbsorption, cloud.volumetricShadowSteps, cloud.volumetricShadowStrength)
                 : Vector4.zero);
 
             if (!enabled)
@@ -362,9 +363,9 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetVector(CloudParams2Id, new Vector4(
                 cloud.anvilBias,
                 cloud.lightAbsorption,
-                controller.cloudShadowSteps,
-                controller.cloudShadowStrength));
-            material.SetFloat("_L17CloudShadowContrast", controller.cloudShadowContrast);
+                cloud.volumetricShadowSteps,
+                cloud.volumetricShadowStrength));
+            material.SetFloat("_L17CloudShadowContrast", cloud.volumetricShadowContrast);
             material.SetFloat(CloudMacroGapStrengthId, cloud.macroGapStrength);
         }
 
