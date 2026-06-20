@@ -44,6 +44,7 @@ Material:
     - _Density: 12
     - _DetailScale: 14
     - _DetailStrength: 0.52
+    - _ForwardPhaseClamp: 0
     - _LightAbsorption: 2.7
     - _LightStepCount: 2
     - _MacroGapStrength: 0

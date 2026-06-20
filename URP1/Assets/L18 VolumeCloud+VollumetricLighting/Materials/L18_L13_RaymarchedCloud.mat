@@ -37,31 +37,31 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Absorption: 2.6
+    - _Absorption: 2.1
     - _AnvilBias: 0.62
     - _BottomSoftness: 0.24
-    - _Coverage: 0.44
-    - _Density: 6.8
-    - _DetailScale: 20
-    - _DetailStrength: 0.48
-    - _ForwardPhaseClamp: 0.12
-    - _LightAbsorption: 2.9
+    - _Coverage: 0.2
+    - _Density: 3.8
+    - _DetailScale: 16
+    - _DetailStrength: 0.4
+    - _ForwardPhaseClamp: 0.2
+    - _LightAbsorption: 2.3
     - _LightStepCount: 4
-    - _MacroGapStrength: 0.52
-    - _Opacity: 1
+    - _MacroGapStrength: 0.72
+    - _Opacity: 0.9
     - _PhaseBackward: -0.28
     - _PhaseForward: 0.58
-    - _PowderStrength: 0.82
-    - _ShapeScale: 3.32
-    - _SilverIntensity: 1.1
+    - _PowderStrength: 0.75
+    - _ShapeScale: 2.8
+    - _SilverIntensity: 1.35
     - _StepCount: 24
     - _TopSoftness: 0.18
-    - _WeatherStrength: 0.86
+    - _WeatherStrength: 0.78
     - _WindSpeed: 1
     m_Colors:
-    - _AmbientColor: {r: 0.24, g: 0.29, b: 0.4, a: 1}
-    - _CloudColor: {r: 0.9, g: 0.86, b: 0.82, a: 1}
+    - _AmbientColor: {r: 0.4, g: 0.5, b: 0.66, a: 1}
+    - _CloudColor: {r: 1, g: 0.78, b: 0.56, a: 1}
     - _NoiseWorldSize: {r: 360, g: 150, b: 300, a: 0}
-    - _ShadowColor: {r: 0.16, g: 0.19, b: 0.27, a: 1}
+    - _ShadowColor: {r: 0.35, g: 0.43, b: 0.56, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0.25, a: 0}
   m_BuildTextureStacks: []
