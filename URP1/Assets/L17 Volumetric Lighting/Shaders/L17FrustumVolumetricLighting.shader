@@ -243,6 +243,31 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return LinearEyeDepth(SampleSceneDepth(uv), _ZBufferParams);
         }
 
+        bool IsSkyDepth(float rawDepth)
+        {
+        #if UNITY_REVERSED_Z
+            return rawDepth <= 0.000001;
+        #else
+            return rawDepth >= 0.999999;
+        #endif
+        }
+
+        float2 IntersectVolumeBounds(float3 rayOriginWS, float3 rayDirectionWS)
+        {
+            float3 halfBounds = max(_L17VolumeBoundsSize.xyz * 0.5, 0.001);
+            float3 boxMinimum = _L17VolumeBoundsCenter.xyz - halfBounds;
+            float3 boxMaximum = _L17VolumeBoundsCenter.xyz + halfBounds;
+            float3 directionSign = step(0.0, rayDirectionWS) * 2.0 - 1.0;
+            float3 inverseDirection = directionSign / max(abs(rayDirectionWS), 0.00001);
+            float3 t0 = (boxMinimum - rayOriginWS) * inverseDirection;
+            float3 t1 = (boxMaximum - rayOriginWS) * inverseDirection;
+            float3 tMinimum = min(t0, t1);
+            float3 tMaximum = max(t0, t1);
+            return float2(
+                max(max(tMinimum.x, tMinimum.y), tMinimum.z),
+                min(min(tMaximum.x, tMaximum.y), tMaximum.z));
+        }
+
         float DensityAtPosition(float3 positionWS)
         {
             float3 halfBounds = max(_L17VolumeBoundsSize.xyz * 0.5, 0.001);
@@ -262,19 +287,62 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return max(_L17Params0.z, 0.0) * heightTerm * noiseTerm * boundsMask;
         }
 
-        float SliceDistance(float slice01)
+        float SliceDistance(float slice01, float rayStart, float rayEnd)
         {
-            return pow(saturate(slice01), max(_L17Params0.y, 0.5)) * max(_L17Params0.x, 0.01);
+            float distributedSlice = pow(saturate(slice01), max(_L17Params0.y, 0.5));
+            return lerp(rayStart, rayEnd, distributedSlice);
         }
 
-        float4 IntegrateVolume(float3 rayDirWS, float sceneDistance, float jitter)
+        float4 IntegrateVolume(float3 rayDirWS, float sceneDistance, bool isSky, float jitter)
         {
             int stepCount = (int)clamp(round(_L17FroxelDepth), 16.0, (float)L17_MAX_STEPS);
             Light mainLight = GetMainLight();
             float3 lightDirWS = normalize(mainLight.direction);
-            float phase = ProductionHenyeyGreenstein(dot(rayDirWS, lightDirWS), saturate(_L17Params1.y));
+            float viewLightCosine = dot(rayDirWS, lightDirWS);
+            float phase = ProductionHenyeyGreenstein(viewLightCosine, saturate(_L17Params1.y));
+
+            // Keep the general outdoor medium stable, then restore a bounded Mie-like
+            // forward lobe only around the sun. This produces a natural halo without
+            // returning to uniform full-screen sky scattering.
+            if (isSky)
+            {
+                const float isotropicPhase = 1.0 / (4.0 * PI);
+                float miePhase = HenyeyGreenstein(viewLightCosine, 0.78);
+                float sunAngularMask = smoothstep(0.72, 0.995, viewLightCosine);
+                float boundedMiePhase = min(miePhase, isotropicPhase * 8.0);
+                phase += boundedMiePhase * sunAngularMask * 0.72;
+            }
             float3 scattering = 0.0;
             float transmittance = 1.0;
+            float2 boundsHit = IntersectVolumeBounds(_WorldSpaceCameraPos, rayDirWS);
+            float rayStart = max(boundsHit.x, 0.0);
+            float rayEnd = min(boundsHit.y, min(sceneDistance, _L17Params0.x));
+            float skyExtinctionWeight = 1.0;
+            float skyScatteringWeight = 1.0;
+
+            // Sky pixels have no geometry depth. Limit their participating-medium path
+            // and attenuate upward-looking scattering so a large outdoor volume cannot
+            // turn the sky into a uniformly emissive screen.
+            if (isSky)
+            {
+                const float skyPathLimit = 96.0;
+                float upwardView = saturate(rayDirWS.y);
+                rayEnd = min(rayEnd, rayStart + skyPathLimit);
+                skyExtinctionWeight = 0.35;
+                skyScatteringWeight = lerp(
+                    0.32,
+                    0.18,
+                    smoothstep(0.05, 0.8, upwardView));
+            }
+
+            if (rayEnd <= rayStart)
+            {
+                return float4(0.0, 0.0, 0.0, 1.0);
+            }
+
+            float cameraFadeDistance = isSky
+                ? 18.0
+                : clamp(_L17VolumeBoundsCenter.w * 0.15, 1.0, 12.0);
 
             [loop]
             for (int index = 0; index < L17_MAX_STEPS; index++)
@@ -286,26 +354,24 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
 
                 float slice0 = (index + jitter) / stepCount;
                 float slice1 = (index + 1.0 + jitter) / stepCount;
-                float t = SliceDistance(slice0);
-                float nextT = SliceDistance(slice1);
-                if (t > sceneDistance)
-                {
-                    break;
-                }
-
-                float stepLength = max(min(nextT, sceneDistance) - t, 0.001);
+                float t = SliceDistance(slice0, rayStart, rayEnd);
+                float nextT = SliceDistance(slice1, rayStart, rayEnd);
+                float stepLength = max(nextT - t, 0.001);
                 float3 sampleWS = _WorldSpaceCameraPos + rayDirWS * t;
                 float density = DensityAtPosition(sampleWS);
+                density *= smoothstep(0.0, cameraFadeDistance, t);
                 float4 shadowCoord = TransformWorldToShadowCoord(sampleWS);
                 Light shadowedLight = GetMainLight(shadowCoord);
                 float cloudTransmission = CoupledCloudTransmittance(sampleWS, lightDirWS);
                 float shadowAttenuation = saturate(shadowedLight.shadowAttenuation * cloudTransmission);
                 float shadow = lerp(_L17Params1.z, 1.0, shadowAttenuation);
                 float multiScatterShadow = shadowAttenuation * shadowAttenuation;
-                float opticalDepth = density * max(_L17Params0.w, 0.001) * stepLength;
+                float extinctionDensity = density * skyExtinctionWeight;
+                float scatteringDensity = density * skyScatteringWeight;
+                float opticalDepth = extinctionDensity * max(_L17Params0.w, 0.001) * stepLength;
                 float stepTransmittance = exp(-opticalDepth);
-                float3 singleScatter = shadowedLight.color * _L17ScatteringColor.rgb * density * phase * shadow * stepLength;
-                float3 multiScatter = shadowedLight.color * _L17ScatteringColor.rgb * density * saturate(_L17Params1.w) * 0.08 * multiScatterShadow * stepLength;
+                float3 singleScatter = shadowedLight.color * _L17ScatteringColor.rgb * scatteringDensity * phase * shadow * stepLength;
+                float3 multiScatter = shadowedLight.color * _L17ScatteringColor.rgb * scatteringDensity * saturate(_L17Params1.w) * 0.08 * multiScatterShadow * stepLength;
 
                 scattering += transmittance * (singleScatter + multiScatter) * max(_L17Params1.x, 0.0);
                 transmittance *= stepTransmittance;
@@ -338,18 +404,22 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             float2 uv = input.texcoord;
             float3 rayDirWS = RayDirection(uv);
-            float sceneDistance = min(SceneEyeDepth(uv), _L17Params0.x);
+            float rawDepth = SampleSceneDepth(uv);
+            bool isSky = IsSkyDepth(rawDepth);
+            float sceneDistance = isSky
+                ? _L17Params0.x
+                : min(LinearEyeDepth(rawDepth, _ZBufferParams), _L17Params0.x);
             float jitter = 0.5;
             if (_L17TemporalParams.y > 0.0001)
             {
                 jitter += (BlueNoise(input.positionCS.xy) - 0.5) * saturate(_L17TemporalParams.y);
             }
 
-            float4 current = IntegrateVolume(rayDirWS, sceneDistance, saturate(jitter));
+            float4 current = IntegrateVolume(rayDirWS, sceneDistance, isSky, saturate(jitter));
             if (_L17TemporalParams.y > 0.0001)
             {
                 float pairedJitter = frac(jitter + 0.5);
-                float4 paired = IntegrateVolume(rayDirWS, sceneDistance, pairedJitter);
+                float4 paired = IntegrateVolume(rayDirWS, sceneDistance, isSky, pairedJitter);
                 current.rgb = (current.rgb + paired.rgb) * 0.5;
                 current.a = min(current.a, paired.a);
             }

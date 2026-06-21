@@ -59,9 +59,9 @@ Material:
     - _WeatherStrength: 0.82
     - _WindSpeed: 0.9
     m_Colors:
-    - _AmbientColor: {r: 0.3, g: 0.42, b: 0.58, a: 1}
-    - _CloudColor: {r: 0.92, g: 0.9, b: 0.84, a: 1}
+    - _AmbientColor: {r: 0.5, g: 0.25, b: 0.22, a: 1}
+    - _CloudColor: {r: 1, g: 0.68, b: 0.46, a: 1}
     - _NoiseWorldSize: {r: 920, g: 260, b: 920, a: 0}
-    - _ShadowColor: {r: 0.34, g: 0.42, b: 0.52, a: 1}
+    - _ShadowColor: {r: 0.31, g: 0.13, b: 0.18, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0.18, a: 0}
   m_BuildTextureStacks: []

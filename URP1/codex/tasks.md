@@ -14,6 +14,8 @@
 - L13/L17 Controller Inspector 已彻底分离：L13 仅调体积云，L17 仅调体积光。RendererFeature 自动发现同场景 L13 云，并在内部固定使用 3/1/2.1 的云影采样配置，不再向任一 GameObject 暴露耦合参数。
 - L18 已按现实傍晚照片重调色调：天空与雾为明亮蓝灰、主光接近中性暖白、云和光幕保留局部暖色，地面不再黑死。色调预览：`Assets/Screenshots/L18_real_world_warm_blue_final_20260620.png`。
 - L18 体积云 Controller 与独立云材质已同步为 LXII `LXII Sky Volume Cloud` 的实际参数：Density 12、Coverage 0.069、Noise World Size 920/260/920、10/2 步进等；L18 云盒、材质引用和太阳引用保持独立。
+- L17 已完成第二轮天空散射修正：积分区间使用射线与体积盒真实交段，天空路径固定 96m，天空消光/散射独立降权，并加入受角度遮罩和能量上限约束的米氏前向瓣；Coverage=0 时太阳周围仍有自然溢光，远离太阳不再整屏抬白。L18 同步改为 GTA5 暖色落日基线，预览 `Assets/Screenshots/L18_GTA5_sunset_tone_final_20260622.png`；Console Error 0、场景与引用验证 0 issues。
+- L18 GTA5 落日阴影补光已完成：TriLight 环境补光、地表反照率和中间调恢复，主光 Shadow Strength 调为 0.55；非直射地表现在为深棕而非纯黑，仍保留明显光照方向和体积光对比。预览：`Assets/Screenshots/L18_GTA5_sunset_balanced_shadow_final_20260622.png`，Console Error 0。
 - `Assets/L15 Water/L15.unity` 已生成纯水体现代二次元水体 Demo：不放水上装饰物，只保留水面、水底凹陷地形、灯光、后处理、相机和 HUD。
 - L15 当前水体链路包含：高细分水面网格、4 层 Gerstner 顶点波、深浅水吸收/分层染色、透明混合、Fresnel/高光、岸线泡沫、水底三平面动态焦散；水面网格已改为 UInt32 索引，避免 65535 顶点以上的大三角伪影。
 - L15 构建菜单：`Tools/Water/Build L15 Modern Anime Water Demo`；预览截图：`Assets/Screenshots/L15_ModernAnimeWater_caustic_voronoi_current_20260522.png`。
