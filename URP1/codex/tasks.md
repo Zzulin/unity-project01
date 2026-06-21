@@ -12,7 +12,8 @@
 - L18 视线对日爆白修正保持有效：主光角度仍为 `(68.00003, 192.52899, 180)`；L13/L17 可选前向峰值限制、L13 最终直射能量限制和 ACES 均保留；L17 Bounds 顶部与 L13 云底衔接，避免云层上方介质长距离累积。
 - L17 Controller 的 Inspector 已优化为有效线性范围 + 低值展开非线性滑条，解决 L18 户外参数全部挤在左端以及 Intensity 被旧上限 10 钳制的问题；L18 当前为 Density 0.0048 / Extinction 0.34 / Intensity 24 / Forward Ceiling 1.7。最终亮度截图：`Assets/Screenshots/L18_volumetric_brightness_round3_final_20260619.png`；上仰压力测试仍无整屏过曝。
 - L13/L17 Controller Inspector 已彻底分离：L13 仅调体积云，L17 仅调体积光。RendererFeature 自动发现同场景 L13 云，并在内部固定使用 3/1/2.1 的云影采样配置，不再向任一 GameObject 暴露耦合参数。
-- L18 已按现实傍晚照片重调色调：天空与雾为明亮蓝灰、主光接近中性暖白、云和光幕保留局部暖色，地面不再黑死；云 Density/Coverage/Macro Gap 为 3.8/0.2/0.72，覆盖明显降低。预览：`Assets/Screenshots/L18_real_world_warm_blue_final_20260620.png`。
+- L18 已按现实傍晚照片重调色调：天空与雾为明亮蓝灰、主光接近中性暖白、云和光幕保留局部暖色，地面不再黑死。色调预览：`Assets/Screenshots/L18_real_world_warm_blue_final_20260620.png`。
+- L18 体积云 Controller 与独立云材质已同步为 LXII `LXII Sky Volume Cloud` 的实际参数：Density 12、Coverage 0.069、Noise World Size 920/260/920、10/2 步进等；L18 云盒、材质引用和太阳引用保持独立。
 - `Assets/L15 Water/L15.unity` 已生成纯水体现代二次元水体 Demo：不放水上装饰物，只保留水面、水底凹陷地形、灯光、后处理、相机和 HUD。
 - L15 当前水体链路包含：高细分水面网格、4 层 Gerstner 顶点波、深浅水吸收/分层染色、透明混合、Fresnel/高光、岸线泡沫、水底三平面动态焦散；水面网格已改为 UInt32 索引，避免 65535 顶点以上的大三角伪影。
 - L15 构建菜单：`Tools/Water/Build L15 Modern Anime Water Demo`；预览截图：`Assets/Screenshots/L15_ModernAnimeWater_caustic_voronoi_current_20260522.png`。

@@ -623,32 +623,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cloudMaterial: {fileID: 2100000, guid: e01f800a57e6f41ebae6fab7ce8d25e3, type: 2}
   sunLight: {fileID: 708351567}
-  cloudColor: {r: 1, g: 0.78, b: 0.56, a: 1}
-  shadowColor: {r: 0.35, g: 0.43, b: 0.56, a: 1}
-  ambientColor: {r: 0.4, g: 0.5, b: 0.66, a: 1}
-  density: 3.8
-  coverage: 0.2
-  weatherStrength: 0.78
-  macroGapStrength: 0.72
-  shapeScale: 2.8
-  detailScale: 16
-  detailStrength: 0.4
-  bottomSoftness: 0.24
-  topSoftness: 0.18
-  anvilBias: 0.62
-  absorption: 2.1
-  lightAbsorption: 2.3
-  forwardPhase: 0.58
-  forwardPhaseClamp: 0.2
-  backwardPhase: -0.28
-  silverIntensity: 1.35
-  powderStrength: 0.75
-  windDirection: {x: 1, y: 0, z: 0.25, w: 0}
-  windSpeed: 1
-  noiseWorldSize: {x: 360, y: 150, z: 300}
-  stepCount: 24
-  lightStepCount: 4
-  opacity: 0.9
+  cloudColor: {r: 0.92, g: 0.9, b: 0.84, a: 1}
+  shadowColor: {r: 0.34, g: 0.42, b: 0.52, a: 1}
+  ambientColor: {r: 0.3, g: 0.42, b: 0.58, a: 1}
+  density: 12
+  coverage: 0.069
+  weatherStrength: 0.82
+  macroGapStrength: 0
+  shapeScale: 2.46
+  detailScale: 14
+  detailStrength: 0.52
+  bottomSoftness: 0.16
+  topSoftness: 0.3
+  anvilBias: 0.56
+  absorption: 2.45
+  lightAbsorption: 2.7
+  forwardPhase: 0.52
+  forwardPhaseClamp: 0
+  backwardPhase: -0.22
+  silverIntensity: 1.25
+  powderStrength: 0.86
+  windDirection: {x: 1, y: 0, z: 0.18, w: 0}
+  windSpeed: 0.9
+  noiseWorldSize: {x: 920, y: 260, z: 920}
+  stepCount: 10
+  lightStepCount: 2
+  opacity: 0.84
 --- !u!1 &1705515874
 GameObject:
   m_ObjectHideFlags: 0
