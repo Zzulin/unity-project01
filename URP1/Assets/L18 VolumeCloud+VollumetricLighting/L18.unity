@@ -253,13 +253,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 550389140}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.035054028, y: -0.14383411, z: -0.00509821, w: 0.98896766}
+  m_LocalRotation: {x: -0.035053898, y: -0.14383411, z: -0.0050981916, w: 0.98896766}
   m_LocalPosition: {x: -35, y: 92, z: -360}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: -4.06, y: -16.55, z: 0}
+  m_LocalEulerAnglesHint: {x: -4.27, y: -4.15, z: 0}
 --- !u!114 &550389146
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -317,7 +317,7 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 1
+    m_Strength: 0.55
     m_Bias: 0.035
     m_NormalBias: 0.35
     m_NearPlane: 0.2
@@ -794,11 +794,11 @@ MonoBehaviour:
   rendererData: {fileID: 11400000, guid: 64dcde4b9461635469144f0672379a5c, type: 2}
   downsample: 2
   froxelDepth: 64
-  maxDistance: 1499.9999
+  maxDistance: 320
   depthDistribution: 1.35
   density: 0.0037999959
   extinction: 0.28
-  intensity: 16
+  intensity: 8.5
   anisotropy: 0.72
   forwardPhaseCeiling: 1.5
   shadowFloor: 0.004
@@ -812,7 +812,7 @@ MonoBehaviour:
   volumeBoundsSize: {x: 3229, y: 384, z: 4606.2}
   volumeBoundsSoftness: 28
   scatteringColor: {r: 1, g: 0.66, b: 0.34, a: 1}
-  temporalAccumulation: 0
+  temporalAccumulation: 1
   jitterStrength: 0.9
   temporalBlend: 0.8
   temporalDepthRejection: 0.12

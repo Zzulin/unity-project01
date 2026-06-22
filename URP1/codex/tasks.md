@@ -11,11 +11,12 @@
 - L18 已完成第二轮独立美术优化：云体改为 6.2/20 Shape/Detail 尺度、0.52 宏观云洞和 24/4 步进；L17 使用 8 次云影采样和轻量介质密度起伏，形成一主一次的实时云缝光幕，地面暗部可读性同步提高。预览：`Assets/Screenshots/L18_optimization_round2_pass3_20260619.png`。
 - L18 视线对日爆白修正保持有效：主光角度仍为 `(68.00003, 192.52899, 180)`；L13/L17 可选前向峰值限制、L13 最终直射能量限制和 ACES 均保留；L17 Bounds 顶部与 L13 云底衔接，避免云层上方介质长距离累积。
 - L17 Controller 的 Inspector 已优化为有效线性范围 + 低值展开非线性滑条，解决 L18 户外参数全部挤在左端以及 Intensity 被旧上限 10 钳制的问题；L18 当前为 Density 0.0048 / Extinction 0.34 / Intensity 24 / Forward Ceiling 1.7。最终亮度截图：`Assets/Screenshots/L18_volumetric_brightness_round3_final_20260619.png`；上仰压力测试仍无整屏过曝。
-- L13/L17 Controller Inspector 已彻底分离：L13 仅调体积云，L17 仅调体积光。RendererFeature 自动发现同场景 L13 云，并在内部固定使用 3/1/2.1 的云影采样配置，不再向任一 GameObject 暴露耦合参数。
+- L13/L17 Controller Inspector 已彻底分离：L13 仅调体积云，L17 仅调体积光。RendererFeature 自动发现同场景 L13 云，并在内部固定使用 3/1/2.8 的云影采样配置和低步数光学深度补偿，不再向任一 GameObject 暴露耦合参数。
 - L18 已按现实傍晚照片重调色调：天空与雾为明亮蓝灰、主光接近中性暖白、云和光幕保留局部暖色，地面不再黑死。色调预览：`Assets/Screenshots/L18_real_world_warm_blue_final_20260620.png`。
 - L18 体积云 Controller 与独立云材质已同步为 LXII `LXII Sky Volume Cloud` 的实际参数：Density 12、Coverage 0.069、Noise World Size 920/260/920、10/2 步进等；L18 云盒、材质引用和太阳引用保持独立。
-- L17 已完成第二轮天空散射修正：积分区间使用射线与体积盒真实交段，天空路径固定 96m，天空消光/散射独立降权，并加入受角度遮罩和能量上限约束的米氏前向瓣；Coverage=0 时太阳周围仍有自然溢光，远离太阳不再整屏抬白。L18 同步改为 GTA5 暖色落日基线，预览 `Assets/Screenshots/L18_GTA5_sunset_tone_final_20260622.png`；Console Error 0、场景与引用验证 0 issues。
+- L17 已完成第三轮天空散射修正：移除天空专用 96m 路径与散射降权，天空/几何统一使用同一介质、消光和米氏相函数，几何仅按深度提前结束积分；L18 使用 320m 统一可见距离、Intensity 8.5，云透射对比提高到 2.8。Temporal 开启时取消 complementary 第二次完整积分，避免重复成本。A/B 已确认原大块地面亮区主要来自主光直射，L17 负责在其前方叠加空气散射，而不再在山脊处切换两套算法。
 - L18 GTA5 落日阴影补光已完成：TriLight 环境补光、地表反照率和中间调恢复，主光 Shadow Strength 调为 0.55；非直射地表现在为深棕而非纯黑，仍保留明显光照方向和体积光对比。预览：`Assets/Screenshots/L18_GTA5_sunset_balanced_shadow_final_20260622.png`，Console Error 0。
+- L17 Controller 已移除对主光 Shadow Strength 的硬编码重置；L18 的 0.55 经组件禁用/启用与脚本重编译验证不会回到 1。编译错误 0、Console Error 0、场景/引用验证 0 issues。
 - `Assets/L15 Water/L15.unity` 已生成纯水体现代二次元水体 Demo：不放水上装饰物，只保留水面、水底凹陷地形、灯光、后处理、相机和 HUD。
 - L15 当前水体链路包含：高细分水面网格、4 层 Gerstner 顶点波、深浅水吸收/分层染色、透明混合、Fresnel/高光、岸线泡沫、水底三平面动态焦散；水面网格已改为 UInt32 索引，避免 65535 顶点以上的大三角伪影。
 - L15 构建菜单：`Tools/Water/Build L15 Modern Anime Water Demo`；预览截图：`Assets/Screenshots/L15_ModernAnimeWater_caustic_voronoi_current_20260522.png`。

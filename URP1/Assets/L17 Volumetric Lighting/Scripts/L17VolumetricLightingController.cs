@@ -95,7 +95,6 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
             sunLight.intensity = sunIntensity;
             sunLight.color = sunColor;
             sunLight.shadows = LightShadows.Soft;
-            sunLight.shadowStrength = 1f;
         }
 
         L17FrustumVolumetricRendererFeature feature = GetFeature();

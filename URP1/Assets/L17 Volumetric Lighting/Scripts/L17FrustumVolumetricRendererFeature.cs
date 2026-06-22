@@ -104,7 +104,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private const string CameraCopyTextureName = "_L17CameraCopyTexture";
         private const int CoupledCloudShadowSteps = 3;
         private const float CoupledCloudShadowStrength = 1f;
-        private const float CoupledCloudShadowContrast = 2.1f;
+        private const float CoupledCloudShadowContrast = 2.8f;
 
         private readonly ProfilingSampler l17ProfilingSampler = new ProfilingSampler("L17 Froxel Volumetric Lighting");
         private readonly Settings featureSettings;
