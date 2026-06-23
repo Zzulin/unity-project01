@@ -103,7 +103,7 @@
 - L17 已重做为现代 URP RendererFeature 体积光 Demo：
   - 不再手摆 cube 光束
   - fullscreen froxel/integrated buffer 管线已接入 RendererFeature，当前回到半分辨率体积 buffer + 96 depth steps 的流畅基线
-  - 使用 scene depth、主光 shadowmap、sun direction、`L17 Local Volume Bounds` 场景 Cube、blue-noise jitter + complementary 双相采样、5x5 cross-bilateral 低分辨率降噪和 Bloom/ACES 前合成；GameView/SceneView temporal accumulation 默认保留，resolve 位于降噪之后，并修正 history 重投影 Y 翻转；multi scatter 已受 shadow map 约束，HG 前向散射加生产级峰值约束以降低墙后漏光团和圆形太阳热点
+  - 使用 scene depth、主光 shadowmap、sun direction、`L17 Local Volume Bounds` 场景 Cube、blue-noise jitter + complementary 双相采样、5x5 cross-bilateral 低分辨率降噪和 Bloom/ACES 前合成；2026-06-23 已修正真实射线距离、删除重复宽 Mie 光瓣并改为单一 HG 软峰值、把主光阴影距离提升至 350m，并补齐历史深度纹理与 Temporal 深度拒绝
   - L17 表面材质已重新推进为双面 URP PBR + Meta pass：`L17TwoSidedInteriorLit` 暴露 PBR 参数，运行时支持 lightmap / reflection probe，烘焙时 Meta pass 直接输出材质 Albedo
   - L17 lightmap 黑图排查已定位到 cube lightmap 输入问题：房间几何改用 `Assets/L17 Volumetric Lighting/Meshes/L17_LightmapReadyCube.asset`，该 mesh 有独立 UV2；本轮已修正生成 mesh 的三角形绕序，避免 Lightmapper 把表面当背面处理；旧黑 lightmap 需要重新 Generate Lighting 才会被覆盖
   - 场景改为窗框和墙体自然切出光束

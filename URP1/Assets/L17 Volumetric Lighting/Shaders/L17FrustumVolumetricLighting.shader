@@ -20,6 +20,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
 
         TEXTURE2D_X(_L17IntegratedTexture);
         TEXTURE2D_X(_L17HistoryTexture);
+        TEXTURE2D_X_FLOAT(_L17HistoryDepthTexture);
         TEXTURE2D_X_FLOAT(_L17LowDepthTexture);
         TEXTURE2D(_L17BlueNoiseTexture);
         SAMPLER(sampler_L17BlueNoiseTexture);
@@ -42,6 +43,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float4 _L17ScatteringColor;
         float4x4 _L17PreviousViewProjection;
         float _L17HistoryValid;
+        float _L17TemporalDepthRejection;
         float _L17FrameIndex;
         float _L17FroxelDepth;
         float4x4 _L17CloudWorldToLocal;
@@ -59,7 +61,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         #if UNITY_REVERSED_Z
             return rawDepth;
         #else
-            return rawDepth * 2.0 - 1.0;
+            return lerp(UNITY_NEAR_CLIP_VALUE, 1.0, rawDepth);
         #endif
         }
 
@@ -118,14 +120,19 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
 
         float ProductionHenyeyGreenstein(float cosTheta, float anisotropy)
         {
-            float stableAnisotropy = min(anisotropy, 0.62);
+            float stableAnisotropy = clamp(anisotropy, 0.0, 0.9);
             float phase = HenyeyGreenstein(cosTheta, stableAnisotropy);
-
-            // Realtime volumetric fog usually bounds the near-singular forward lobe.
-            // Otherwise a directional light turns into a screen-space disk instead of a shaft.
             float isotropicPhase = 1.0 / (4.0 * PI);
             float phaseCeiling = isotropicPhase * clamp(_L17TemporalControl.w, 1.0, 3.5);
-            return min(phase, phaseCeiling);
+            float softRegion = max(phaseCeiling * 0.2, 0.0001);
+            float softStart = phaseCeiling - softRegion;
+
+            // Keep the standard HG phase function, but approach the realtime safety
+            // ceiling smoothly. A hard min creates a constant angular plateau that
+            // appears as a circular halo around the sun.
+            return phase <= softStart
+                ? phase
+                : phaseCeiling - softRegion * exp(-(phase - softStart) / softRegion);
         }
 
         float2 IntersectCloudBox(float3 rayOriginOS, float3 rayDirectionOS)
@@ -242,11 +249,6 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return SafeNormalize(farPositionWS - _WorldSpaceCameraPos);
         }
 
-        float SceneEyeDepth(float2 uv)
-        {
-            return LinearEyeDepth(SampleSceneDepth(uv), _ZBufferParams);
-        }
-
         bool IsSkyDepth(float rawDepth)
         {
         #if UNITY_REVERSED_Z
@@ -254,6 +256,21 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         #else
             return rawDepth >= 0.999999;
         #endif
+        }
+
+        float SceneRayDistance(float2 uv)
+        {
+            float rawDepth = SampleSceneDepth(uv);
+            if (IsSkyDepth(rawDepth))
+            {
+                return _L17Params0.x;
+            }
+
+            float3 scenePositionWS = ComputeWorldSpacePosition(
+                uv,
+                DeviceDepthFromRawDepth(rawDepth),
+                unity_MatrixInvVP);
+            return distance(scenePositionWS, _WorldSpaceCameraPos);
         }
 
         float2 IntersectVolumeBounds(float3 rayOriginWS, float3 rayDirectionWS)
@@ -304,14 +321,6 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             float3 lightDirWS = normalize(mainLight.direction);
             float viewLightCosine = dot(rayDirWS, lightDirWS);
             float phase = ProductionHenyeyGreenstein(viewLightCosine, saturate(_L17Params1.y));
-
-            // The phase function belongs to the medium, not to the background type.
-            // Apply the same bounded Mie lobe to geometry and sky rays.
-            const float isotropicPhase = 1.0 / (4.0 * PI);
-            float miePhase = HenyeyGreenstein(viewLightCosine, 0.78);
-            float sunAngularMask = smoothstep(0.72, 0.995, viewLightCosine);
-            float boundedMiePhase = min(miePhase, isotropicPhase * 8.0);
-            phase += boundedMiePhase * sunAngularMask * 0.72;
             float3 scattering = 0.0;
             float transmittance = 1.0;
             float2 boundsHit = IntersectVolumeBounds(_WorldSpaceCameraPos, rayDirWS);
@@ -374,7 +383,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         half4 FragmentLowDepth(Varyings input) : SV_Target
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-            return SceneEyeDepth(input.texcoord).xxxx;
+            return SceneRayDistance(input.texcoord).xxxx;
         }
 
         half4 FragmentBuildVolume(Varyings input) : SV_Target
@@ -382,11 +391,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             float2 uv = input.texcoord;
             float3 rayDirWS = RayDirection(uv);
-            float rawDepth = SampleSceneDepth(uv);
-            bool isSky = IsSkyDepth(rawDepth);
-            float sceneDistance = isSky
-                ? _L17Params0.x
-                : min(LinearEyeDepth(rawDepth, _ZBufferParams), _L17Params0.x);
+            float sceneDistance = min(SceneRayDistance(uv), _L17Params0.x);
             float jitter = 0.5;
             if (_L17TemporalParams.y > 0.0001)
             {
@@ -453,7 +458,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 return current;
             }
 
-            float sceneDistance = min(SceneEyeDepth(uv), _L17Params0.x);
+            float sceneDistance = min(SceneRayDistance(uv), _L17Params0.x);
             float3 rayDirWS = RayDirection(uv);
             float reprojectionDistance = min(sceneDistance, _L17Params0.x * 0.72);
             float3 reprojectionWS = _WorldSpaceCameraPos + rayDirWS * reprojectionDistance;
@@ -467,6 +472,27 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             if (!all(previousUv > 0.001) || !all(previousUv < 0.999))
             {
                 return current;
+            }
+
+            float previousSceneDistance = SAMPLE_TEXTURE2D_X(
+                _L17HistoryDepthTexture,
+                sampler_PointClamp,
+                previousUv).r;
+            bool currentIsSky = sceneDistance >= _L17Params0.x * 0.999;
+            bool previousIsSky = previousSceneDistance >= _L17Params0.x * 0.999;
+            if (currentIsSky != previousIsSky)
+            {
+                return current;
+            }
+
+            if (!currentIsSky)
+            {
+                float relativeDepthDelta = abs(previousSceneDistance - sceneDistance)
+                    / max(sceneDistance, 1.0);
+                if (relativeDepthDelta > max(_L17TemporalDepthRejection, 0.0001))
+                {
+                    return current;
+                }
             }
 
             float3 minColor = current.rgb;
@@ -527,7 +553,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             float2 uv = input.texcoord;
             half4 sceneColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
-            float fullDepth = SceneEyeDepth(uv);
+            float fullDepth = SceneRayDistance(uv);
             float4 volume = SampleBilateralVolume(uv, fullDepth);
             float opacity = saturate(_L17TemporalParams.w);
             half3 volumetricColor = sceneColor.rgb * saturate(volume.a) + volume.rgb;

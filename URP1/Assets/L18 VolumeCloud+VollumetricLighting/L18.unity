@@ -627,10 +627,10 @@ MonoBehaviour:
   shadowColor: {r: 0.31, g: 0.13, b: 0.18, a: 1}
   ambientColor: {r: 0.5, g: 0.25, b: 0.22, a: 1}
   density: 12
-  coverage: 0.069
+  coverage: 0.117
   weatherStrength: 0.82
   macroGapStrength: 0
-  shapeScale: 2.46
+  shapeScale: 2.4
   detailScale: 14
   detailStrength: 0.52
   bottomSoftness: 0.16

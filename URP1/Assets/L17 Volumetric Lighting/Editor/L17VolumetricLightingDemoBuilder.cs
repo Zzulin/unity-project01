@@ -100,7 +100,7 @@ public static class L17VolumetricLightingDemoBuilder
         SetBool(serialized, "m_SupportsHDR", true);
         SetBool(serialized, "m_MainLightShadowsSupported", true);
         SetBool(serialized, "m_SoftShadowsSupported", true);
-        SetFloat(serialized, "m_ShadowDistance", 72f);
+        SetFloat(serialized, "m_ShadowDistance", 350f);
         SetInt(serialized, "m_MainLightShadowmapResolution", 4096);
         SetInt(serialized, "m_ShadowCascadeCount", 4);
         SetInt(serialized, "m_SoftShadowQuality", 3);

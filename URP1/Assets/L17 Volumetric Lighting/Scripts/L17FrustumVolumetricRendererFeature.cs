@@ -67,6 +67,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
     {
         private static readonly int IntegratedTextureId = Shader.PropertyToID("_L17IntegratedTexture");
         private static readonly int HistoryTextureId = Shader.PropertyToID("_L17HistoryTexture");
+        private static readonly int HistoryDepthTextureId = Shader.PropertyToID("_L17HistoryDepthTexture");
         private static readonly int LowDepthTextureId = Shader.PropertyToID("_L17LowDepthTexture");
         private static readonly int CameraCopyTextureId = Shader.PropertyToID("_L17CameraCopyTexture");
         private static readonly int BlueNoiseTextureId = Shader.PropertyToID("_L17BlueNoiseTexture");
@@ -82,6 +83,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int ScatteringColorId = Shader.PropertyToID("_L17ScatteringColor");
         private static readonly int PreviousViewProjectionId = Shader.PropertyToID("_L17PreviousViewProjection");
         private static readonly int HistoryValidId = Shader.PropertyToID("_L17HistoryValid");
+        private static readonly int TemporalDepthRejectionId = Shader.PropertyToID("_L17TemporalDepthRejection");
         private static readonly int FrameIndexId = Shader.PropertyToID("_L17FrameIndex");
         private static readonly int FroxelDepthId = Shader.PropertyToID("_L17FroxelDepth");
         private static readonly int CloudShapeNoiseId = Shader.PropertyToID("_L17CloudShapeNoise");
@@ -119,12 +121,14 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private RTHandle cameraCopyTexture;
         private readonly Dictionary<int, CameraHistory> cameraHistories = new Dictionary<int, CameraHistory>();
         private RenderTextureDescriptor currentLowDescriptor;
+        private RenderTextureDescriptor currentDepthDescriptor;
         private int previousWidth = -1;
         private int previousHeight = -1;
 
         private sealed class CameraHistory
         {
             public RTHandle texture;
+            public RTHandle depthTexture;
             public Matrix4x4 previousViewProjection = Matrix4x4.identity;
             public Vector3 previousPosition;
             public Quaternion previousRotation = Quaternion.identity;
@@ -182,6 +186,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             RenderingUtils.ReAllocateIfNeeded(ref cameraCopyTexture, copyDescriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: CameraCopyTextureName);
 
             currentLowDescriptor = lowDescriptor;
+            currentDepthDescriptor = depthDescriptor;
             previousWidth = lowWidth;
             previousHeight = lowHeight;
         }
@@ -213,7 +218,8 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                     {
                         float positionDelta = Vector3.Distance(camera.transform.position, history.previousPosition);
                         float rotationDelta = Quaternion.Angle(camera.transform.rotation, history.previousRotation);
-                        if (positionDelta > 0.015f || rotationDelta > 0.08f)
+                        float teleportDistance = Mathf.Max(2f, GetMaxDistance() * 0.05f);
+                        if (positionDelta > teleportDistance || rotationDelta > 15f)
                         {
                             history.valid = false;
                         }
@@ -237,9 +243,10 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                 Blitter.BlitCameraTexture(cmd, source, cameraCopyTexture);
                 Blitter.BlitCameraTexture(cmd, cameraCopyTexture, source, material, 4);
 
-                if (history != null && history.texture != null)
+                if (history != null && history.texture != null && history.depthTexture != null)
                 {
                     cmd.CopyTexture(temporalTexture, history.texture);
+                    cmd.CopyTexture(lowDepthTexture, history.depthTexture);
                     history.previousViewProjection = viewProjection;
                     history.previousPosition = camera.transform.position;
                     history.previousRotation = camera.transform.rotation;
@@ -283,8 +290,14 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                 FilterMode.Bilinear,
                 TextureWrapMode.Clamp,
                 name: $"{HistoryTextureName}_{cameraId}");
+            bool depthResized = RenderingUtils.ReAllocateIfNeeded(
+                ref history.depthTexture,
+                currentDepthDescriptor,
+                FilterMode.Point,
+                TextureWrapMode.Clamp,
+                name: $"{HistoryTextureName}_Depth_{cameraId}");
 
-            if (resized || history.width != previousWidth || history.height != previousHeight)
+            if (resized || depthResized || history.width != previousWidth || history.height != previousHeight)
             {
                 history.valid = false;
                 history.poseValid = false;
@@ -295,11 +308,16 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
 
         private void PushSettings(Camera camera, CameraHistory history, bool useTemporalHistory, CameraType cameraType)
         {
-            bool validHistory = useTemporalHistory && history != null && history.valid && history.texture != null;
+            bool validHistory = useTemporalHistory
+                && history != null
+                && history.valid
+                && history.texture != null
+                && history.depthTexture != null;
             float temporalBlend = validHistory ? GetTemporalBlend() : 0f;
             float frameIndex = validHistory ? Time.renderedFrameCount : 0f;
             GetVolumeBounds(out Vector3 boundsCenter, out Vector3 boundsSize);
             material.SetTexture(HistoryTextureId, validHistory ? history.texture : Texture2D.blackTexture);
+            material.SetTexture(HistoryDepthTextureId, validHistory ? history.depthTexture : Texture2D.blackTexture);
             material.SetTexture(BlueNoiseTextureId, blueNoiseTexture != null ? blueNoiseTexture : Texture2D.blackTexture);
             material.SetVector(FroxelSizeId, new Vector4(previousWidth, previousHeight, 1f / Mathf.Max(1, previousWidth), 1f / Mathf.Max(1, previousHeight)));
             material.SetVector(CameraSizeId, new Vector4(camera.pixelWidth, camera.pixelHeight, 1f / Mathf.Max(1, camera.pixelWidth), 1f / Mathf.Max(1, camera.pixelHeight)));
@@ -317,6 +335,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetColor(ScatteringColorId, GetScatteringColor());
             material.SetMatrix(PreviousViewProjectionId, validHistory ? history.previousViewProjection : Matrix4x4.identity);
             material.SetFloat(HistoryValidId, validHistory ? 1f : 0f);
+            material.SetFloat(TemporalDepthRejectionId, GetTemporalDepthRejection());
             material.SetFloat(FrameIndexId, frameIndex);
             material.SetFloat(FroxelDepthId, GetFroxelDepth());
             PushCloudOccluder();
@@ -387,6 +406,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private bool GetTemporalAccumulation() => controller != null ? controller.temporalAccumulation : featureSettings.temporalAccumulation;
         private float GetJitterStrength() => controller != null ? controller.jitterStrength : featureSettings.jitterStrength;
         private float GetTemporalBlend() => controller != null ? controller.temporalBlend : featureSettings.temporalBlend;
+        private float GetTemporalDepthRejection() => controller != null ? controller.temporalDepthRejection : featureSettings.temporalDepthRejection;
         private float GetBilateralDepthScale() => controller != null ? controller.bilateralDepthScale : featureSettings.bilateralDepthScale;
         private float GetCompositeOpacity() => controller != null ? controller.compositeOpacity : featureSettings.compositeOpacity;
         private float GetVolumeBoundsSoftness() => controller != null ? controller.volumeBoundsSoftness : featureSettings.volumeBoundsSoftness;
@@ -414,6 +434,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             foreach (CameraHistory history in cameraHistories.Values)
             {
                 history.texture?.Release();
+                history.depthTexture?.Release();
             }
 
             cameraHistories.Clear();

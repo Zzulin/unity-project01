@@ -40,7 +40,7 @@ Material:
     - _Absorption: 2.45
     - _AnvilBias: 0.56
     - _BottomSoftness: 0.16
-    - _Coverage: 0.069
+    - _Coverage: 0.117
     - _Density: 12
     - _DetailScale: 14
     - _DetailStrength: 0.52
@@ -52,7 +52,7 @@ Material:
     - _PhaseBackward: -0.22
     - _PhaseForward: 0.52
     - _PowderStrength: 0.86
-    - _ShapeScale: 2.46
+    - _ShapeScale: 2.4
     - _SilverIntensity: 1.25
     - _StepCount: 10
     - _TopSoftness: 0.3
