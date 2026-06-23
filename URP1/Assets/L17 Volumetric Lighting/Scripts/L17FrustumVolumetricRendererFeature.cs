@@ -60,7 +60,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         [Range(0f, 1f)] public float compositeOpacity = 0.94f;
         [HideInInspector]
         public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
-        public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+        public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingTransparents;
     }
 
     private sealed class L17VolumetricPass : ScriptableRenderPass
@@ -348,7 +348,6 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             bool enabled = cloud != null
                 && cloud.isActiveAndEnabled
                 && cloudMaterial != null
-                && cloud.coverage > 0.0001f
                 && cloud.density > 0.0001f;
 
             material.SetVector(CloudParams2Id, enabled

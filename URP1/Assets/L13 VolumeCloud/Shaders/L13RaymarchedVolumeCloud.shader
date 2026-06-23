@@ -74,6 +74,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
             #define MAX_VIEW_STEPS 160
             #define MAX_LIGHT_STEPS 16
             #define PI 3.14159265359
+            #define CLOUD_METERS_TO_KILOMETERS 0.001
 
             Texture3D _ShapeNoise;
             SamplerState sampler_ShapeNoise;
@@ -212,21 +213,21 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 return (1.0 - g2) / (4.0 * PI * denom);
             }
 
-            float LightTransmittance(float3 pOS, float3 lightDirOS)
+            float LightTransmittance(float3 pOS, float3 lightDirOSPerMeter)
             {
                 if (_LightStepCount <= 0)
                 {
                     float height = saturate(pOS.y + 0.5);
-                    float sunFacing = saturate(dot(normalize(lightDirOS), float3(0.0, 1.0, 0.0)) * 0.5 + 0.5);
+                    float sunFacing = saturate(dot(normalize(lightDirOSPerMeter), float3(0.0, 1.0, 0.0)) * 0.5 + 0.5);
                     return lerp(0.45, 0.95, saturate(height * 0.7 + sunFacing * 0.3));
                 }
 
-                float2 hit = IntersectUnitBox(pOS, lightDirOS);
+                float2 hit = IntersectUnitBox(pOS, lightDirOSPerMeter);
                 float end = max(hit.y, 0.0);
                 int lightSteps = clamp(_LightStepCount, 1, MAX_LIGHT_STEPS);
-                float stepSize = end / lightSteps;
+                float stepSizeMeters = end / lightSteps;
                 float opticalDepth = 0.0;
-                float t = stepSize * 0.5;
+                float tMeters = stepSizeMeters * 0.5;
 
                 [loop]
                 for (int i = 0; i < MAX_LIGHT_STEPS; i++)
@@ -236,8 +237,10 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                         break;
                     }
 
-                    opticalDepth += SampleCloudDensity(pOS + lightDirOS * t, false) * stepSize;
-                    t += stepSize;
+                    opticalDepth += SampleCloudDensity(
+                        pOS + lightDirOSPerMeter * tMeters,
+                        true) * stepSizeMeters * CLOUD_METERS_TO_KILOMETERS;
+                    tMeters += stepSizeMeters;
                 }
 
                 return exp(-opticalDepth * _LightAbsorption);
@@ -246,8 +249,9 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
             half4 Frag(Varyings input) : SV_Target
             {
                 float3 roOS = TransformWorldToObject(_WorldSpaceCameraPos);
-                float3 rdOS = normalize(input.positionOS - roOS);
-                float2 hit = IntersectUnitBox(roOS, rdOS);
+                float3 rdWS = normalize(input.positionWS - _WorldSpaceCameraPos);
+                float3 rdOSPerMeter = mul((float3x3)unity_WorldToObject, rdWS);
+                float2 hit = IntersectUnitBox(roOS, rdOSPerMeter);
 
                 if (hit.y <= max(hit.x, 0.0))
                 {
@@ -257,13 +261,13 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                 int viewSteps = clamp(_StepCount, 3, MAX_VIEW_STEPS);
                 float start = max(hit.x, 0.0);
                 float end = hit.y;
-                float rayLength = end - start;
-                float stepSize = rayLength / viewSteps;
+                float rayLengthMeters = end - start;
+                float stepSizeMeters = rayLengthMeters / viewSteps;
                 float jitter = Hash12(input.positionHCS.xy);
-                float t = start + stepSize * jitter;
+                float tMeters = start + stepSizeMeters * jitter;
 
                 float3 sunDirWS = normalize(_SunDirectionWS.xyz);
-                float3 sunDirOS = normalize(TransformWorldToObjectDir(sunDirWS));
+                float3 sunDirOSPerMeter = mul((float3x3)unity_WorldToObject, sunDirWS);
                 float3 viewDirWS = normalize(input.positionWS - _WorldSpaceCameraPos);
                 float forwardPhase = HenyeyGreenstein(dot(viewDirWS, sunDirWS), _PhaseForward);
                 float backwardPhase = HenyeyGreenstein(dot(viewDirWS, sunDirWS), _PhaseBackward);
@@ -284,13 +288,14 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                         break;
                     }
 
-                    float3 pOS = roOS + rdOS * t;
+                    float3 pOS = roOS + rdOSPerMeter * tMeters;
                     float density = SampleCloudDensity(pOS, true);
 
                     if (density > 0.001)
                     {
-                        float lightTrans = LightTransmittance(pOS, sunDirOS);
-                        float attenuation = exp(-density * stepSize * _Absorption);
+                        float lightTrans = LightTransmittance(pOS, sunDirOSPerMeter);
+                        float opticalStep = stepSizeMeters * CLOUD_METERS_TO_KILOMETERS;
+                        float attenuation = exp(-density * opticalStep * _Absorption);
                         float alphaSlice = saturate(1.0 - attenuation);
                         float powder = 1.0 - exp(-density * _PowderStrength);
                         float3 litCloud = lerp(_ShadowColor.rgb, _CloudColor.rgb, lightTrans);
@@ -305,7 +310,7 @@ Shader "L13 VolumeCloud/Raymarched Volume Cloud"
                         transmittance *= attenuation;
                     }
 
-                    t += stepSize;
+                    tMeters += stepSizeMeters;
                 }
 
                 float alpha = saturate(1.0 - transmittance) * _Opacity;

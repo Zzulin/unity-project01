@@ -254,7 +254,7 @@ public static class L17VolumetricLightingDemoBuilder
         feature.settings.bilateralDepthScale = 0.08f;
         feature.settings.compositeOpacity = 0.94f;
         feature.settings.scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
-        feature.settings.passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+        feature.settings.passEvent = RenderPassEvent.BeforeRenderingTransparents;
 
         EditorUtility.SetDirty(feature);
         EditorUtility.SetDirty(rendererData);

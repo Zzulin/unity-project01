@@ -17,6 +17,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
         #define L17_MAX_STEPS 128
+        #define CLOUD_METERS_TO_KILOMETERS 0.001
 
         TEXTURE2D_X(_L17IntegratedTexture);
         TEXTURE2D_X(_L17HistoryTexture);
@@ -202,14 +203,14 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
 
         float CoupledCloudTransmittance(float3 positionWS, float3 lightDirectionWS)
         {
-            if (_L17CloudParams2.w <= 0.0001 || _L17CloudParams0.y <= 0.0001)
+            if (_L17CloudParams2.w <= 0.0001 || _L17CloudParams0.x <= 0.0001)
             {
                 return 1.0;
             }
 
             float3 rayOriginOS = mul(_L17CloudWorldToLocal, float4(positionWS, 1.0)).xyz;
-            float3 rayDirectionOS = normalize(mul((float3x3)_L17CloudWorldToLocal, lightDirectionWS));
-            float2 hit = IntersectCloudBox(rayOriginOS, rayDirectionOS);
+            float3 rayDirectionOSPerMeter = mul((float3x3)_L17CloudWorldToLocal, lightDirectionWS);
+            float2 hit = IntersectCloudBox(rayOriginOS, rayDirectionOSPerMeter);
             float startDistance = max(hit.x, 0.0);
             float endDistance = hit.y;
             if (endDistance <= startDistance)
@@ -218,9 +219,9 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             }
 
             int stepCount = (int)clamp(round(_L17CloudParams2.z), 1.0, 8.0);
-            float stepLength = (endDistance - startDistance) / stepCount;
+            float stepLengthMeters = (endDistance - startDistance) / stepCount;
             float opticalDepth = 0.0;
-            float travel = startDistance + stepLength * 0.5;
+            float travelMeters = startDistance + stepLengthMeters * 0.5;
 
             [loop]
             for (int index = 0; index < 8; index++)
@@ -230,8 +231,11 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                     break;
                 }
 
-                opticalDepth += SampleCoupledCloudDensity(rayOriginOS + rayDirectionOS * travel) * stepLength;
-                travel += stepLength;
+                opticalDepth += SampleCoupledCloudDensity(
+                    rayOriginOS + rayDirectionOSPerMeter * travelMeters)
+                    * stepLengthMeters
+                    * CLOUD_METERS_TO_KILOMETERS;
+                travelMeters += stepLengthMeters;
             }
 
             float transmission = exp(-opticalDepth * max(_L17CloudParams2.y, 0.001));

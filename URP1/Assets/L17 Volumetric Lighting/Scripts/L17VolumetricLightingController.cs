@@ -116,7 +116,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
             volumeBoundsSize = boundsSize;
         }
 
-        settings.passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+        settings.passEvent = RenderPassEvent.BeforeRenderingTransparents;
         RememberVolumeBounds(boundsCenter, boundsSize);
         hasApplied = true;
 
