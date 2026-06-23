@@ -14,7 +14,7 @@
 - 体积范围：由场景对象 `L17 Local Volume Bounds` 的 Transform 控制
 - 默认质量：半分辨率体积 buffer，`96 depth steps`
 - 主光：URP Directional Light + Main Light Shadow Map
-- 稳定性：blue-noise jitter、complementary 双相采样、5x5 cross-bilateral 低分辨率降噪、temporal accumulation
+- 稳定性：blue-noise jitter、temporal accumulation、低分辨率 5 点十字双边降噪、全分辨率 3x3 双边上采样
 - 合成：Bloom / ACES Tonemapping 前合成
 - 运行镜头：`WASD` 移动，右键旋转视角，`Shift` 加速，`Q/E` 垂直移动
 - 场景内容：简化房间、窗户、窗框、两个室内接光物、局部体积盒、太阳光、相机和后处理 Volume
@@ -184,7 +184,7 @@ Assets/L17 Volumetric Lighting/Scripts/L17RuntimeCameraMotion.cs
 - 保留 blue-noise jitter，只用于减少步进规律性。
 - 默认半分辨率体积 buffer。
 - 默认 `froxelDepth = 96`。
-- 用 5x5 cross-bilateral 在低分辨率阶段压掉残余颗粒。
+- 当时使用 5x5 cross-bilateral 在低分辨率阶段压掉残余颗粒；后续为降低采样成本，当前版本已改为 5 点十字双边降噪。
 
 这个阶段的结论是：L17 当前优先保证“稳定、流畅、没有明显纹路 bug”，而不是堆更多程序噪声细节。
 
@@ -495,7 +495,7 @@ flowchart LR
 - `Assets/Screenshots/L17_baked_indirect_fixed_camera.png`：UnitySkills 直接由 `Main Camera` 截图，暗面可见棕金色 baked indirect
 - UnitySkills `validate_missing_references`：0 issues
 
-历史记录中 `Hidden/L17/Froxel Volumetric Composite` 的 `shader_check_errors` 曾返回 `messageCount=1`，但 Unity Console Warning / Error 均为 0，当前按 ShaderUtil 内部 message 残留记录。
+历史记录中 `Hidden/L17/Froxel Volumetric Composite` 的 `shader_check_errors` 曾返回内部 message；2026-06-23 修正局部 const 数组写法后可清掉该类 message。2026-06-24 为恢复 L17 室内窗框/墙体对体积光的正确遮挡，BuildVolume pass 重新保留 `_MAIN_LIGHT_SHADOWS_CASCADE` 与 `_SHADOWS_SOFT` 变体；UnitySkills 当前仍会报告 1 条 URP `Shadows.hlsl` 在 Metal + cascade shadow variant 下的 warning，但 `ShaderHasError=False`、Unity Console Error 0。不能为了清这条 URP warning 删除 cascade/soft shadow variants，否则 L17 会失去主光 shadowmap 遮挡并整屏爆白。
 
 ## 已知设计取舍
 

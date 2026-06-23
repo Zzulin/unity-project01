@@ -72,7 +72,6 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int CameraCopyTextureId = Shader.PropertyToID("_L17CameraCopyTexture");
         private static readonly int BlueNoiseTextureId = Shader.PropertyToID("_L17BlueNoiseTexture");
         private static readonly int FroxelSizeId = Shader.PropertyToID("_L17FroxelSize");
-        private static readonly int CameraSizeId = Shader.PropertyToID("_L17CameraSize");
         private static readonly int Params0Id = Shader.PropertyToID("_L17Params0");
         private static readonly int Params1Id = Shader.PropertyToID("_L17Params1");
         private static readonly int Params2Id = Shader.PropertyToID("_L17Params2");
@@ -227,13 +226,13 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                 }
 
                 Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(camera.projectionMatrix, true) * camera.worldToCameraMatrix;
-                PushSettings(camera, history, useTemporalHistory, cameraType);
+                PushSettings(camera, history, useTemporalHistory);
 
                 Blitter.BlitCameraTexture(cmd, source, lowDepthTexture, material, 0);
+                cmd.SetGlobalTexture(LowDepthTextureId, lowDepthTexture);
                 Blitter.BlitCameraTexture(cmd, source, integratedTexture, material, 1);
 
                 cmd.SetGlobalTexture(IntegratedTextureId, integratedTexture);
-                cmd.SetGlobalTexture(LowDepthTextureId, lowDepthTexture);
                 Blitter.BlitCameraTexture(cmd, integratedTexture, denoisedTexture, material, 2);
 
                 cmd.SetGlobalTexture(IntegratedTextureId, denoisedTexture);
@@ -306,7 +305,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             }
         }
 
-        private void PushSettings(Camera camera, CameraHistory history, bool useTemporalHistory, CameraType cameraType)
+        private void PushSettings(Camera camera, CameraHistory history, bool useTemporalHistory)
         {
             bool validHistory = useTemporalHistory
                 && history != null
@@ -320,7 +319,6 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetTexture(HistoryDepthTextureId, validHistory ? history.depthTexture : Texture2D.blackTexture);
             material.SetTexture(BlueNoiseTextureId, blueNoiseTexture != null ? blueNoiseTexture : Texture2D.blackTexture);
             material.SetVector(FroxelSizeId, new Vector4(previousWidth, previousHeight, 1f / Mathf.Max(1, previousWidth), 1f / Mathf.Max(1, previousHeight)));
-            material.SetVector(CameraSizeId, new Vector4(camera.pixelWidth, camera.pixelHeight, 1f / Mathf.Max(1, camera.pixelWidth), 1f / Mathf.Max(1, camera.pixelHeight)));
             material.SetVector(Params0Id, new Vector4(GetMaxDistance(), GetDepthDistribution(), GetDensity(), GetExtinction()));
             material.SetVector(Params1Id, new Vector4(GetIntensity(), GetAnisotropy(), GetShadowFloor(), GetMultiScatter()));
             material.SetVector(Params2Id, new Vector4(GetHeightOrigin(), GetHeightFalloff(), GetNoiseScale(), GetNoiseStrength()));
@@ -329,8 +327,8 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetVector(TemporalParamsId, new Vector4(temporalBlend, GetJitterStrength(), GetBilateralDepthScale(), GetCompositeOpacity()));
             material.SetVector(TemporalControlId, new Vector4(
                 useTemporalHistory ? 1f : 0f,
-                cameraType == CameraType.SceneView ? 1f : 0f,
-                GetTemporalAccumulation() ? 1f : 0f,
+                0f,
+                0f,
                 controller != null ? controller.forwardPhaseCeiling : 3.5f));
             material.SetColor(ScatteringColorId, GetScatteringColor());
             material.SetMatrix(PreviousViewProjectionId, validHistory ? history.previousViewProjection : Matrix4x4.identity);
@@ -350,12 +348,9 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                 && cloudMaterial != null
                 && cloud.density > 0.0001f;
 
-            material.SetVector(CloudParams2Id, enabled
-                ? new Vector4(cloud.anvilBias, cloud.lightAbsorption, CoupledCloudShadowSteps, CoupledCloudShadowStrength)
-                : Vector4.zero);
-
             if (!enabled)
             {
+                material.SetVector(CloudParams2Id, Vector4.zero);
                 return;
             }
 
@@ -402,7 +397,6 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private float GetHeightFalloff() => controller != null ? controller.heightFalloff : featureSettings.heightFalloff;
         private float GetNoiseStrength() => controller != null ? controller.noiseStrength : featureSettings.noiseStrength;
         private float GetNoiseScale() => controller != null ? controller.noiseScale : featureSettings.noiseScale;
-        private bool GetTemporalAccumulation() => controller != null ? controller.temporalAccumulation : featureSettings.temporalAccumulation;
         private float GetJitterStrength() => controller != null ? controller.jitterStrength : featureSettings.jitterStrength;
         private float GetTemporalBlend() => controller != null ? controller.temporalBlend : featureSettings.temporalBlend;
         private float GetTemporalDepthRejection() => controller != null ? controller.temporalDepthRejection : featureSettings.temporalDepthRejection;

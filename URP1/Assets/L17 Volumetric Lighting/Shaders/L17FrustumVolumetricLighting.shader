@@ -33,7 +33,6 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         SAMPLER(sampler_L17CloudWeatherMap);
 
         float4 _L17FroxelSize;
-        float4 _L17CameraSize;
         float4 _L17Params0;
         float4 _L17Params1;
         float4 _L17Params2;
@@ -235,6 +234,11 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                     rayOriginOS + rayDirectionOSPerMeter * travelMeters)
                     * stepLengthMeters
                     * CLOUD_METERS_TO_KILOMETERS;
+                if (opticalDepth * max(_L17CloudParams2.y, 0.001) >= 6.0)
+                {
+                    break;
+                }
+
                 travelMeters += stepLengthMeters;
             }
 
@@ -318,6 +322,21 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return lerp(rayStart, rayEnd, distributedSlice);
         }
 
+        float CloudTransmissionAtSlice(
+            float3 rayDirWS,
+            float3 lightDirWS,
+            float rayStart,
+            float rayEnd,
+            int stepCount,
+            int stepIndex,
+            float jitter)
+        {
+            float slice = (min(stepIndex, stepCount - 1) + jitter) / stepCount;
+            float distanceAlongRay = SliceDistance(slice, rayStart, rayEnd);
+            float3 positionWS = _WorldSpaceCameraPos + rayDirWS * distanceAlongRay;
+            return CoupledCloudTransmittance(positionWS, lightDirWS);
+        }
+
         float4 IntegrateVolume(float3 rayDirWS, float sceneDistance, float jitter)
         {
             int stepCount = (int)clamp(round(_L17FroxelDepth), 16.0, (float)L17_MAX_STEPS);
@@ -336,6 +355,23 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             }
 
             float cameraFadeDistance = clamp(_L17VolumeBoundsCenter.w * 0.15, 1.0, 18.0);
+            const int cloudSampleStride = 2;
+            float cloudTransmission0 = CloudTransmissionAtSlice(
+                rayDirWS,
+                lightDirWS,
+                rayStart,
+                rayEnd,
+                stepCount,
+                0,
+                jitter);
+            float cloudTransmission1 = CloudTransmissionAtSlice(
+                rayDirWS,
+                lightDirWS,
+                rayStart,
+                rayEnd,
+                stepCount,
+                min(cloudSampleStride, stepCount - 1),
+                jitter);
 
             [loop]
             for (int index = 0; index < L17_MAX_STEPS; index++)
@@ -355,7 +391,24 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 density *= smoothstep(0.0, cameraFadeDistance, t);
                 float4 shadowCoord = TransformWorldToShadowCoord(sampleWS);
                 Light shadowedLight = GetMainLight(shadowCoord);
-                float cloudTransmission = CoupledCloudTransmittance(sampleWS, lightDirWS);
+                if (index > 0 && frac((float)index * 0.5) < 0.001)
+                {
+                    cloudTransmission0 = cloudTransmission1;
+                    cloudTransmission1 = CloudTransmissionAtSlice(
+                        rayDirWS,
+                        lightDirWS,
+                        rayStart,
+                        rayEnd,
+                        stepCount,
+                        min(index + cloudSampleStride, stepCount - 1),
+                        jitter);
+                }
+
+                float cloudBlend = frac((float)index * 0.5) * 2.0;
+                float cloudTransmission = lerp(
+                    cloudTransmission0,
+                    cloudTransmission1,
+                    cloudBlend);
                 float shadowAttenuation = saturate(shadowedLight.shadowAttenuation * cloudTransmission);
                 float shadow = lerp(_L17Params1.z, 1.0, shadowAttenuation);
                 float multiScatterShadow = shadowAttenuation * shadowAttenuation;
@@ -395,26 +448,16 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             float2 uv = input.texcoord;
             float3 rayDirWS = RayDirection(uv);
-            float sceneDistance = min(SceneRayDistance(uv), _L17Params0.x);
+            float sceneDistance = min(
+                SAMPLE_TEXTURE2D_X(_L17LowDepthTexture, sampler_PointClamp, uv).r,
+                _L17Params0.x);
             float jitter = 0.5;
             if (_L17TemporalParams.y > 0.0001)
             {
                 jitter += (BlueNoise(input.positionCS.xy) - 0.5) * saturate(_L17TemporalParams.y);
             }
 
-            float4 current = IntegrateVolume(rayDirWS, sceneDistance, saturate(jitter));
-            // Temporal accumulation already distributes jitter across frames.
-            // Only pay for the complementary second integration when temporal
-            // history is disabled.
-            if (_L17TemporalParams.y > 0.0001 && _L17TemporalControl.x <= 0.5)
-            {
-                float pairedJitter = frac(jitter + 0.5);
-                float4 paired = IntegrateVolume(rayDirWS, sceneDistance, pairedJitter);
-                current.rgb = (current.rgb + paired.rgb) * 0.5;
-                current.a = min(current.a, paired.a);
-            }
-
-            return current;
+            return IntegrateVolume(rayDirWS, sceneDistance, saturate(jitter));
         }
 
         float BilateralWeight(float fullDepth, float lowDepth, float spatialWeight)
@@ -423,32 +466,44 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return spatialWeight * exp(-abs(fullDepth - lowDepth) * depthScale);
         }
 
+        void AccumulateDenoiseSample(
+            float2 uv,
+            float2 texel,
+            float centerDepth,
+            float2 offset,
+            float spatialWeight,
+            inout float4 accum,
+            inout float weightSum)
+        {
+            float2 sampleUv = uv + offset * texel;
+            float sampleDepth = SAMPLE_TEXTURE2D_X(
+                _L17LowDepthTexture,
+                sampler_PointClamp,
+                sampleUv).r;
+            float weight = BilateralWeight(centerDepth, sampleDepth, spatialWeight);
+            accum += SAMPLE_TEXTURE2D_X(
+                _L17IntegratedTexture,
+                sampler_LinearClamp,
+                sampleUv) * weight;
+            weightSum += weight;
+        }
+
         half4 FragmentDenoiseVolume(Varyings input) : SV_Target
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             float2 uv = input.texcoord;
-            float2 texel = _L17FroxelSize.zw;
             float centerDepth = SAMPLE_TEXTURE2D_X(_L17LowDepthTexture, sampler_PointClamp, uv).r;
+            float2 texel = _L17FroxelSize.zw;
             float4 accum = 0.0;
             float weightSum = 0.0;
 
-            [unroll]
-            for (int y = -2; y <= 2; y++)
-            {
-                [unroll]
-                for (int x = -2; x <= 2; x++)
-                {
-                    float2 offset = float2(x, y);
-                    float2 sampleUv = uv + offset * texel;
-                    float spatial = exp(-dot(offset, offset) * 0.38);
-                    float sampleDepth = SAMPLE_TEXTURE2D_X(_L17LowDepthTexture, sampler_PointClamp, sampleUv).r;
-                    float weight = BilateralWeight(centerDepth, sampleDepth, spatial);
-                    accum += SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, sampleUv) * weight;
-                    weightSum += weight;
-                }
-            }
+            AccumulateDenoiseSample(uv, texel, centerDepth, float2(0.0, 0.0), 1.0, accum, weightSum);
+            AccumulateDenoiseSample(uv, texel, centerDepth, float2(1.0, 0.0), 0.55, accum, weightSum);
+            AccumulateDenoiseSample(uv, texel, centerDepth, float2(-1.0, 0.0), 0.55, accum, weightSum);
+            AccumulateDenoiseSample(uv, texel, centerDepth, float2(0.0, 1.0), 0.55, accum, weightSum);
+            AccumulateDenoiseSample(uv, texel, centerDepth, float2(0.0, -1.0), 0.55, accum, weightSum);
 
-            return weightSum > 0.0001 ? accum / weightSum : SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, uv);
+            return accum / max(weightSum, 0.0001);
         }
 
         half4 FragmentResolveTemporal(Varyings input) : SV_Target
@@ -462,7 +517,9 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 return current;
             }
 
-            float sceneDistance = min(SceneRayDistance(uv), _L17Params0.x);
+            float sceneDistance = min(
+                SAMPLE_TEXTURE2D_X(_L17LowDepthTexture, sampler_PointClamp, uv).r,
+                _L17Params0.x);
             float3 rayDirWS = RayDirection(uv);
             float reprojectionDistance = min(sceneDistance, _L17Params0.x * 0.72);
             float3 reprojectionWS = _WorldSpaceCameraPos + rayDirWS * reprojectionDistance;
@@ -532,10 +589,10 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             float weightSum = 0.0;
 
             [unroll]
-            for (int y = -2; y <= 2; y++)
+            for (int y = -1; y <= 1; y++)
             {
                 [unroll]
-                for (int x = -2; x <= 2; x++)
+                for (int x = -1; x <= 1; x++)
                 {
                     float2 offset = float2(x, y);
                     float2 pixel = centerPixel + offset;
