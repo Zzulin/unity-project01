@@ -794,9 +794,9 @@ MonoBehaviour:
   rendererData: {fileID: 11400000, guid: 64dcde4b9461635469144f0672379a5c, type: 2}
   downsample: 2
   froxelDepth: 64
-  maxDistance: 320
+  maxDistance: 2000
   depthDistribution: 1.35
-  density: 0.0037999959
+  density: 0.0018297182
   extinction: 0.28
   intensity: 8.5
   anisotropy: 0.72
