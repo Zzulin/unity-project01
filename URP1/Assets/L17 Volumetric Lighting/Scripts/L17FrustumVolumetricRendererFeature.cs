@@ -60,7 +60,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         [Range(0f, 1f)] public float compositeOpacity = 0.94f;
         [HideInInspector]
         public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
-        public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingTransparents;
+        public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
     }
 
     private sealed class L17VolumetricPass : ScriptableRenderPass
