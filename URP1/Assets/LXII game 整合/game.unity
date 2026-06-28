@@ -15,14 +15,14 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 1
-  m_FogColor: {r: 0.6726724, g: 0.6159375, b: 0.6181141, a: 1}
+  m_FogColor: {r: 0.5960639, g: 0.33823162, b: 0.20634344, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.01
   m_LinearFogStart: 150
   m_LinearFogEnd: 900
-  m_AmbientSkyColor: {r: 0.5411368, g: 0.57539326, b: 0.7275215, a: 1}
-  m_AmbientEquatorColor: {r: 0.48425645, g: 0.4948491, b: 0.5275215, a: 1}
-  m_AmbientGroundColor: {r: 0.30425644, g: 0.3253448, b: 0.27059263, a: 1}
+  m_AmbientSkyColor: {r: 0.38313177, g: 0.33120367, b: 0.4402396, a: 1}
+  m_AmbientEquatorColor: {r: 0.3980719, g: 0.28417572, b: 0.24023962, a: 1}
+  m_AmbientGroundColor: {r: 0.2180719, g: 0.1721278, b: 0.14610383, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
@@ -859,32 +859,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cloudMaterial: {fileID: 2100000, guid: e01f800a57e6f41ebae6fab7ce8d25e3, type: 2}
   sunLight: {fileID: 1636083857}
-  cloudColor: {r: 1, g: 0.8537608, b: 0.7380172, a: 1}
-  shadowColor: {r: 0.48955277, g: 0.4717295, b: 0.57385767, a: 1}
-  ambientColor: {r: 0.66217667, g: 0.61489755, b: 0.6717779, a: 1}
-  density: 8.408945
-  coverage: 0.09556951
-  weatherStrength: 0.7389116
+  cloudColor: {r: 1, g: 0.71011984, b: 0.5081917, a: 1}
+  shadowColor: {r: 0.3411238, g: 0.18923561, b: 0.24827157, a: 1}
+  ambientColor: {r: 0.5281118, g: 0.31325158, b: 0.2983115, a: 1}
+  density: 11.377524
+  coverage: 0.11328522
+  weatherStrength: 0.8059441
   macroGapStrength: 0
-  shapeScale: 2.631681
+  shapeScale: 2.4401598
   detailScale: 14
-  detailStrength: 0.48524785
-  bottomSoftness: 0.17158405
-  topSoftness: 0.3231681
-  anvilBias: 0.5368319
-  absorption: 1.6970367
-  lightAbsorption: 1.9180768
-  forwardPhase: 0.46207973
+  detailStrength: 0.51397604
+  bottomSoftness: 0.16200799
+  topSoftness: 0.304016
+  anvilBias: 0.555984
+  absorption: 2.319481
+  lightAbsorption: 2.564461
+  forwardPhase: 0.50996006
   forwardPhaseClamp: 0
-  backwardPhase: -0.16207975
-  silverIntensity: 1.018319
-  powderStrength: 0.77891165
+  backwardPhase: -0.20996006
+  silverIntensity: 1.2098403
+  powderStrength: 0.8459441
   windDirection: {x: 1, y: 0, z: 0.18, w: 0}
   windSpeed: 0.9
   noiseWorldSize: {x: 920, y: 260, z: 920}
-  stepCount: 10
-  lightStepCount: 2
-  opacity: 0.68940735
+  stepCount: 34
+  lightStepCount: 4
+  opacity: 0.8138961
 --- !u!23 &1228242098
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1028,8 +1028,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.8900485, b: 0.7569288, a: 1}
-  m_Intensity: 1.1448007
+  m_Color: {r: 1, g: 0.79907584, b: 0.59413576, a: 1}
+  m_Intensity: 1.0250999
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1038,7 +1038,7 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 0.64846444
+    m_Strength: 0.5670679
     m_Bias: 0.035
     m_NormalBias: 0.35
     m_NearPlane: 0.2
@@ -1110,13 +1110,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1636083856}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.41660035, y: 0.127819, z: -0.059290946, w: -0.8981041}
+  m_LocalRotation: {x: -0.151972, y: 0.13923113, z: -0.021628795, w: -0.97829}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 130.23, y: -196.2, z: 180}
+  m_LocalEulerAnglesHint: {x: 162.34, y: -196.2, z: 180}
 --- !u!1 &1711800483
 GameObject:
   m_ObjectHideFlags: 0
@@ -1233,13 +1233,13 @@ MonoBehaviour:
   froxelDepth: 64
   maxDistance: 2000
   depthDistribution: 1.35
-  density: 0.0010885022
-  extinction: 0.19311963
-  intensity: 4.532463
-  anisotropy: 0.63891166
-  forwardPhaseCeiling: 1.3262392
-  shadowFloor: 0.0051584053
-  multiScatter: 0.023049569
+  density: 0.0017012351
+  extinction: 0.26494008
+  intensity: 7.8122644
+  anisotropy: 0.7059441
+  forwardPhaseCeiling: 1.4698802
+  shadowFloor: 0.004200799
+  multiScatter: 0.028795207
   heightOrigin: 20
   heightFalloff: 0.0034999994
   noiseStrength: 0.18
@@ -1248,19 +1248,19 @@ MonoBehaviour:
   volumeBoundsCenter: {x: 80, y: 75, z: 390}
   volumeBoundsSize: {x: 3229, y: 384, z: 4606.2}
   volumeBoundsSoftness: 28
-  scatteringColor: {r: 0.9536638, g: 0.84534484, b: 0.72227365, a: 1}
+  scatteringColor: {r: 0.99196804, g: 0.6921278, b: 0.4062636, a: 1}
   temporalAccumulation: 1
   jitterStrength: 0.9
   temporalBlend: 0.8
   temporalDepthRejection: 0.12
   bilateralDepthScale: 0.08
-  compositeOpacity: 0.6408945
+  compositeOpacity: 0.9377524
   sunLight: {fileID: 1636083857}
-  sunIntensity: 1.1448007
-  sunColor: {r: 1, g: 0.8900485, b: 0.7569288, a: 1}
-  ambientSky: {r: 0.5411368, g: 0.57539326, b: 0.7275215, a: 1}
-  ambientEquator: {r: 0.48425645, g: 0.4948491, b: 0.5275215, a: 1}
-  ambientGround: {r: 0.30425644, g: 0.3253448, b: 0.27059263, a: 1}
+  sunIntensity: 1.0250999
+  sunColor: {r: 1, g: 0.79907584, b: 0.59413576, a: 1}
+  ambientSky: {r: 0.38313177, g: 0.33120367, b: 0.4402396, a: 1}
+  ambientEquator: {r: 0.3980719, g: 0.28417572, b: 0.24023962, a: 1}
+  ambientGround: {r: 0.2180719, g: 0.1721278, b: 0.14610383, a: 1}
 --- !u!4 &1886511696
 Transform:
   m_ObjectHideFlags: 0
