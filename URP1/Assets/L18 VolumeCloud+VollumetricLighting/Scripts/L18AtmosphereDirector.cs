@@ -80,8 +80,10 @@ public sealed class L18AtmosphereDirector : MonoBehaviour
     [Header("Sun X Mapping")]
     [Tooltip("主光 X 轴等于该角度时使用正午 Profile。")]
     public float noonSunX = 90f;
-    [Tooltip("主光 X 轴等于该角度时使用黄昏 Profile。")]
-    public float sunsetSunX = 20f;
+    [Tooltip("主光 X 轴等于该角度时使用黄昏 Profile，作为昼弧起点。")]
+    public float sunsetSunX = 0f;
+    [Tooltip("主光 X 轴等于该角度时再次回到黄昏 Profile，作为昼弧终点。")]
+    public float duskSunX = 180f;
     [Tooltip("平滑 daytime blend，避免昼夜色调硬切。")]
     public bool smoothBlend = true;
     [Range(0f, 1f)] public float manualBlendPreview = 1f;
@@ -153,6 +155,7 @@ public sealed class L18AtmosphereDirector : MonoBehaviour
     {
         noonSunX = Mathf.Repeat(noonSunX, 360f);
         sunsetSunX = Mathf.Repeat(sunsetSunX, 360f);
+        duskSunX = Mathf.Repeat(duskSunX, 360f);
         RefreshImmediate();
     }
 
@@ -214,7 +217,24 @@ public sealed class L18AtmosphereDirector : MonoBehaviour
         }
 
         float sunX = Mathf.Repeat(sunLight.transform.eulerAngles.x, 360f);
-        float blend = Mathf.InverseLerp(sunsetSunX, noonSunX, sunX);
+        float dayStart = sunsetSunX;
+        float dayNoon = noonSunX;
+        float dayEnd = duskSunX;
+
+        float blend;
+        if (sunX <= dayStart || sunX >= dayEnd)
+        {
+            blend = 0f;
+        }
+        else if (sunX <= dayNoon)
+        {
+            blend = Mathf.InverseLerp(dayStart, dayNoon, sunX);
+        }
+        else
+        {
+            blend = 1f - Mathf.InverseLerp(dayNoon, dayEnd, sunX);
+        }
+
         blend = Mathf.Clamp01(blend);
         return smoothBlend ? blend * blend * (3f - 2f * blend) : blend;
     }
