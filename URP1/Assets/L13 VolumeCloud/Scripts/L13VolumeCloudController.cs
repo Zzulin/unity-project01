@@ -98,6 +98,12 @@ public sealed class L13VolumeCloudController : MonoBehaviour
         PushProperties(!Application.isPlaying);
     }
 
+    public void RefreshImmediate(bool persistMaterialAsset = false)
+    {
+        CacheMaterialFromRenderer();
+        PushProperties(persistMaterialAsset && !Application.isPlaying);
+    }
+
     private void OnEnable()
     {
         CacheMaterialFromRenderer();

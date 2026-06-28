@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 1
-  m_FogColor: {r: 0.52, g: 0.29, b: 0.15, a: 1}
+  m_FogColor: {r: 0.58, g: 0.28, b: 0.12, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.002
   m_LinearFogStart: 420
@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 14269ad7ed034fb8ba04e3080529266e, type: 2}
+  m_SkyboxMaterial: {fileID: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -160,8 +160,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
@@ -270,8 +270,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 07e647fe892f04310a89f3750a0a1d15, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   enableRuntimeControls: 1
   moveSpeed: 12
   fastMoveMultiplier: 4
@@ -366,7 +366,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 708351566}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.95080495, y: -0.04523616, z: 0.2565469, w: 0.16765264}
+  m_LocalRotation: {x: 0.95080495, y: -0.045236185, z: 0.2565469, w: 0.16765256}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -383,8 +383,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Version: 3
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -396,6 +396,149 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &827493307
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 827493308}
+  - component: {fileID: 827493309}
+  m_Layer: 0
+  m_Name: L18 Atmosphere Director
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &827493308
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 827493307}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &827493309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 827493307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24a2c6a423ff0451187dd1bd1c47df88, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  sunLight: {fileID: 708351567}
+  skyboxMaterial: {fileID: 2100000, guid: 14269ad7ed034fb8ba04e3080529266e, type: 2}
+  cloudController: {fileID: 1441240294}
+  volumetricLighting: {fileID: 2133876003}
+  noonSunX: 90
+  sunsetSunX: 20
+  smoothBlend: 1
+  manualBlendPreview: 1
+  useManualBlend: 0
+  noon:
+    sunColor: {r: 1, g: 0.97, b: 0.9, a: 1}
+    sunIntensity: 1.25
+    shadowStrength: 0.72
+    skyTint: {r: 0.22, g: 0.48, b: 1, a: 1}
+    groundColor: {r: 0.36, g: 0.48, b: 0.62, a: 1}
+    atmosphereThickness: 0.58
+    exposure: 1.02
+    sunSize: 0.018
+    sunSizeConvergence: 6.5
+    ambientSky: {r: 0.68, g: 0.79, b: 0.98, a: 1}
+    ambientEquator: {r: 0.56, g: 0.68, b: 0.78, a: 1}
+    ambientGround: {r: 0.38, g: 0.46, b: 0.38, a: 1}
+    fogColor: {r: 0.74, g: 0.86, b: 0.98, a: 1}
+    cloudColor: {r: 1, g: 0.98, b: 0.94, a: 1}
+    cloudShadowColor: {r: 0.62, g: 0.72, b: 0.86, a: 1}
+    cloudAmbientColor: {r: 0.78, g: 0.88, b: 1, a: 1}
+    cloudDensity: 5.8
+    cloudCoverage: 0.08
+    weatherStrength: 0.68
+    macroGapStrength: 0
+    shapeScale: 2.8
+    detailScale: 14
+    detailStrength: 0.46
+    bottomSoftness: 0.18
+    topSoftness: 0.34
+    anvilBias: 0.52
+    absorption: 1.15
+    lightAbsorption: 1.35
+    forwardPhase: 0.42
+    backwardPhase: -0.12
+    silverIntensity: 0.85
+    powderStrength: 0.72
+    cloudOpacity: 0.58
+    scatteringColor: {r: 0.92, g: 0.98, b: 1, a: 1}
+    maxDistance: 2000
+    volumeDensity: 0.00055
+    extinction: 0.13
+    intensity: 1.65
+    anisotropy: 0.58
+    forwardPhaseCeiling: 1.2
+    shadowFloor: 0.006
+    multiScatter: 0.018
+    compositeOpacity: 0.38
+  sunset:
+    sunColor: {r: 1, g: 0.78, b: 0.56, a: 1}
+    sunIntensity: 1
+    shadowStrength: 0.55
+    skyTint: {r: 0.38, g: 0.36, b: 0.55, a: 1}
+    groundColor: {r: 0.55, g: 0.24, b: 0.07, a: 1}
+    atmosphereThickness: 1.35
+    exposure: 1.08
+    sunSize: 0.025
+    sunSizeConvergence: 7
+    ambientSky: {r: 0.35, g: 0.28, b: 0.38, a: 1}
+    ambientEquator: {r: 0.38, g: 0.24, b: 0.18, a: 1}
+    ambientGround: {r: 0.2, g: 0.14, b: 0.12, a: 1}
+    fogColor: {r: 0.58, g: 0.28, b: 0.12, a: 1}
+    cloudColor: {r: 1, g: 0.68, b: 0.46, a: 1}
+    cloudShadowColor: {r: 0.31, g: 0.13, b: 0.18, a: 1}
+    cloudAmbientColor: {r: 0.5, g: 0.25, b: 0.22, a: 1}
+    cloudDensity: 12
+    cloudCoverage: 0.117
+    weatherStrength: 0.82
+    macroGapStrength: 0
+    shapeScale: 2.4
+    detailScale: 14
+    detailStrength: 0.52
+    bottomSoftness: 0.16
+    topSoftness: 0.3
+    anvilBias: 0.56
+    absorption: 2.45
+    lightAbsorption: 2.7
+    forwardPhase: 0.52
+    backwardPhase: -0.22
+    silverIntensity: 1.25
+    powderStrength: 0.86
+    cloudOpacity: 0.84
+    scatteringColor: {r: 1, g: 0.66, b: 0.34, a: 1}
+    maxDistance: 2000
+    volumeDensity: 0.0018297182
+    extinction: 0.28
+    intensity: 8.5
+    anisotropy: 0.72
+    forwardPhaseCeiling: 1.5
+    shadowFloor: 0.004
+    multiScatter: 0.03
+    compositeOpacity: 1
+  applyInEditMode: 1
+  instantiateSkybox: 1
 --- !u!1 &891808616
 GameObject:
   m_ObjectHideFlags: 0
@@ -521,8 +664,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c72fa3f2027a46d0aa73903a47bc330, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   boundsColor: {r: 1, g: 0.78, b: 0.28, a: 0.2}
   wireColor: {r: 1, g: 0.72, b: 0.18, a: 0.9}
 --- !u!1 &1441240289
@@ -619,8 +762,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d745af3d2feba400a8060b13f169e24a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   cloudMaterial: {fileID: 2100000, guid: e01f800a57e6f41ebae6fab7ce8d25e3, type: 2}
   sunLight: {fileID: 708351567}
   cloudColor: {r: 1, g: 0.68, b: 0.46, a: 1}
@@ -676,8 +819,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_IsGlobal: 1
   priority: 10
   blendDistance: 0
@@ -725,8 +868,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_IsGlobal: 1
   priority: 0
   blendDistance: 0
@@ -789,8 +932,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6333cf07a877f44a2be3f77a971f231b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rendererData: {fileID: 11400000, guid: 64dcde4b9461635469144f0672379a5c, type: 2}
   downsample: 2
   froxelDepth: 64
@@ -836,3 +979,4 @@ SceneRoots:
   - {fileID: 1280845992}
   - {fileID: 891808617}
   - {fileID: 1906853402}
+  - {fileID: 827493308}
