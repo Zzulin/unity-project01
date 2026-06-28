@@ -790,8 +790,8 @@ MonoBehaviour:
   windDirection: {x: 1, y: 0, z: 0.18, w: 0}
   windSpeed: 0.9
   noiseWorldSize: {x: 920, y: 260, z: 920}
-  stepCount: 10
-  lightStepCount: 2
+  stepCount: 32
+  lightStepCount: 4
   opacity: 0.79839563
 --- !u!1 &1705515874
 GameObject:
