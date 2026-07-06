@@ -37,31 +37,31 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Absorption: 2.2419782
-    - _AnvilBias: 0.55359936
-    - _BottomSoftness: 0.16320033
-    - _Coverage: 0.11107938
-    - _Density: 11.007896
+    - _Absorption: 2.319481
+    - _AnvilBias: 0.555984
+    - _BottomSoftness: 0.16200799
+    - _Coverage: 0.11328522
+    - _Density: 11.377524
     - _DetailScale: 14
-    - _DetailStrength: 0.510399
+    - _DetailStrength: 0.51397604
     - _ForwardPhaseClamp: 0
-    - _LightAbsorption: 2.4839773
+    - _LightAbsorption: 2.564461
     - _LightStepCount: 4
     - _MacroGapStrength: 0
-    - _Opacity: 0.79839563
-    - _PhaseBackward: -0.20399833
-    - _PhaseForward: 0.5039983
-    - _PowderStrength: 0.83759767
-    - _ShapeScale: 2.4640067
-    - _SilverIntensity: 1.1859933
-    - _StepCount: 32
-    - _TopSoftness: 0.3064007
-    - _WeatherStrength: 0.79759765
+    - _Opacity: 0.8138961
+    - _PhaseBackward: -0.20996006
+    - _PhaseForward: 0.50996006
+    - _PowderStrength: 0.8459441
+    - _ShapeScale: 2.4401598
+    - _SilverIntensity: 1.2098403
+    - _StepCount: 34
+    - _TopSoftness: 0.304016
+    - _WeatherStrength: 0.8059441
     - _WindSpeed: 0.9
     m_Colors:
-    - _AmbientColor: {r: 0.5448047, g: 0.35081056, b: 0.34481308, a: 1}
-    - _CloudColor: {r: 1, g: 0.72800505, b: 0.5368081, a: 1}
+    - _AmbientColor: {r: 0.5281118, g: 0.31325158, b: 0.2983115, a: 1}
+    - _CloudColor: {r: 1, g: 0.71011984, b: 0.5081917, a: 1}
     - _NoiseWorldSize: {r: 920, g: 260, b: 920, a: 0}
-    - _ShadowColor: {r: 0.3596052, g: 0.2244099, b: 0.28881142, a: 1}
+    - _ShadowColor: {r: 0.3411238, g: 0.18923561, b: 0.24827157, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0.18, a: 0}
   m_BuildTextureStacks: []
