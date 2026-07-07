@@ -6,15 +6,19 @@ using UnityEditor;
 #endif
 
 [ExecuteAlways]
+// L17 场景级体积光控制器，负责把参数交给 RendererFeature。
 public sealed class L17VolumetricLightingController : MonoBehaviour
 {
+    // RendererFeature 绑定。
     public UniversalRendererData rendererData;
 
+    // Froxel 网格分辨率与深度分布。
     [Range(1, 4)] public int downsample = 2;
     [Range(16, 128)] public int froxelDepth = 96;
     [Min(4f)] public float maxDistance = 58f;
     [Range(0.5f, 3f)] public float depthDistribution = 1.9f;
 
+    // 参与介质散射与局部体积范围。
     [Min(0f)] public float density = 0.24f;
     [Range(0.01f, 1.5f)] public float extinction = 0.68f;
     [Range(0f, 30f)] public float intensity = 3.25f;
@@ -33,6 +37,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Min(0.01f)] public float volumeBoundsSoftness = 0.45f;
     public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
 
+    // 时域稳定、降噪与最终合成。
     public bool temporalAccumulation = true;
     [Range(0f, 1f)] public float jitterStrength = 0.9f;
     [Range(0f, 0.95f)] public float temporalBlend = 0.8f;
@@ -40,36 +45,43 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Range(0f, 0.3f)] public float bilateralDepthScale = 0.08f;
     [Range(0f, 1f)] public float compositeOpacity = 0.94f;
 
+    // 主光参数。
     public Light sunLight;
     [Range(0f, 5f)] public float sunIntensity = 2.35f;
     public Color sunColor = new Color(1f, 0.93f, 0.78f, 1f);
 
+    // TriLight 环境反弹光颜色。
     public Color ambientSky = new Color(0.08f, 0.082f, 0.09f, 1f);
     public Color ambientEquator = new Color(0.045f, 0.04f, 0.034f, 1f);
     public Color ambientGround = new Color(0.018f, 0.015f, 0.012f, 1f);
 
+    // 运行时缓存与变化追踪。
     private L17FrustumVolumetricRendererFeature cachedFeature;
     private L13VolumeCloudController cachedCloudOccluder;
     private bool hasApplied;
     private Vector3 lastVolumeBoundsPosition;
     private Vector3 lastVolumeBoundsScale;
 
+    // 注册当前场景控制器，并应用初始参数。
     private void OnEnable()
     {
         L17FrustumVolumetricRendererFeature.RegisterSceneController(this);
         Apply(false);
     }
 
+    // 从场景控制器注册表中移除。
     private void OnDisable()
     {
         L17FrustumVolumetricRendererFeature.UnregisterSceneController(this);
     }
 
+    // Inspector 修改后重新应用参数。
     private void OnValidate()
     {
         Apply(true);
     }
 
+    // 只在体积盒 Transform 变化时刷新缓存。
     private void Update()
     {
         if (NeedsRuntimeApply())
@@ -78,11 +90,13 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         }
     }
 
+    // 供外部系统强制立即刷新参数。
     public void RefreshImmediate()
     {
         Apply(true);
     }
 
+    // 应用场景光照、RendererFeature 状态和体积范围。
     private void Apply(bool persistAssets)
     {
         RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -132,6 +146,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
 #endif
     }
 
+    // 从指定 RendererData 中查找并缓存 L17 RendererFeature。
     private L17FrustumVolumetricRendererFeature GetFeature()
     {
         if (cachedFeature != null)
@@ -156,6 +171,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         return null;
     }
 
+    // 判断运行时体积范围是否需要重新应用。
     private bool NeedsRuntimeApply()
     {
         if (!hasApplied)
@@ -174,12 +190,14 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
             || (currentScale - lastVolumeBoundsScale).sqrMagnitude > 0.000001f;
     }
 
+    // 记录最新体积范围快照。
     private void RememberVolumeBounds(Vector3 boundsCenter, Vector3 boundsSize)
     {
         lastVolumeBoundsPosition = boundsCenter;
         lastVolumeBoundsScale = boundsSize;
     }
 
+    // 优先返回实时 Transform 范围，否则返回序列化范围。
     public void GetVolumeBounds(out Vector3 center, out Vector3 size)
     {
         if (volumeBoundsTransform != null)
@@ -193,6 +211,7 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
         size = volumeBoundsSize;
     }
 
+    // 查找同场景启用的 L13 云，用于体积光云影。
     public L13VolumeCloudController GetCloudOccluder()
     {
         if (cachedCloudOccluder != null
@@ -226,17 +245,20 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
 [CustomEditor(typeof(L17VolumetricLightingController))]
 public sealed class L17VolumetricLightingControllerEditor : Editor
 {
+    // 按名称查找序列化字段。
     private SerializedProperty Property(string name)
     {
         return serializedObject.FindProperty(name);
     }
 
+    // 绘制简洁的 Inspector 分组标题。
     private static void Header(string label)
     {
         EditorGUILayout.Space(5f);
         EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
     }
 
+    // 绘制幂曲线滑条，提高低值区调参精度。
     private static void PowerSlider(
         SerializedProperty property,
         GUIContent label,
@@ -255,6 +277,7 @@ public sealed class L17VolumetricLightingControllerEditor : Editor
         property.floatValue = Mathf.Clamp(nextValue, 0f, maximum);
     }
 
+    // 绘制分组后的 L17 控制器 Inspector。
     public override void OnInspectorGUI()
     {
         serializedObject.Update();

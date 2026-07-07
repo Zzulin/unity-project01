@@ -5,13 +5,17 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
+// URP RendererFeature：负责把 L17 体积光 Pass 接入渲染管线。
 public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeature
 {
+    // RendererFeature 的默认配置，通常由场景 Controller 覆盖。
     [System.Serializable]
     public sealed class Settings
     {
+        // Feature 开关与场景 Controller 约束。
         public bool enabled = true;
         public bool requireSceneController = true;
+        // Froxel 网格与深度分布。
         [HideInInspector]
         [Range(1, 4)] public int downsample = 2;
         [HideInInspector]
@@ -20,6 +24,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         [Range(4f, 120f)] public float maxDistance = 58f;
         [HideInInspector]
         [Range(0.5f, 4f)] public float depthDistribution = 1.9f;
+        // 参与介质散射参数。
         [HideInInspector]
         [Range(0f, 1.5f)] public float density = 0.24f;
         [HideInInspector]
@@ -40,12 +45,14 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         [Range(0f, 1f)] public float noiseStrength = 0f;
         [HideInInspector]
         [Range(0.05f, 8f)] public float noiseScale = 1.25f;
+        // 局部体积盒范围。
         [HideInInspector]
         public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
         [HideInInspector]
         public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
         [HideInInspector]
         [Range(0.01f, 3f)] public float volumeBoundsSoftness = 0.45f;
+        // 时域稳定、降噪与合成参数。
         [HideInInspector]
         public bool temporalAccumulation = true;
         [HideInInspector]
@@ -60,11 +67,14 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         [Range(0f, 1f)] public float compositeOpacity = 0.94f;
         [HideInInspector]
         public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
+        // 合成时机，当前在后处理前写回相机颜色。
         public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
     }
 
+    // 实际执行体积光构建、降噪、时域累积和合成的 RenderPass。
     private sealed class L17VolumetricPass : ScriptableRenderPass
     {
+        // Shader 属性 ID：避免每帧用字符串查找。
         private static readonly int IntegratedTextureId = Shader.PropertyToID("_L17IntegratedTexture");
         private static readonly int HistoryTextureId = Shader.PropertyToID("_L17HistoryTexture");
         private static readonly int HistoryDepthTextureId = Shader.PropertyToID("_L17HistoryDepthTexture");
@@ -97,16 +107,19 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int CloudParams2Id = Shader.PropertyToID("_L17CloudParams2");
         private static readonly int CloudMacroGapStrengthId = Shader.PropertyToID("_L17CloudMacroGapStrength");
 
+        // RTHandle 资源名称。
         private const string IntegratedTextureName = "_L17IntegratedTexture";
         private const string DenoisedTextureName = "_L17DenoisedTexture";
         private const string TemporalTextureName = "_L17TemporalTexture";
         private const string HistoryTextureName = "_L17HistoryTexture";
         private const string LowDepthTextureName = "_L17LowDepthTexture";
         private const string CameraCopyTextureName = "_L17CameraCopyTexture";
+        // L13 云对 L17 体积光的固定耦合参数。
         private const int CoupledCloudShadowSteps = 3;
         private const float CoupledCloudShadowStrength = 1f;
         private const float CoupledCloudShadowContrast = 2.8f;
 
+        // Pass 运行时依赖与临时纹理。
         private readonly ProfilingSampler l17ProfilingSampler = new ProfilingSampler("L17 Froxel Volumetric Lighting");
         private readonly Settings featureSettings;
         private readonly Material material;
@@ -124,6 +137,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private int previousWidth = -1;
         private int previousHeight = -1;
 
+        // 单个相机的时域历史缓存。
         private sealed class CameraHistory
         {
             public RTHandle texture;
@@ -139,6 +153,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
 
         public Texture blueNoiseTexture { get; set; }
 
+        // 创建 Pass，并声明需要相机深度输入。
         public L17VolumetricPass(Material material, Settings featureSettings)
         {
             this.material = material;
@@ -147,6 +162,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             ConfigureInput(ScriptableRenderPassInput.Depth);
         }
 
+        // 每帧渲染前绑定当前相机颜色目标和场景 Controller。
         public void Setup(RTHandle source, L17VolumetricLightingController controller)
         {
             this.source = source;
@@ -154,6 +170,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             renderPassEvent = featureSettings.passEvent;
         }
 
+        // 根据相机分辨率和降采样参数分配临时渲染纹理。
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             int downsample = Mathf.Max(1, controller != null ? controller.downsample : featureSettings.downsample);
@@ -190,6 +207,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             previousHeight = lowHeight;
         }
 
+        // 执行低分辨率体积积分、降噪、时域累积和最终合成。
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (material == null || source == null)
@@ -258,6 +276,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             CommandBufferPool.Release(cmd);
         }
 
+        // 获取或创建指定相机的时域历史。
         private CameraHistory GetCameraHistory(int cameraId)
         {
             if (!cameraHistories.TryGetValue(cameraId, out CameraHistory history))
@@ -269,6 +288,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             return history;
         }
 
+        // 判断当前相机是否允许使用时域历史。
         private bool ShouldUseTemporalHistory(CameraType cameraType)
         {
             bool temporalAccumulation = controller != null ? controller.temporalAccumulation : featureSettings.temporalAccumulation;
@@ -281,6 +301,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             return cameraType == CameraType.Game || cameraType == CameraType.SceneView;
         }
 
+        // 确保相机历史纹理尺寸与当前低分辨率纹理一致。
         private void EnsureCameraHistoryTexture(CameraHistory history, int cameraId)
         {
             bool resized = RenderingUtils.ReAllocateIfNeeded(
@@ -305,6 +326,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             }
         }
 
+        // 把 Controller/Settings 参数推送到体积光材质。
         private void PushSettings(Camera camera, CameraHistory history, bool useTemporalHistory)
         {
             bool validHistory = useTemporalHistory
@@ -339,6 +361,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             PushCloudOccluder();
         }
 
+        // 把同场景 L13 云参数推送给 L17 作为体积光遮挡。
         private void PushCloudOccluder()
         {
             L13VolumeCloudController cloud = controller != null ? controller.GetCloudOccluder() : null;
@@ -384,27 +407,48 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetFloat(CloudMacroGapStrengthId, cloud.macroGapStrength);
         }
 
+        // 读取 Froxel 深度层数。
         private int GetFroxelDepth() => controller != null ? controller.froxelDepth : featureSettings.froxelDepth;
+        // 读取最大积分距离。
         private float GetMaxDistance() => controller != null ? controller.maxDistance : featureSettings.maxDistance;
+        // 读取深度分布曲线。
         private float GetDepthDistribution() => controller != null ? controller.depthDistribution : featureSettings.depthDistribution;
+        // 读取介质密度。
         private float GetDensity() => controller != null ? controller.density : featureSettings.density;
+        // 读取消光系数。
         private float GetExtinction() => controller != null ? controller.extinction : featureSettings.extinction;
+        // 读取散射强度。
         private float GetIntensity() => controller != null ? controller.intensity : featureSettings.intensity;
+        // 读取相函数各向异性。
         private float GetAnisotropy() => controller != null ? controller.anisotropy : featureSettings.anisotropy;
+        // 读取阴影下限。
         private float GetShadowFloor() => controller != null ? controller.shadowFloor : featureSettings.shadowFloor;
+        // 读取多重散射近似强度。
         private float GetMultiScatter() => controller != null ? controller.multiScatter : featureSettings.multiScatter;
+        // 读取高度衰减原点。
         private float GetHeightOrigin() => controller != null ? controller.heightOrigin : featureSettings.heightOrigin;
+        // 读取高度衰减强度。
         private float GetHeightFalloff() => controller != null ? controller.heightFalloff : featureSettings.heightFalloff;
+        // 读取噪声强度。
         private float GetNoiseStrength() => controller != null ? controller.noiseStrength : featureSettings.noiseStrength;
+        // 读取噪声尺度。
         private float GetNoiseScale() => controller != null ? controller.noiseScale : featureSettings.noiseScale;
+        // 读取抖动强度。
         private float GetJitterStrength() => controller != null ? controller.jitterStrength : featureSettings.jitterStrength;
+        // 读取时域混合权重。
         private float GetTemporalBlend() => controller != null ? controller.temporalBlend : featureSettings.temporalBlend;
+        // 读取时域深度拒绝阈值。
         private float GetTemporalDepthRejection() => controller != null ? controller.temporalDepthRejection : featureSettings.temporalDepthRejection;
+        // 读取双边深度权重。
         private float GetBilateralDepthScale() => controller != null ? controller.bilateralDepthScale : featureSettings.bilateralDepthScale;
+        // 读取最终合成透明度。
         private float GetCompositeOpacity() => controller != null ? controller.compositeOpacity : featureSettings.compositeOpacity;
+        // 读取体积盒边缘软化距离。
         private float GetVolumeBoundsSoftness() => controller != null ? controller.volumeBoundsSoftness : featureSettings.volumeBoundsSoftness;
+        // 读取散射颜色。
         private Color GetScatteringColor() => controller != null ? controller.scatteringColor : featureSettings.scatteringColor;
 
+        // 读取体积盒范围，优先使用场景 Controller。
         private void GetVolumeBounds(out Vector3 center, out Vector3 size)
         {
             if (controller != null)
@@ -417,6 +461,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             size = featureSettings.volumeBoundsSize;
         }
 
+        // 释放 Pass 持有的所有临时纹理和历史缓存。
         public void Dispose()
         {
             integratedTexture?.Release();
@@ -434,14 +479,17 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         }
     }
 
+    // Feature 默认设置与渲染资源。
     public Settings settings = new Settings();
     [SerializeField] private Shader compositeShader;
     [SerializeField] private Texture2D blueNoiseTexture;
     [HideInInspector]
     [SerializeField] private Material compositeMaterial;
+    // 每个 Scene 只保留一个启用的 L17 Controller。
     private static readonly Dictionary<int, L17VolumetricLightingController> activeSceneControllers = new Dictionary<int, L17VolumetricLightingController>();
     private L17VolumetricPass pass;
 
+    // 注册当前场景的 L17 Controller。
     public static void RegisterSceneController(L17VolumetricLightingController controller)
     {
         if (controller == null)
@@ -458,6 +506,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         activeSceneControllers[scene.handle] = controller;
     }
 
+    // 注销当前场景的 L17 Controller。
     public static void UnregisterSceneController(L17VolumetricLightingController controller)
     {
         if (controller == null)
@@ -479,6 +528,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         }
     }
 
+    // 编辑器构建器注入 Shader 和蓝噪声资源。
     public void SetResources(Shader froxelCompositeShader, Texture2D blueNoise)
     {
         compositeShader = froxelCompositeShader;
@@ -486,6 +536,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         Create();
     }
 
+    // 创建材质和 RenderPass 实例。
     public override void Create()
     {
         if (compositeShader == null)
@@ -505,6 +556,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         };
     }
 
+    // 判断当前相机可渲染时，把 Pass 加入 Renderer 队列。
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
         if (!TryGetRenderController(renderingData.cameraData.camera, renderingData.cameraData.cameraType, out _))
@@ -515,6 +567,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         renderer.EnqueuePass(pass);
     }
 
+    // 在渲染前把相机颜色目标和 Controller 传给 Pass。
     public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)
     {
         if (!TryGetRenderController(renderingData.cameraData.camera, renderingData.cameraData.cameraType, out L17VolumetricLightingController controller))
@@ -526,6 +579,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         pass.blueNoiseTexture = blueNoiseTexture;
     }
 
+    // 释放 Feature 级资源。
     protected override void Dispose(bool disposing)
     {
         pass?.Dispose();
@@ -534,6 +588,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         compositeMaterial = null;
     }
 
+    // 判断当前相机是否能使用 L17 Controller 渲染。
     private bool TryGetRenderController(Camera camera, CameraType cameraType, out L17VolumetricLightingController controller)
     {
         controller = null;
@@ -565,6 +620,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         return TryGetSceneController(SceneManager.GetActiveScene(), out controller);
     }
 
+    // 从场景注册表查找启用中的 L17 Controller。
     private static bool TryGetSceneController(Scene scene, out L17VolumetricLightingController controller)
     {
         controller = null;
