@@ -228,33 +228,34 @@ public static class L17VolumetricLightingDemoBuilder
 
         feature.SetActive(true);
         feature.SetResources(compositeShader, blueNoise);
-        feature.settings.enabled = true;
-        feature.settings.requireSceneController = true;
-        feature.settings.downsample = 2;
-        feature.settings.froxelDepth = 96;
-        feature.settings.maxDistance = 58f;
-        feature.settings.depthDistribution = 1.9f;
-        feature.settings.density = 0.24f;
-        feature.settings.extinction = 0.68f;
-        feature.settings.intensity = 3.25f;
-        feature.settings.anisotropy = 0.78f;
-        feature.settings.shadowFloor = 0.015f;
-        feature.settings.multiScatter = 0.32f;
-        feature.settings.heightOrigin = -0.4f;
-        feature.settings.heightFalloff = 0.22f;
-        feature.settings.noiseStrength = 0f;
-        feature.settings.noiseScale = 1.25f;
-        feature.settings.volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
-        feature.settings.volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
-        feature.settings.volumeBoundsSoftness = 0.45f;
-        feature.settings.temporalAccumulation = true;
-        feature.settings.jitterStrength = 0.9f;
-        feature.settings.temporalBlend = 0.8f;
-        feature.settings.temporalDepthRejection = 0.12f;
-        feature.settings.bilateralDepthScale = 0.08f;
-        feature.settings.compositeOpacity = 0.94f;
-        feature.settings.scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
-        feature.settings.passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+        L17FrustumVolumetricRendererFeature.Settings settings = feature.settings;
+        settings.enabled = true;
+        settings.requireSceneController = true;
+        settings.downsample = 2;
+        settings.froxelDepth = 96;
+        settings.maxDistance = 58f;
+        settings.depthDistribution = 1.9f;
+        settings.density = 0.24f;
+        settings.extinction = 0.68f;
+        settings.intensity = 3.25f;
+        settings.anisotropy = 0.78f;
+        settings.shadowFloor = 0.015f;
+        settings.multiScatter = 0.32f;
+        settings.heightOrigin = -0.4f;
+        settings.heightFalloff = 0.22f;
+        settings.noiseStrength = 0f;
+        settings.noiseScale = 1.25f;
+        settings.volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
+        settings.volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
+        settings.volumeBoundsSoftness = 0.45f;
+        settings.temporalAccumulation = true;
+        settings.jitterStrength = 0.9f;
+        settings.temporalBlend = 0.8f;
+        settings.temporalDepthRejection = 0.12f;
+        settings.bilateralDepthScale = 0.08f;
+        settings.compositeOpacity = 0.94f;
+        settings.scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
+        settings.passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
 
         EditorUtility.SetDirty(feature);
         EditorUtility.SetDirty(rendererData);
@@ -484,34 +485,36 @@ public static class L17VolumetricLightingDemoBuilder
     private static void CreateLightingController(L17FrustumVolumetricRendererFeature feature, Light sunLight, Transform localVolumeBounds)
     {
         UniversalRendererData rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(RendererPath);
+        L17FrustumVolumetricRendererFeature.Settings settings =
+            feature != null ? feature.settings : new L17FrustumVolumetricRendererFeature.Settings();
         GameObject controllerObject = new GameObject("L17 Froxel Lighting Controller");
         L17VolumetricLightingController controller = controllerObject.AddComponent<L17VolumetricLightingController>();
         controller.rendererData = rendererData;
         controller.sunLight = sunLight;
         controller.volumeBoundsTransform = localVolumeBounds;
-        controller.downsample = feature != null ? feature.settings.downsample : 2;
-        controller.froxelDepth = feature != null ? feature.settings.froxelDepth : 96;
-        controller.maxDistance = feature != null ? feature.settings.maxDistance : 58f;
-        controller.depthDistribution = feature != null ? feature.settings.depthDistribution : 1.9f;
-        controller.density = feature != null ? feature.settings.density : 0.24f;
-        controller.extinction = feature != null ? feature.settings.extinction : 0.68f;
-        controller.intensity = feature != null ? feature.settings.intensity : 3.25f;
-        controller.anisotropy = feature != null ? feature.settings.anisotropy : 0.78f;
-        controller.shadowFloor = feature != null ? feature.settings.shadowFloor : 0.015f;
-        controller.multiScatter = feature != null ? feature.settings.multiScatter : 0.32f;
-        controller.heightOrigin = feature != null ? feature.settings.heightOrigin : -0.4f;
-        controller.heightFalloff = feature != null ? feature.settings.heightFalloff : 0.22f;
-        controller.noiseStrength = feature != null ? feature.settings.noiseStrength : 0f;
-        controller.noiseScale = feature != null ? feature.settings.noiseScale : 1.25f;
-        controller.volumeBoundsCenter = feature != null ? feature.settings.volumeBoundsCenter : new Vector3(0f, 3.1f, -0.1f);
-        controller.volumeBoundsSize = feature != null ? feature.settings.volumeBoundsSize : new Vector3(15.8f, 6.2f, 16.2f);
-        controller.volumeBoundsSoftness = feature != null ? feature.settings.volumeBoundsSoftness : 0.45f;
-        controller.temporalAccumulation = feature == null || feature.settings.temporalAccumulation;
-        controller.jitterStrength = feature != null ? feature.settings.jitterStrength : 0.9f;
-        controller.temporalBlend = feature != null ? feature.settings.temporalBlend : 0.8f;
-        controller.bilateralDepthScale = feature != null ? feature.settings.bilateralDepthScale : 0.08f;
-        controller.compositeOpacity = feature != null ? feature.settings.compositeOpacity : 0.94f;
-        controller.scatteringColor = feature != null ? feature.settings.scatteringColor : new Color(1f, 0.84f, 0.52f, 1f);
+        controller.downsample = settings.downsample;
+        controller.froxelDepth = settings.froxelDepth;
+        controller.maxDistance = settings.maxDistance;
+        controller.depthDistribution = settings.depthDistribution;
+        controller.density = settings.density;
+        controller.extinction = settings.extinction;
+        controller.intensity = settings.intensity;
+        controller.anisotropy = settings.anisotropy;
+        controller.shadowFloor = settings.shadowFloor;
+        controller.multiScatter = settings.multiScatter;
+        controller.heightOrigin = settings.heightOrigin;
+        controller.heightFalloff = settings.heightFalloff;
+        controller.noiseStrength = settings.noiseStrength;
+        controller.noiseScale = settings.noiseScale;
+        controller.volumeBoundsCenter = settings.volumeBoundsCenter;
+        controller.volumeBoundsSize = settings.volumeBoundsSize;
+        controller.volumeBoundsSoftness = settings.volumeBoundsSoftness;
+        controller.temporalAccumulation = settings.temporalAccumulation;
+        controller.jitterStrength = settings.jitterStrength;
+        controller.temporalBlend = settings.temporalBlend;
+        controller.bilateralDepthScale = settings.bilateralDepthScale;
+        controller.compositeOpacity = settings.compositeOpacity;
+        controller.scatteringColor = settings.scatteringColor;
         controller.RefreshImmediate();
     }
 
@@ -559,21 +562,6 @@ public static class L17VolumetricLightingDemoBuilder
         return material;
     }
 
-    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material, bool castShadows, bool receiveShadows)
-    {
-        return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows, null);
-    }
-
-    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Vector3 rotationEuler, Material material, bool castShadows, bool receiveShadows)
-    {
-        return CreateCube(name, position, scale, rotationEuler, material, castShadows, receiveShadows, null);
-    }
-
-    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material, bool castShadows, bool receiveShadows, Transform parent)
-    {
-        return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows, parent);
-    }
-
     private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material, bool castShadows, bool receiveShadows, Transform parent, bool contributeGi)
     {
         return CreateCube(name, position, scale, Vector3.zero, material, castShadows, receiveShadows, parent, contributeGi);
@@ -582,7 +570,6 @@ public static class L17VolumetricLightingDemoBuilder
     private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Vector3 rotationEuler, Material material, bool castShadows, bool receiveShadows, Transform parent, bool contributeGi = true)
     {
         GameObject cube = new GameObject(name);
-        cube.name = name;
         MeshFilter filter = cube.AddComponent<MeshFilter>();
         filter.sharedMesh = LoadOrCreateLightmapCubeMesh();
         MeshRenderer renderer = cube.AddComponent<MeshRenderer>();

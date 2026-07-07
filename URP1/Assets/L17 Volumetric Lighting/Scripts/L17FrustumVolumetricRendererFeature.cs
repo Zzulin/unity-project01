@@ -79,7 +79,6 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int HistoryTextureId = Shader.PropertyToID("_L17HistoryTexture");
         private static readonly int HistoryDepthTextureId = Shader.PropertyToID("_L17HistoryDepthTexture");
         private static readonly int LowDepthTextureId = Shader.PropertyToID("_L17LowDepthTexture");
-        private static readonly int CameraCopyTextureId = Shader.PropertyToID("_L17CameraCopyTexture");
         private static readonly int BlueNoiseTextureId = Shader.PropertyToID("_L17BlueNoiseTexture");
         private static readonly int FroxelSizeId = Shader.PropertyToID("_L17FroxelSize");
         private static readonly int Params0Id = Shader.PropertyToID("_L17Params0");
@@ -244,7 +243,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                 }
 
                 Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(camera.projectionMatrix, true) * camera.worldToCameraMatrix;
-                PushSettings(camera, history, useTemporalHistory);
+                PushSettings(history, useTemporalHistory);
 
                 Blitter.BlitCameraTexture(cmd, source, lowDepthTexture, material, 0);
                 cmd.SetGlobalTexture(LowDepthTextureId, lowDepthTexture);
@@ -327,7 +326,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         }
 
         // 把 Controller/Settings 参数推送到体积光材质。
-        private void PushSettings(Camera camera, CameraHistory history, bool useTemporalHistory)
+        private void PushSettings(CameraHistory history, bool useTemporalHistory)
         {
             bool validHistory = useTemporalHistory
                 && history != null

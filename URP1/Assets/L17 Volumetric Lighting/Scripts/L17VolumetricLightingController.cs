@@ -214,20 +214,21 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     // 查找同场景启用的 L13 云，用于体积光云影。
     public L13VolumeCloudController GetCloudOccluder()
     {
+        UnityEngine.SceneManagement.Scene scene = gameObject.scene;
         if (cachedCloudOccluder != null
             && cachedCloudOccluder.isActiveAndEnabled
-            && cachedCloudOccluder.gameObject.scene == gameObject.scene)
+            && cachedCloudOccluder.gameObject.scene == scene)
         {
             return cachedCloudOccluder;
         }
 
         cachedCloudOccluder = null;
-        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded)
+        if (!scene.IsValid() || !scene.isLoaded)
         {
             return null;
         }
 
-        foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+        foreach (GameObject root in scene.GetRootGameObjects())
         {
             L13VolumeCloudController cloud = root.GetComponentInChildren<L13VolumeCloudController>(false);
             if (cloud != null && cloud.isActiveAndEnabled)
