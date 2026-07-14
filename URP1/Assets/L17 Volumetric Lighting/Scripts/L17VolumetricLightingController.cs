@@ -32,8 +32,8 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     [Range(0f, 1f)] public float noiseStrength = 0f;
     [Min(0.001f)] public float noiseScale = 1.25f;
     public Transform volumeBoundsTransform;
-    public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
-    public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
+    [HideInInspector] public Vector3 volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
+    [HideInInspector] public Vector3 volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
     [Min(0.01f)] public float volumeBoundsSoftness = 0.45f;
     public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
 
@@ -310,8 +310,6 @@ public sealed class L17VolumetricLightingControllerEditor : Editor
         EditorGUILayout.PropertyField(Property("noiseStrength"));
         PowerSlider(Property("noiseScale"), new GUIContent("Noise Scale"), 2f, 2.2f);
         EditorGUILayout.PropertyField(Property("volumeBoundsTransform"));
-        EditorGUILayout.PropertyField(Property("volumeBoundsCenter"));
-        EditorGUILayout.PropertyField(Property("volumeBoundsSize"));
         PowerSlider(Property("volumeBoundsSoftness"), new GUIContent("Volume Bounds Softness"), 100f, 2.2f);
         EditorGUILayout.PropertyField(Property("scatteringColor"));
 
