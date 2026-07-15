@@ -248,7 +248,6 @@ public static class L17VolumetricLightingDemoBuilder
         settings.volumeBoundsCenter = new Vector3(0f, 3.1f, -0.1f);
         settings.volumeBoundsSize = new Vector3(15.8f, 6.2f, 16.2f);
         settings.volumeBoundsSoftness = 0.45f;
-        settings.temporalAccumulation = true;
         settings.jitterStrength = 0.9f;
         settings.temporalBlend = 0.8f;
         settings.temporalDepthRejection = 0.12f;
@@ -509,7 +508,6 @@ public static class L17VolumetricLightingDemoBuilder
         controller.volumeBoundsCenter = settings.volumeBoundsCenter;
         controller.volumeBoundsSize = settings.volumeBoundsSize;
         controller.volumeBoundsSoftness = settings.volumeBoundsSoftness;
-        controller.temporalAccumulation = settings.temporalAccumulation;
         controller.jitterStrength = settings.jitterStrength;
         controller.temporalBlend = settings.temporalBlend;
         controller.bilateralDepthScale = settings.bilateralDepthScale;

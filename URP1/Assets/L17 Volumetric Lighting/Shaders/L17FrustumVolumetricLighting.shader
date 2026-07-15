@@ -39,7 +39,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float4 _L17VolumeBoundsCenter;
         float4 _L17VolumeBoundsSize;
         float4 _L17TemporalParams;
-        float4 _L17TemporalControl;
+        float _L17ForwardPhaseCeiling;
         float4 _L17ScatteringColor;
         float4x4 _L17PreviousViewProjection;
         float _L17HistoryValid;
@@ -123,7 +123,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             float stableAnisotropy = clamp(anisotropy, 0.0, 0.9);
             float phase = HenyeyGreenstein(cosTheta, stableAnisotropy);
             float isotropicPhase = 1.0 / (4.0 * PI);
-            float phaseCeiling = isotropicPhase * clamp(_L17TemporalControl.w, 1.0, 3.5);
+            float phaseCeiling = isotropicPhase * clamp(_L17ForwardPhaseCeiling, 1.0, 3.5);
             float softRegion = max(phaseCeiling * 0.2, 0.0001);
             float softStart = phaseCeiling - softRegion;
 
@@ -512,7 +512,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             float2 uv = input.texcoord;
             float4 current = SAMPLE_TEXTURE2D_X(_L17IntegratedTexture, sampler_LinearClamp, uv);
             UNITY_BRANCH
-            if (_L17TemporalControl.x <= 0.5 || _L17HistoryValid <= 0.5)
+            if (_L17HistoryValid <= 0.5)
             {
                 return current;
             }

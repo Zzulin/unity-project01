@@ -54,11 +54,9 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         [Range(0.01f, 3f)] public float volumeBoundsSoftness = 0.45f;
         // 时域稳定、降噪与合成参数。
         [HideInInspector]
-        public bool temporalAccumulation = true;
-        [HideInInspector]
         [Range(0f, 1f)] public float jitterStrength = 0.9f;
         [HideInInspector]
-        [Range(0f, 0.98f)] public float temporalBlend = 0.8f;
+        [Range(0.05f, 0.98f)] public float temporalBlend = 0.8f;
         [HideInInspector]
         [Range(0.001f, 2f)] public float temporalDepthRejection = 0.12f;
         [HideInInspector]
@@ -87,7 +85,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int VolumeBoundsCenterId = Shader.PropertyToID("_L17VolumeBoundsCenter");
         private static readonly int VolumeBoundsSizeId = Shader.PropertyToID("_L17VolumeBoundsSize");
         private static readonly int TemporalParamsId = Shader.PropertyToID("_L17TemporalParams");
-        private static readonly int TemporalControlId = Shader.PropertyToID("_L17TemporalControl");
+        private static readonly int ForwardPhaseCeilingId = Shader.PropertyToID("_L17ForwardPhaseCeiling");
         private static readonly int ScatteringColorId = Shader.PropertyToID("_L17ScatteringColor");
         private static readonly int PreviousViewProjectionId = Shader.PropertyToID("_L17PreviousViewProjection");
         private static readonly int HistoryValidId = Shader.PropertyToID("_L17HistoryValid");
@@ -223,27 +221,23 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             CommandBuffer cmd = CommandBufferPool.Get("L17 Froxel Volumetric Lighting");
             using (new ProfilingScope(cmd, l17ProfilingSampler))
             {
-                CameraType cameraType = renderingData.cameraData.cameraType;
-                bool useTemporalHistory = ShouldUseTemporalHistory(cameraType);
-                CameraHistory history = useTemporalHistory ? GetCameraHistory(camera.GetInstanceID()) : null;
+                CameraHistory history = GetCameraHistory(camera.GetInstanceID());
 
-                if (history != null)
+                if (history.poseValid)
                 {
-                    EnsureCameraHistoryTexture(history, camera.GetInstanceID());
-                    if (history.poseValid)
+                    float positionDelta = Vector3.Distance(camera.transform.position, history.previousPosition);
+                    float rotationDelta = Quaternion.Angle(camera.transform.rotation, history.previousRotation);
+                    float teleportDistance = Mathf.Max(2f, GetMaxDistance() * 0.05f);
+                    if (positionDelta > teleportDistance || rotationDelta > 15f)
                     {
-                        float positionDelta = Vector3.Distance(camera.transform.position, history.previousPosition);
-                        float rotationDelta = Quaternion.Angle(camera.transform.rotation, history.previousRotation);
-                        float teleportDistance = Mathf.Max(2f, GetMaxDistance() * 0.05f);
-                        if (positionDelta > teleportDistance || rotationDelta > 15f)
-                        {
-                            history.valid = false;
-                        }
+                        history.valid = false;
                     }
                 }
 
+                EnsureCameraHistoryTexture(history, camera.GetInstanceID());
+
                 Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(camera.projectionMatrix, true) * camera.worldToCameraMatrix;
-                PushSettings(history, useTemporalHistory);
+                PushSettings(history);
 
                 Blitter.BlitCameraTexture(cmd, source, lowDepthTexture, material, 0);
                 cmd.SetGlobalTexture(LowDepthTextureId, lowDepthTexture);
@@ -287,19 +281,6 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             return history;
         }
 
-        // 判断当前相机是否允许使用时域历史。
-        private bool ShouldUseTemporalHistory(CameraType cameraType)
-        {
-            bool temporalAccumulation = controller != null ? controller.temporalAccumulation : featureSettings.temporalAccumulation;
-            float temporalBlend = controller != null ? controller.temporalBlend : featureSettings.temporalBlend;
-            if (!temporalAccumulation || temporalBlend <= 0.001f)
-            {
-                return false;
-            }
-
-            return cameraType == CameraType.Game || cameraType == CameraType.SceneView;
-        }
-
         // 确保相机历史纹理尺寸与当前低分辨率纹理一致。
         private void EnsureCameraHistoryTexture(CameraHistory history, int cameraId)
         {
@@ -326,11 +307,9 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         }
 
         // 把 Controller/Settings 参数推送到体积光材质。
-        private void PushSettings(CameraHistory history, bool useTemporalHistory)
+        private void PushSettings(CameraHistory history)
         {
-            bool validHistory = useTemporalHistory
-                && history != null
-                && history.valid
+            bool validHistory = history.valid
                 && history.texture != null
                 && history.depthTexture != null;
             float temporalBlend = validHistory ? GetTemporalBlend() : 0f;
@@ -346,11 +325,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetVector(VolumeBoundsCenterId, new Vector4(boundsCenter.x, boundsCenter.y, boundsCenter.z, GetVolumeBoundsSoftness()));
             material.SetVector(VolumeBoundsSizeId, new Vector4(boundsSize.x, boundsSize.y, boundsSize.z, 0f));
             material.SetVector(TemporalParamsId, new Vector4(temporalBlend, GetJitterStrength(), GetBilateralDepthScale(), GetCompositeOpacity()));
-            material.SetVector(TemporalControlId, new Vector4(
-                useTemporalHistory ? 1f : 0f,
-                0f,
-                0f,
-                controller != null ? controller.forwardPhaseCeiling : 3.5f));
+            material.SetFloat(ForwardPhaseCeilingId, controller != null ? controller.forwardPhaseCeiling : 3.5f);
             material.SetColor(ScatteringColorId, GetScatteringColor());
             material.SetMatrix(PreviousViewProjectionId, validHistory ? history.previousViewProjection : Matrix4x4.identity);
             material.SetFloat(HistoryValidId, validHistory ? 1f : 0f);

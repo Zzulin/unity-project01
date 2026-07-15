@@ -956,7 +956,6 @@ MonoBehaviour:
   volumeBoundsSize: {x: 3229, y: 384, z: 4606.2}
   volumeBoundsSoftness: 28
   scatteringColor: {r: 0.98719865, g: 0.71120536, b: 0.44561106, a: 1}
-  temporalAccumulation: 1
   jitterStrength: 0.9
   temporalBlend: 0.8
   temporalDepthRejection: 0.12

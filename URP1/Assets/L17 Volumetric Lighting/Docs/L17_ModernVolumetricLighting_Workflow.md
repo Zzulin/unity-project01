@@ -163,7 +163,7 @@ Assets/L17 Volumetric Lighting/Scripts/L17RuntimeCameraMotion.cs
 
 修复方式：
 
-- GameView 和 SceneView 都由同一个 `temporalAccumulation` 总开关控制。
+- GameView 和 SceneView 都固定执行 temporal accumulation，并各自维护独立 history。
 - 每个 Camera 按 Instance ID 维护独立 history。
 - history 重投影按 `UNITY_UV_STARTS_AT_TOP` 修正 Y 方向。
 - temporal resolve 挪到低分辨率降噪之后。

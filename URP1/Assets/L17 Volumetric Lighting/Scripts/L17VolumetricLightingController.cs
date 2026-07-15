@@ -38,9 +38,8 @@ public sealed class L17VolumetricLightingController : MonoBehaviour
     public Color scatteringColor = new Color(1f, 0.84f, 0.52f, 1f);
 
     // 时域稳定、降噪与最终合成。
-    public bool temporalAccumulation = true;
     [Range(0f, 1f)] public float jitterStrength = 0.9f;
-    [Range(0f, 0.95f)] public float temporalBlend = 0.8f;
+    [Range(0.05f, 0.95f)] public float temporalBlend = 0.8f;
     [Range(0.001f, 0.5f)] public float temporalDepthRejection = 0.12f;
     [Range(0f, 0.3f)] public float bilateralDepthScale = 0.08f;
     [Range(0f, 1f)] public float compositeOpacity = 0.94f;
@@ -314,7 +313,6 @@ public sealed class L17VolumetricLightingControllerEditor : Editor
         EditorGUILayout.PropertyField(Property("scatteringColor"));
 
         Header("Stability");
-        EditorGUILayout.PropertyField(Property("temporalAccumulation"));
         EditorGUILayout.PropertyField(Property("jitterStrength"));
         EditorGUILayout.PropertyField(Property("temporalBlend"));
         EditorGUILayout.PropertyField(Property("temporalDepthRejection"));
