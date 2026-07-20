@@ -454,6 +454,19 @@ L17 Volumetric Lighting/Two Sided Interior Lit
 - Unity Console Warning / Error：0。
 - `L17TwoSidedInteriorLit.shader` `shader_check_errors`：0 error / 0 message。
 
+## 20. L13 云遮挡改为世界 XZ 缓存
+
+问题表现：L18 / LXII 的户外体积盒会在每个低分辨率像素的体积积分中，每两层调用一次三步 `CoupledCloudTransmittance`。这会重复进行大量 L13 3D Shape / Detail Noise 与 WeatherMap 采样。
+
+修复方式：
+
+- 新增 `BuildCloudShadow` Pass，先把 L13 的原始三步云透射写入固定 `128 x 128` 的低分辨率世界 XZ 纹理。
+- 缓存范围覆盖 L17 体积盒，并按太阳方向扩展，避免高度投影后的采样越界。
+- `BuildLowResolutionVolume` 删除逐层云步进和层间插值；每个体积采样点只按太阳方向投影到缓存平面并读取一次 `_L17CloudShadowTexture`。
+- 没有启用 L13 云的室内 L17 场景跳过该 Pass，维持原有室内路径。
+
+结果：云密度、风场和三步透射模型保持一致，但高频云采样从体积积分循环移到单个低分辨率缓存 Pass，主要收益落在 L18 / LXII 大范围户外体积光。
+
 ## 代码关系
 
 ```mermaid

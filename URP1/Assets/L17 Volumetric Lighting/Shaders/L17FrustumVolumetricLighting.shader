@@ -23,6 +23,8 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         TEXTURE2D_X(_L17HistoryTexture);
         TEXTURE2D_X_FLOAT(_L17HistoryDepthTexture);
         TEXTURE2D_X_FLOAT(_L17LowDepthTexture);
+        TEXTURE2D(_L17CloudShadowTexture);
+        SAMPLER(sampler_L17CloudShadowTexture);
         TEXTURE2D(_L17BlueNoiseTexture);
         SAMPLER(sampler_L17BlueNoiseTexture);
         TEXTURE3D(_L17CloudShapeNoise);
@@ -55,6 +57,8 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         float4 _L17CloudParams2;
         float _L17CloudShadowContrast;
         float _L17CloudMacroGapStrength;
+        float4 _L17CloudShadowBounds;
+        float _L17CloudShadowReceiverHeight;
 
         float DeviceDepthFromRawDepth(float rawDepth)
         {
@@ -322,19 +326,29 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             return lerp(rayStart, rayEnd, distributedSlice);
         }
 
-        float CloudTransmissionAtSlice(
-            float3 rayDirWS,
-            float3 lightDirWS,
-            float rayStart,
-            float rayEnd,
-            int stepCount,
-            int stepIndex,
-            float jitter)
+        float SampleCloudShadow(float3 positionWS, float3 lightDirectionWS)
         {
-            float slice = (min(stepIndex, stepCount - 1) + jitter) / stepCount;
-            float distanceAlongRay = SliceDistance(slice, rayStart, rayEnd);
-            float3 positionWS = _WorldSpaceCameraPos + rayDirWS * distanceAlongRay;
-            return CoupledCloudTransmittance(positionWS, lightDirWS);
+            if (_L17CloudParams2.w <= 0.0001)
+            {
+                return 1.0;
+            }
+
+            float safeLightY = abs(lightDirectionWS.y) < 0.15
+                ? (lightDirectionWS.y < 0.0 ? -0.15 : 0.15)
+                : lightDirectionWS.y;
+            float distanceToReceiver = (_L17CloudShadowReceiverHeight - positionWS.y) / safeLightY;
+            float2 projectedXZ = positionWS.xz + lightDirectionWS.xz * distanceToReceiver;
+            float2 shadowUv = (projectedXZ - _L17CloudShadowBounds.xy)
+                / max(_L17CloudShadowBounds.zw, 0.01)
+                + 0.5;
+            float2 edgeDistance = min(shadowUv, 1.0 - shadowUv);
+            float mapWeight = saturate(min(edgeDistance.x, edgeDistance.y) * 32.0);
+            float cachedTransmission = SAMPLE_TEXTURE2D_LOD(
+                _L17CloudShadowTexture,
+                sampler_L17CloudShadowTexture,
+                saturate(shadowUv),
+                0).r;
+            return lerp(1.0, cachedTransmission, mapWeight);
         }
 
         float4 IntegrateVolume(float3 rayDirWS, float sceneDistance, float jitter)
@@ -355,24 +369,6 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             }
 
             float cameraFadeDistance = clamp(_L17VolumeBoundsCenter.w * 0.15, 1.0, 18.0);
-            const int cloudSampleStride = 2;
-            float cloudTransmission0 = CloudTransmissionAtSlice(
-                rayDirWS,
-                lightDirWS,
-                rayStart,
-                rayEnd,
-                stepCount,
-                0,
-                jitter);
-            float cloudTransmission1 = CloudTransmissionAtSlice(
-                rayDirWS,
-                lightDirWS,
-                rayStart,
-                rayEnd,
-                stepCount,
-                min(cloudSampleStride, stepCount - 1),
-                jitter);
-
             [loop]
             for (int index = 0; index < L17_MAX_STEPS; index++)
             {
@@ -391,24 +387,7 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
                 density *= smoothstep(0.0, cameraFadeDistance, t);
                 float4 shadowCoord = TransformWorldToShadowCoord(sampleWS);
                 Light shadowedLight = GetMainLight(shadowCoord);
-                if (index > 0 && frac((float)index * 0.5) < 0.001)
-                {
-                    cloudTransmission0 = cloudTransmission1;
-                    cloudTransmission1 = CloudTransmissionAtSlice(
-                        rayDirWS,
-                        lightDirWS,
-                        rayStart,
-                        rayEnd,
-                        stepCount,
-                        min(index + cloudSampleStride, stepCount - 1),
-                        jitter);
-                }
-
-                float cloudBlend = frac((float)index * 0.5) * 2.0;
-                float cloudTransmission = lerp(
-                    cloudTransmission0,
-                    cloudTransmission1,
-                    cloudBlend);
+                float cloudTransmission = SampleCloudShadow(sampleWS, lightDirWS);
                 float shadowAttenuation = saturate(shadowedLight.shadowAttenuation * cloudTransmission);
                 float shadow = lerp(_L17Params1.z, 1.0, shadowAttenuation);
                 float multiScatterShadow = shadowAttenuation * shadowAttenuation;
@@ -441,6 +420,18 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             return SceneRayDistance(input.texcoord).xxxx;
+        }
+
+        half4 FragmentBuildCloudShadow(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 shadowPositionXZ = (input.texcoord - 0.5) * _L17CloudShadowBounds.zw
+                + _L17CloudShadowBounds.xy;
+            Light mainLight = GetMainLight();
+            float transmission = CoupledCloudTransmittance(
+                float3(shadowPositionXZ.x, _L17CloudShadowReceiverHeight, shadowPositionXZ.y),
+                normalize(mainLight.direction));
+            return transmission.xxxx;
         }
 
         half4 FragmentBuildVolume(Varyings input) : SV_Target
@@ -633,6 +624,19 @@ Shader "Hidden/L17/Froxel Volumetric Composite"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment FragmentLowDepth
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "BuildCloudShadow"
+            ZTest Always
+            ZWrite Off
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment FragmentBuildCloudShadow
             ENDHLSL
         }
 

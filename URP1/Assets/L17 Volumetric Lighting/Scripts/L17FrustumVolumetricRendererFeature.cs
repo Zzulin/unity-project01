@@ -103,6 +103,9 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private static readonly int CloudParams1Id = Shader.PropertyToID("_L17CloudParams1");
         private static readonly int CloudParams2Id = Shader.PropertyToID("_L17CloudParams2");
         private static readonly int CloudMacroGapStrengthId = Shader.PropertyToID("_L17CloudMacroGapStrength");
+        private static readonly int CloudShadowTextureId = Shader.PropertyToID("_L17CloudShadowTexture");
+        private static readonly int CloudShadowBoundsId = Shader.PropertyToID("_L17CloudShadowBounds");
+        private static readonly int CloudShadowReceiverHeightId = Shader.PropertyToID("_L17CloudShadowReceiverHeight");
 
         // RTHandle 资源名称。
         private const string IntegratedTextureName = "_L17IntegratedTexture";
@@ -111,7 +114,9 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private const string HistoryTextureName = "_L17HistoryTexture";
         private const string LowDepthTextureName = "_L17LowDepthTexture";
         private const string CameraCopyTextureName = "_L17CameraCopyTexture";
-        // L13 云对 L17 体积光的固定耦合参数。
+        private const string CloudShadowTextureName = "_L17CloudShadowTexture";
+        // L13 云影缓存的固定构建参数。
+        private const int CloudShadowMapResolution = 128;
         private const int CoupledCloudShadowSteps = 3;
         private const float CoupledCloudShadowStrength = 1f;
         private const float CoupledCloudShadowContrast = 2.8f;
@@ -128,6 +133,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         private RTHandle temporalTexture;
         private RTHandle lowDepthTexture;
         private RTHandle cameraCopyTexture;
+        private RTHandle cloudShadowTexture;
         private readonly Dictionary<int, CameraHistory> cameraHistories = new Dictionary<int, CameraHistory>();
         private RenderTextureDescriptor currentLowDescriptor;
         private RenderTextureDescriptor currentDepthDescriptor;
@@ -188,6 +194,11 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             RenderTextureDescriptor depthDescriptor = lowDescriptor;
             depthDescriptor.graphicsFormat = GraphicsFormat.R32_SFloat;
 
+            RenderTextureDescriptor cloudShadowDescriptor = lowDescriptor;
+            cloudShadowDescriptor.width = CloudShadowMapResolution;
+            cloudShadowDescriptor.height = CloudShadowMapResolution;
+            cloudShadowDescriptor.graphicsFormat = GraphicsFormat.R16_SFloat;
+
             RenderTextureDescriptor copyDescriptor = cameraTextureDescriptor;
             copyDescriptor.depthBufferBits = 0;
             copyDescriptor.msaaSamples = 1;
@@ -197,6 +208,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             RenderingUtils.ReAllocateIfNeeded(ref temporalTexture, lowDescriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: TemporalTextureName);
             RenderingUtils.ReAllocateIfNeeded(ref lowDepthTexture, depthDescriptor, FilterMode.Point, TextureWrapMode.Clamp, name: LowDepthTextureName);
             RenderingUtils.ReAllocateIfNeeded(ref cameraCopyTexture, copyDescriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: CameraCopyTextureName);
+            RenderingUtils.ReAllocateIfNeeded(ref cloudShadowTexture, cloudShadowDescriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: CloudShadowTextureName);
 
             currentLowDescriptor = lowDescriptor;
             currentDepthDescriptor = depthDescriptor;
@@ -204,7 +216,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             previousHeight = lowHeight;
         }
 
-        // 执行低分辨率体积积分、降噪、时域累积和最终合成。
+        // 依次构建低分辨率深度、可选云影缓存、体积积分、降噪、时域累积与最终合成。
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (material == null || source == null)
@@ -237,21 +249,27 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                 EnsureCameraHistoryTexture(history, camera.GetInstanceID());
 
                 Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(camera.projectionMatrix, true) * camera.worldToCameraMatrix;
-                PushSettings(history);
+                bool hasCloudShadow = PushSettings(history);
 
                 Blitter.BlitCameraTexture(cmd, source, lowDepthTexture, material, 0);
                 cmd.SetGlobalTexture(LowDepthTextureId, lowDepthTexture);
-                Blitter.BlitCameraTexture(cmd, source, integratedTexture, material, 1);
+                cmd.SetGlobalTexture(CloudShadowTextureId, cloudShadowTexture);
+                if (hasCloudShadow)
+                {
+                    Blitter.BlitCameraTexture(cmd, source, cloudShadowTexture, material, 1);
+                }
+
+                Blitter.BlitCameraTexture(cmd, source, integratedTexture, material, 2);
 
                 cmd.SetGlobalTexture(IntegratedTextureId, integratedTexture);
-                Blitter.BlitCameraTexture(cmd, integratedTexture, denoisedTexture, material, 2);
+                Blitter.BlitCameraTexture(cmd, integratedTexture, denoisedTexture, material, 3);
 
                 cmd.SetGlobalTexture(IntegratedTextureId, denoisedTexture);
-                Blitter.BlitCameraTexture(cmd, denoisedTexture, temporalTexture, material, 3);
+                Blitter.BlitCameraTexture(cmd, denoisedTexture, temporalTexture, material, 4);
                 cmd.SetGlobalTexture(IntegratedTextureId, temporalTexture);
 
                 Blitter.BlitCameraTexture(cmd, source, cameraCopyTexture);
-                Blitter.BlitCameraTexture(cmd, cameraCopyTexture, source, material, 4);
+                Blitter.BlitCameraTexture(cmd, cameraCopyTexture, source, material, 5);
 
                 if (history != null && history.texture != null && history.depthTexture != null)
                 {
@@ -307,7 +325,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
         }
 
         // 把 Controller/Settings 参数推送到体积光材质。
-        private void PushSettings(CameraHistory history)
+        private bool PushSettings(CameraHistory history)
         {
             bool validHistory = history.valid
                 && history.texture != null
@@ -332,11 +350,11 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             material.SetFloat(TemporalDepthRejectionId, GetTemporalDepthRejection());
             material.SetFloat(FrameIndexId, frameIndex);
             material.SetFloat(FroxelDepthId, GetFroxelDepth());
-            PushCloudOccluder();
+            return PushCloudOccluder(boundsCenter, boundsSize);
         }
 
-        // 把同场景 L13 云参数推送给 L17 作为体积光遮挡。
-        private void PushCloudOccluder()
+        // 把同场景 L13 云参数和世界 XZ 阴影缓存范围推送给 L17。
+        private bool PushCloudOccluder(Vector3 volumeBoundsCenter, Vector3 volumeBoundsSize)
         {
             L13VolumeCloudController cloud = controller != null ? controller.GetCloudOccluder() : null;
             Material cloudMaterial = cloud != null ? cloud.cloudMaterial : null;
@@ -348,7 +366,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             if (!enabled)
             {
                 material.SetVector(CloudParams2Id, Vector4.zero);
-                return;
+                return false;
             }
 
             material.SetTexture(CloudShapeNoiseId, cloudMaterial.GetTexture("_ShapeNoise"));
@@ -379,47 +397,51 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
                 CoupledCloudShadowStrength));
             material.SetFloat("_L17CloudShadowContrast", CoupledCloudShadowContrast);
             material.SetFloat(CloudMacroGapStrengthId, cloud.macroGapStrength);
+            // 低角度太阳会让不同高度的云影错开，需要沿光线方向扩大 XZ 覆盖范围。
+            Vector3 lightDirection = GetCloudShadowLightDirection();
+            float safeVerticalDirection = Mathf.Max(Mathf.Abs(lightDirection.y), 0.15f);
+            Vector2 projectedPadding = new Vector2(
+                Mathf.Abs(lightDirection.x),
+                Mathf.Abs(lightDirection.z))
+                * (Mathf.Abs(volumeBoundsSize.y) / safeVerticalDirection);
+            Vector2 shadowMapSize = new Vector2(
+                Mathf.Max(Mathf.Abs(volumeBoundsSize.x) + projectedPadding.x, 0.01f),
+                Mathf.Max(Mathf.Abs(volumeBoundsSize.z) + projectedPadding.y, 0.01f));
+            material.SetVector(CloudShadowBoundsId, new Vector4(
+                volumeBoundsCenter.x,
+                volumeBoundsCenter.z,
+                shadowMapSize.x,
+                shadowMapSize.y));
+            material.SetFloat(CloudShadowReceiverHeightId, volumeBoundsCenter.y);
+            return true;
         }
 
-        // 读取 Froxel 深度层数。
+        // 返回与 URP 主方向光一致的光线传播方向。
+        private Vector3 GetCloudShadowLightDirection()
+        {
+            Light sunLight = controller != null ? controller.sunLight : RenderSettings.sun;
+            return sunLight != null ? -sunLight.transform.forward : Vector3.up;
+        }
+
         private int GetFroxelDepth() => controller != null ? controller.froxelDepth : featureSettings.froxelDepth;
-        // 读取最大积分距离。
         private float GetMaxDistance() => controller != null ? controller.maxDistance : featureSettings.maxDistance;
-        // 读取深度分布曲线。
         private float GetDepthDistribution() => controller != null ? controller.depthDistribution : featureSettings.depthDistribution;
-        // 读取介质密度。
         private float GetDensity() => controller != null ? controller.density : featureSettings.density;
-        // 读取消光系数。
         private float GetExtinction() => controller != null ? controller.extinction : featureSettings.extinction;
-        // 读取散射强度。
         private float GetIntensity() => controller != null ? controller.intensity : featureSettings.intensity;
-        // 读取相函数各向异性。
         private float GetAnisotropy() => controller != null ? controller.anisotropy : featureSettings.anisotropy;
-        // 读取阴影下限。
         private float GetShadowFloor() => controller != null ? controller.shadowFloor : featureSettings.shadowFloor;
-        // 读取多重散射近似强度。
         private float GetMultiScatter() => controller != null ? controller.multiScatter : featureSettings.multiScatter;
-        // 读取高度衰减原点。
         private float GetHeightOrigin() => controller != null ? controller.heightOrigin : featureSettings.heightOrigin;
-        // 读取高度衰减强度。
         private float GetHeightFalloff() => controller != null ? controller.heightFalloff : featureSettings.heightFalloff;
-        // 读取噪声强度。
         private float GetNoiseStrength() => controller != null ? controller.noiseStrength : featureSettings.noiseStrength;
-        // 读取噪声尺度。
         private float GetNoiseScale() => controller != null ? controller.noiseScale : featureSettings.noiseScale;
-        // 读取抖动强度。
         private float GetJitterStrength() => controller != null ? controller.jitterStrength : featureSettings.jitterStrength;
-        // 读取时域混合权重。
         private float GetTemporalBlend() => controller != null ? controller.temporalBlend : featureSettings.temporalBlend;
-        // 读取时域深度拒绝阈值。
         private float GetTemporalDepthRejection() => controller != null ? controller.temporalDepthRejection : featureSettings.temporalDepthRejection;
-        // 读取双边深度权重。
         private float GetBilateralDepthScale() => controller != null ? controller.bilateralDepthScale : featureSettings.bilateralDepthScale;
-        // 读取最终合成透明度。
         private float GetCompositeOpacity() => controller != null ? controller.compositeOpacity : featureSettings.compositeOpacity;
-        // 读取体积盒边缘软化距离。
         private float GetVolumeBoundsSoftness() => controller != null ? controller.volumeBoundsSoftness : featureSettings.volumeBoundsSoftness;
-        // 读取散射颜色。
         private Color GetScatteringColor() => controller != null ? controller.scatteringColor : featureSettings.scatteringColor;
 
         // 读取体积盒范围，优先使用场景 Controller。
@@ -443,6 +465,7 @@ public sealed class L17FrustumVolumetricRendererFeature : ScriptableRendererFeat
             temporalTexture?.Release();
             lowDepthTexture?.Release();
             cameraCopyTexture?.Release();
+            cloudShadowTexture?.Release();
             foreach (CameraHistory history in cameraHistories.Values)
             {
                 history.texture?.Release();
